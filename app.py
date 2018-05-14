@@ -2,6 +2,8 @@
 from importlib import import_module
 import os
 from flask import Flask, render_template, Response
+import time
+import fields_statistic as fields_st
 
 # import camera driver
 if os.environ.get('CAMERA'):
@@ -28,12 +30,28 @@ def gen(camera):
         yield (b'--frame\r\n'
                b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
 
+def gen_push():
+    """Parameters streaming generator function."""
+    while True:
+        time.sleep(1)
+        #x = ( int(time.time()) % 3 )
+         
+        parameter = (fields_st).encode('ascii') 
+        yield ( parameter )
+  
 
 @app.route('/video_feed')
 def video_feed():
     """Video streaming route. Put this in the src attribute of an img tag."""
     return Response(gen(Camera()),
                     mimetype='multipart/x-mixed-replace; boundary=frame')
+
+@app.route('/params_feed')
+def params_feed():
+    """Parameters streaming route. Put this in the src attribute of an img tag."""
+    return Response(gen_push(),
+                    mimetype='multipart/x-mixed-replace; boundary=frame')
+
 
 
 if __name__ == '__main__':
