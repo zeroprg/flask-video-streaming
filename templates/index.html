@@ -8,12 +8,13 @@
       <h1>Video Streaming Demonstration</h1>
       <img id="image" src="{{ url_for('video_feed') }}">
       <h1>Parameters:</h1>
-
+      <div id="myDiv"><!-- Plotly chart will be drawn inside this DIV --></div>
       <!-- Optional JavaScript -->
       <!-- jQuery first, then Popper.js, then Bootstrap JS -->
       <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
       <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
       <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+      <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
       <script>
           var offset = 0;
           var r = new XMLHttpRequest();
@@ -28,7 +29,56 @@
               //console.log(offset);
               console.log(latestPart);
           };
-          
+          var trace1 = {
+              x: [1, 2, 3, 4, 5],
+              y: [1, 6, 3, 6, 1],
+              mode: 'markers+text',
+              type: 'scatter',
+              name: 'Team A',
+              text: ['car-1', 'car-2', 'car-3', 'car-4', 'car-5'],
+              textposition: 'top center',
+              textfont: {
+                  family: 'Raleway, sans-serif'
+              },
+              marker: { size: 12 }
+          };
+
+          var trace2 = {
+              x: [1.5, 2.5, 3.5, 4.5, 5.5],
+              y: [4, 1, 7, 1, 4],
+              mode: 'markers+text',
+              type: 'scatter',
+              name: 'Team B',
+              text: ['B-a', 'B-b', 'B-c', 'B-d', 'B-e'],
+              textfont: {
+                  family: 'Times New Roman'
+              },
+              textposition: 'bottom center',
+              marker: { size: 12 }
+          };
+
+          var data = [trace1, trace2];
+
+          var layout = {
+              xaxis: {
+                  range: [0.75, 5.25]
+              },
+              yaxis: {
+                  range: [0, 8]
+              },
+              legend: {
+                  y: 0.5,
+                  yref: 'paper',
+                  font: {
+                      family: 'Arial, sans-serif',
+                      size: 20,
+                      color: 'grey',
+                  }
+              },
+              title: 'Data Labels on the Plot'
+          };
+
+          Plotly.newPlot('myDiv', data, layout);
       </script>
 
   </body>

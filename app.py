@@ -3,7 +3,7 @@ from importlib import import_module
 import os
 from flask import Flask, render_template, Response
 import time
-import fields_statistic as fields_st
+
 
 # import camera driver
 if os.environ.get('CAMERA'):
