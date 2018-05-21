@@ -6,7 +6,7 @@
 
 
       <h1>Video Streaming Demonstration</h1>
-      <img id="image" src="{{ url_for('video_feed') }}">
+      <img id="image" style="-webkit-user-select: none;"  src="{{ url_for('video_feed') }}">
       <h1>Parameters:</h1>
       <div id="myDiv"><!-- Plotly chart will be drawn inside this DIV --></div>
       <!-- Optional JavaScript -->
@@ -16,48 +16,39 @@
       <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
       <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
       <script>
-          var offset = 0;
-          var r = new XMLHttpRequest();
-         // r.multipart = true;
-          r.open('GET', "{{ url_for('params_feed') }}", true);
-          r.send();
-          //r.onreadystatechange
-          r.onprogress = function () {
-              var latestPart = r.responseText.substring(offset);
-
-              offset = r.responseText.length;
-              //console.log(offset);
-              console.log(latestPart);
-          };
-          var trace1 = {
-              x: [1, 2, 3, 4, 5],
-              y: [1, 6, 3, 6, 1],
-              mode: 'markers+text',
-              type: 'scatter',
-              name: 'Team A',
-              text: ['car-1', 'car-2', 'car-3', 'car-4', 'car-5'],
-              textposition: 'top center',
-              textfont: {
-                  family: 'Raleway, sans-serif'
-              },
-              marker: { size: 12 }
-          };
-
-          var trace2 = {
-              x: [1.5, 2.5, 3.5, 4.5, 5.5],
-              y: [4, 1, 7, 1, 4],
-              mode: 'markers+text',
-              type: 'scatter',
-              name: 'Team B',
-              text: ['B-a', 'B-b', 'B-c', 'B-d', 'B-e'],
-              textfont: {
-                  family: 'Times New Roman'
-              },
-              textposition: 'bottom center',
-              marker: { size: 12 }
-          };
-
-          var data = [trace1, trace2];
+          window.setInterval(function(){
+              ajaxCallFunction();  //calling every 0.5 seconds
+          }, 500);
+   
+          function ajaxCallFunction(){
+            //this function uses ajax to interact with the server
+            
+              var r = new XMLHttpRequest();
+             // r.multipart = true;
+              r.open('GET', "{{ url_for('params_feed') }}", true);
+              r.send();
+              //r.onreadystatechange
+              r.onprogress = function () {
+                  
+                 console.log(r.responseText);
+                 if(r.responseText){
+                     var traces = JSON.parse(r.responseText);
+                     if( data.length == 0) data.push.apply(data,traces)
+                     for( i = 0 ; i< data.length; i++) 
+                       for( j = 0 ; j< traces.length; j++) {
+                         if( traces[j].name == data[i].name ) {
+                             data[i].x.push(traces[j].x[0])
+                             data[i].y.push(traces[j].y[0])
+                             data[i].text.push(traces[j].text[0])
+                         }    
+                     }    
+                     
+                     Plotly.newPlot('myDiv', data, layout);
+                 }
+              };
+          }
+    
+          var data = []
 
           var layout = {
               xaxis: {
@@ -78,7 +69,7 @@
               title: 'Data Labels on the Plot'
           };
 
-          Plotly.newPlot('myDiv', data, layout);
+ 
       </script>
 
   </body>

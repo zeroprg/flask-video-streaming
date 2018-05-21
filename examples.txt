@@ -1,0 +1,5 @@
+python3 pi_object_detection.py --video_file http://38.101.209.29:8082/mjpg/video.mjpg?COUNTER  --prototxt MobileNetSSD_deploy.prototxt.txt --model MobileNetSSD_deploy.caffemodel
+python3 pi_object_detection.py --video_file http://208.72.70.171:80/mjpg/video.mjpg?COUNTER --prototxt MobileNetSSD_deploy.prototxt.txt --model MobileNetSSD_deploy.caffemodel
+python3 pi_object_detection.py --video_file "http://104.157.73.60:80/cgi-bin/faststream.jpg?stream=half&amp;fps=15&amp;rand=COUNTER" --prototxt MobileNetSSD_deploy.prototxt.txt --model MobileNetSSD_deploy.caffemodel
+python3 pi_object_detection.py --video_file "http://192.168.1.73:81/videostream.cgi?loginuse=GwEBAA%3D%3D&loginpas=Nw0AG1ZceWtl&_=15255843588410.6653500917047492" --prototxt MobileNetSSD_deploy.prototxt.txt --model MobileNetSSD_deploy.caffemodel
+python3 pi_object_detection.py --video_file ~/Downloads/1522899193.flv --prototxt MobileNetSSD_deploy.prototxt.txt --model MobileNetSSD_deploy.caffemode

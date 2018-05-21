@@ -2,65 +2,34 @@
 # import the necessary packages
 from skimage.measure import structural_similarity as ssim
 import time
+from time import gmtime, strftime
+import cv2
+import numpy as np
+import math
+import dhash
 
-import numpy as np 
+SCENE_FRAMES = 50
+IMAGES = {"background": [], "bicycle": [], "bus": [], "car": [], "cat": [],"dog": [], "horse": [], "motorbike": [], "person": [],  "train": []}
+hash_delta = 65
+mse_delta = 1
+#ssim_delta = 0.6
+#initial height of the image stored in app
+
+def dhash_own(image, hashSize=8):
+    	# convert the image to grayscale and compute the hash
+	image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+
+	# resize the input image, adding a single column (width) so we
+	# can compute the horizontal gradient
+	resized = cv2.resize(image, (hashSize + 1, hashSize))
  
-mse_delta = 1000
-ssim_delta = 0.6
-
-class Screen_statistic(Object):
-    """An emulated camera implementation that streams a repeated sequence of"""
-
-    def __init__(self,dict_of_objs):
-         self.total_for_5min = {}
-         self.total_for_10min  = {} 
-         self.total_for_30min  = {}
-         self.total_for_1hour  = {}
-         self.total_for_2hour  = {}
-         self.total_for_5hour  = {}
-         self.total_for_10hour = {}
-         self.images           = {}
-
-    def refresh(dict_of_objs):
-        tick = int(time.time())
-        for key, image in  dict_of_objs:
-             if( tick % 300 == 0 ):   total_for_5min[key] = 0
-             if( tick % 600 == 0 ):   total_for_10min[key] = 0
-             if( tick % 1200 == 0 ):  total_for_30min[key] = 0
-             if( tick % 3600 == 0 ):  total_for_1hour[key] = 0
-             if( tick % 10200 == 0 ): total_for_2hour[key] = 0
-             if( tick % 24400 == 0 ): total_for_4hour[key] = 0
-             if( tick % 48800 == 0 ): total_for_8hour[key] = 0
-             if(not isAnySimularImage(imagehash,key,value) ):
-                """ a new object with a new coordinates (value) come """ 
-                if(len(values[key]) > 15 ): values[key].pop(0)
-                values[key].append(image)
-                #values[(i + 1) % len(values)][key] = image
-                total_for_5min[key]   += 1
-                total_for_10min[key]  += 1 
-                total_for_30min[key]  += 1
-                total_for_1hour[key]  += 1
-                total_for_2hour[key]  += 1
-                total_for_4hour[key]  += 1
-                total_for_8hour[key]  += 1
-   
-
-
-
-    @staticmethod
-    def isAnySimularImage(values: dict, key, image):
-        hashes = values[key]
-        if(len(hashes) == 0 ):
-            return False
-        for _image in hashes:
-            if( mse(_image , image) < mse_delta): 
-                return True
-            elif ( ssim(_image , image) > ssim_delta ): 
-                return True
-        return False
-
-'''Python Compare Two ImagesPython '''
-
+	# compute the (relative) horizontal gradient between adjacent
+	# column pixels
+	diff = resized[:, 1:] > resized[:, :-1]
+ 
+	# convert the difference image to a hash
+	return sum([(2 << i)>>1 for (i, v) in enumerate(diff.flatten()) if v])
+    
 
 def mse(imageA, imageB):
 	# the 'Mean Squared Error' between the two images is the
@@ -73,72 +42,168 @@ def mse(imageA, imageB):
 	# the two images are
 	return err
 
-def compare_images(imageA, imageB, title):
-	# compute the mean squared error and structural similarity
-	# index for the images
-	m = mse(imageA, imageB)
-	s = ssim(imageA, imageB)
-
-	# setup the figure
-	fig = plt.figure(title)
-	plt.suptitle("MSE: %.2f, SSIM: %.2f" % (m, s))
-
-	# show first image
-	ax = fig.add_subplot(1, 2, 1)
-	plt.imshow(imageA, cmap = plt.cm.gray)
-	plt.axis("off")
-
-	# show the second image
-	ax = fig.add_subplot(1, 2, 2)
-	plt.imshow(imageB, cmap = plt.cm.gray)
-	plt.axis("off")
-
-	# show the images
-	plt.show()
 
 
-if __name__ == '__main__':
-    import matplotlib.pyplot as plt
-    import cv2
+def dsize(img,**options):
+    height, width = img.shape[:2]
+    print ("Image height: {0} and width: {1} before resizing ".format( height, width) )
+    original_height = options.get("original_height")
+    if( original_height and original_height > 0 ):        
+        ratio = height/original_height
+        dsize = (int(height /ratio), int(width /ratio))
+    else:
+        dsize = (height, width)
+    print ("Image height: {0} and width: {1} after resizing ".format( height, width) ) 
+    return dsize
 
-    # load the images -- the original, the original + contrast,
-    # and the original + photoshop
-    original = cv2.imread("images/jp_gates_original.png")
-    contrast = cv2.imread("images/jp_gates_contrast.png")
-    shopped = cv2.imread("images/jp_gates_photoshopped.png")
+""" Resize image to initial height """
+def image_resize(img, initial_height):
+    height, width = img.shape[:2]
+    if( initial_height > 0 ):
+        initial_height = (initial_height + height)/2
+        img = cv2.resize(img , dsize(img, original_height=self.initial_height), interpolation=cv2.INTER_CUBIC)
+    else:
+        initial_height = height
+    return img
 
-    # convert the images to grayscale
-    original = cv2.cvtColor(original, cv2.COLOR_BGR2GRAY)
-    contrast = cv2.cvtColor(contrast, cv2.COLOR_BGR2GRAY)
-    shopped = cv2.cvtColor(shopped, cv2.COLOR_BGR2GRAY)
 
-    # load the images -- the original, the original + contrast,
-    # and the original + photoshop
-    original = cv2.imread("images/jp_gates_original.png")
-    contrast = cv2.imread("images/jp_gates_contrast.png")
-    shopped = cv2.imread("images/jp_gates_photoshopped.png")
- 
-    # convert the images to grayscale
-    original = cv2.cvtColor(original, cv2.COLOR_BGR2GRAY)
-    contrast = cv2.cvtColor(contrast, cv2.COLOR_BGR2GRAY)
-    shopped = cv2.cvtColor(shopped, cv2.COLOR_BGR2GRAY)
+class Screen_statistic(object):
+    """An emulated camera implementation that streams a repeated sequence of images"""
 
-    # initialize the figure
-    fig = plt.figure("Images")
-    images = ("Original", original), ("Contrast", contrast), ("Photoshopped", shopped)
- 
-    # loop over the images
-    for (i, (name, image)) in enumerate(images):
-	    # show the image
-	    ax = fig.add_subplot(1, 3, i + 1)
-	    ax.set_title(name)
-	    plt.imshow(image, cmap = plt.cm.gray)
-	    plt.axis("off")
- 
-    # show the figure
-    plt.show()
- 
-    # compare the images
-    compare_images(original, original, "Original vs. Original")
-    compare_images(original, contrast, "Original vs. Contrast")
-    compare_images(original, shopped, "Original vs. Photoshopped")
+
+    def isAnySimularImageByHashCode(self, image_hashes: dict, key, image):
+        dim = image.shape[:2]
+        if( dim[0] < 30 or dim[1] < 30 ): return True
+        hashes = image_hashes[key]
+        imageHash =  dhash_own(image)
+        print("image_hash:" , image_hash)
+        self.image_hashes[key].append(imageHash) 
+        if(len(hashes) == 0 ):
+            return False
+
+        for _imageHash in hashes:
+            delta = dhash.get_num_bits_different(imageHash, _imageHash)
+            
+            if( delta < hash_delta):
+                #print( key, delta ) 
+                return True
+#            elif ( compare_ssim(_image , image) > ssim_delta ):
+#                return True
+                
+        return False
+
+# Check if any simular image by Mean Square Error where parameter is numpy array :
+#  A = np.array([confidence,startX,endX, startY, endY])
+    def countDifferentImagesByMSE(self, orig_classes: dict, classes: dict):
+
+
+        for key,value in classes.items():
+            if( not key in self.images_counter ): continue
+            if(self.frame_counter > SCENE_FRAMES ):
+                if( len(self.orig_classes[key])>0 ): self.orig_classes[key].pop(0)            
+
+            #Check how big the box
+
+            #if( value[2]< 20 or value[4]< 20 ): continue
+            if( not key in orig_classes):
+                orig_classes[key] = value
+                self.images_counter[key] = len(value)
+                continue
+                
+            for orig_key, orig_value in classes.items():
+                if(orig_key == key ):
+                    mse = 0.0
+                    the_same = 0
+                    print(orig_value)
+                    temp=[]
+                    for _orig_value in orig_value:
+                        for _value in value:    
+                            
+                            #mse = ((_orig_value - _value)**2).mean()
+                            #mse0 = _orig_value[0] - _value[0]
+                            #mse0 = mse0*mse0
+                            mse1 = _orig_value[1] - _value[1]
+                            #mse2 = _orig_value[2] - _value[2]
+                            mse3 = _orig_value[3] - _value[3]
+                            #mse4 = _orig_value[4] - _value[4]
+                            #print(mse)
+                            # the same
+                            mse = math.sqrt((mse1*mse1 +  mse3*mse3 )/2)
+                            #print(mse)
+                            if(mse < mse_delta):
+                                #print(mse)
+                                #if(self.isAnySimularImageByHashCode(self.image_hashes, key,_value[5])):
+                                #the_same +=1
+                                #value.remove(_value)
+                                continue
+                            else:
+                                temp.append([_value])
+                    #new_ones = len(value) - the_same
+                    #self.images_counter[key] += new_ones
+                    
+                    orig_value.append(temp)
+                    self.images_counter[key] =  len(orig_value)
+                    print( key, ":", self.images_counter[key])
+
+
+
+    def __init__(self, params_queue):
+        self.image_hashes     = {}
+        self.images_counter   = IMAGES
+        self.orig_classes     = {}
+        self.frame_counter    = 0
+        self.paramsQueue = params_queue
+   
+
+    
+    def refresh(self, classes):
+        print(self.frame_counter)
+        self.frame_counter += 1
+
+        if(self.frame_counter > SCENE_FRAMES ):
+            self.frame_counter = 0
+            self.images_counter = IMAGES
+            self.paramsQueue.put(self.getParametersJSON(self.orig_classes))
+             
+        self.countDifferentImagesByMSE(self.orig_classes, classes)
+
+    def getParametersJSON(self, orig_classes):
+        ret =[]
+        for key in orig_classes:
+            _array = orig_classes[key]
+            _array_length = len(_array)           
+            prob_total = 0 
+            for value in _array:
+                 prob_total += value[0]
+                 
+            prob_total /= _array_length
+            trace = Trace()
+            trace.name = key
+            tm = strftime("%H:%M:%S", gmtime())
+            
+            trace.x.append(tm)
+            trace.y.append(self.images_counter[key])
+            trace.text.append(str(int(prob_total*100))+ '%')
+            ret.append(trace.__dict__)
+            #print( trace.__dict__ )
+        return ret
+
+
+class Trace(dict):
+    def __init__(self):
+        dict.__init__(self)
+        self.x = list()
+        self.y = list()
+        self.mode = 'markers+text'
+        self.type = 'scatter'
+        self.name = ''
+        self.text = list()
+        self.textposition = 'top center',
+        self.textfont = {'family': 'Raleway, sans-serif'}
+        self.marker = { 'size': 12 }
+        
+    def toJSON(self):
+            return json.dumps(self, default=lambda o: o.__dict__, 
+                sort_keys=True, indent=4)        
+
+
