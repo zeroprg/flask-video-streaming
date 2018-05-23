@@ -8,10 +8,10 @@ import numpy as np
 import math
 import dhash
 
-SCENE_FRAMES = 50
+SCENE_FRAMES = 160
 IMAGES = {"background": [], "bicycle": [], "bus": [], "car": [], "cat": [],"dog": [], "horse": [], "motorbike": [], "person": [],  "train": []}
 hash_delta = 65
-mse_delta = 1
+mse_delta = 5
 #ssim_delta = 0.6
 #initial height of the image stored in app
 
@@ -143,7 +143,7 @@ class Screen_statistic(object):
                     
                     orig_value.append(temp)
                     self.images_counter[key] =  len(orig_value)
-                    print( key, ":", self.images_counter[key])
+                    #print( key, ":", self.images_counter[key])
 
 
 
@@ -159,11 +159,11 @@ class Screen_statistic(object):
     def refresh(self, classes):
         print(self.frame_counter)
         self.frame_counter += 1
-
+        self.paramsQueue.put(self.getParametersJSON(self.orig_classes))
         if(self.frame_counter > SCENE_FRAMES ):
             self.frame_counter = 0
             self.images_counter = IMAGES
-            self.paramsQueue.put(self.getParametersJSON(self.orig_classes))
+  
              
         self.countDifferentImagesByMSE(self.orig_classes, classes)
 
@@ -194,16 +194,16 @@ class Trace(dict):
         dict.__init__(self)
         self.x = list()
         self.y = list()
-        self.mode = 'markers+text'
+        self.mode = 'lines'
         self.type = 'scatter'
         self.name = ''
         self.text = list()
         self.textposition = 'top center',
         self.textfont = {'family': 'Raleway, sans-serif'}
         self.marker = { 'size': 12 }
-        
+
+
     def toJSON(self):
             return json.dumps(self, default=lambda o: o.__dict__, 
                 sort_keys=True, indent=4)        
-
 

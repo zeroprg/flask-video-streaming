@@ -29,8 +29,9 @@ imgs =  [open(f + '.jpg', 'rb').read() for f in ['1', '2', '3']]
 
     
 pnt = 0
-IMAGE_BUFFER = 9500
-PARAMS_BUFFER = 10 
+IMAGE_BUFFER = 40
+PARAMS_BUFFER = 10
+THREAD_NUMBERS = 3
 
 def classify_frame( net, inputQueue, outputQueue):
         # keep looping
@@ -40,9 +41,9 @@ def classify_frame( net, inputQueue, outputQueue):
                         # grab the frame from the input queue, resize it, and
                         # construct a blob from it
                         frame = inputQueue.get()
-                        frame = cv2.resize(frame, (300, 300))
+                        frame = cv2.resize(frame, (400, 400))
                         blob = cv2.dnn.blobFromImage(frame, 0.007843,
-                                (300, 300), 127.5)
+                                (400, 400), 127.5)
 
                         # set the blob as input to our deep learning object
                         # detector and obtain the detections
@@ -69,13 +70,13 @@ def get_frame(vs):
             #print('Test 2- flag: ' , flag )
             if not flag:
                     continue
-            frame = imutils.resize(frame, width=400)
+            frame = imutils.resize(frame, width=640)
             (fH, fW) = frame.shape[:2]
             #print('Test 2.5- frame: ' , frame )
             # if the input queue *is* empty, give the current frame to
             # classify
-            if inputQueue.empty():
-                    inputQueue.put(frame)
+            #if inputQueue.empty():
+            inputQueue.put(frame)
 
             # if the output queue *is not* empty, grab the detections
             if not outputQueue.empty():
@@ -123,6 +124,9 @@ def get_frame(vs):
 
             # Accumulate statistic
             #print('Test4 - scrn_stats: ' , scrn_stats )
+            #p_scrn_stats = Process(scrn_stats.refresh, args=(classes,))
+            #p_scrn_stats.daemon = True
+            #p_scrn_stats.start()
             scrn_stats.refresh(classes)
 
             # show the output frame when need to test is working or not
@@ -167,8 +171,8 @@ args = {}
 
 # initialize the input queue (frames), output queue (detections),
 # and the list of actual detections returned by the child process
-inputQueue = Queue(maxsize=10)
-outputQueue = Queue(maxsize=10)
+inputQueue = Queue(maxsize=100)
+outputQueue = Queue(maxsize=100)
 imagesQueue = Queue(maxsize=IMAGE_BUFFER)
 paramsQueue = Queue(maxsize=PARAMS_BUFFER)
 imagesQueue.put(imgs[0])
@@ -193,7 +197,7 @@ if (__name__ == '__main__'):
             help="path to Caffe 'deploy' prototxt file")
     ap.add_argument("-m", "--model", required=True,
             help="path to Caffe pre-trained model")
-    ap.add_argument("-c", "--confidence", type=float, default=0.20,
+    ap.add_argument("-c", "--confidence", type=float, default=0.15,
             help="minimum probability to filter weak detections")
     args = vars(ap.parse_args())
     
@@ -226,10 +230,11 @@ def start():
     # construct a child process *indepedent* from our main process of
     # execution
     print("[INFO] starting process...")
-    p_classifier = Process(target=classify_frame, args=(net,inputQueue,
-            outputQueue,))
-    p_classifier.daemon = True
-    p_classifier.start()
+    for i in range(THREAD_NUMBERS):
+        p_classifier = Process(target=classify_frame, args=(net,inputQueue,
+                outputQueue,))
+        p_classifier.daemon = True
+        p_classifier.start()
 
     # initialize the video stream, allow the cammera sensor to warmup,
     # and initialize the FPS counter
@@ -275,13 +280,11 @@ def detect():
         #frame = camera.get_frame()
         #time.sleep(1)
         
-        while(imagesQueue.empty()):time.sleep(0.1)
+        #while(imagesQueue.empty()):time.sleep(0.1)
         iterable = imagesQueue.get()
         #else: iterable = old
         
-        yield b'--frame\r\nContent-Type: image/jpeg\r\n\r\n'
-        yield iterable
-        yield b'\r\n'
+        yield b'--frame\r\nContent-Type: image/jpeg\r\n\r\n' + iterable + b'\r\n'
 
 def gen_params():
     """Parameters streaming generator function."""

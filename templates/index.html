@@ -1,13 +1,11 @@
 <html>
   <head>
-    <title>Video Streaming Demonstration</title>
+    <title>Artificial Intelegence Camera </title>
   </head>
   <body>
-
-
-      <h1>Video Streaming Demonstration</h1>
-      <img id="image" style="-webkit-user-select: none;"  src="{{ url_for('video_feed') }}">
-      <h1>Parameters:</h1>
+      <h1>Artificial Intelegence Camera </h1>
+      <img id="image" style="-webkit-user-select: none;"  width="640" height="480" src="{{ url_for('video_feed') }}">
+      <!--h1>Objects founded:</h1-->
       <div id="myDiv"><!-- Plotly chart will be drawn inside this DIV --></div>
       <!-- Optional JavaScript -->
       <!-- jQuery first, then Popper.js, then Bootstrap JS -->
@@ -16,9 +14,10 @@
       <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
       <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
       <script>
+          MAX_BUFFER = 10000
           window.setInterval(function(){
-              ajaxCallFunction();  //calling every 0.5 seconds
-          }, 500);
+              ajaxCallFunction();  //calling every 5 second
+          }, 5000);
    
           function ajaxCallFunction(){
             //this function uses ajax to interact with the server
@@ -34,15 +33,22 @@
                  if(r.responseText){
                      var traces = JSON.parse(r.responseText);
                      if( data.length == 0) data.push.apply(data,traces)
+  
+                     
                      for( i = 0 ; i< data.length; i++) 
                        for( j = 0 ; j< traces.length; j++) {
                          if( traces[j].name == data[i].name ) {
                              data[i].x.push(traces[j].x[0])
                              data[i].y.push(traces[j].y[0])
                              data[i].text.push(traces[j].text[0])
-                         }    
+                       }
+                       if( data[i].x.length >= MAX_BUFFER ) {
+                         data[i].x.shift();
+                         data[i].y.shift();
+                         data[i].text.shift();
+                       }  
+   
                      }    
-                     
                      Plotly.newPlot('myDiv', data, layout);
                  }
               };
@@ -52,10 +58,10 @@
 
           var layout = {
               xaxis: {
-                  range: [0.75, 5.25]
+                  autorange: true
               },
               yaxis: {
-                  range: [0, 8]
+                  autorange: true
               },
               legend: {
                   y: 0.5,
@@ -66,7 +72,7 @@
                       color: 'grey',
                   }
               },
-              title: 'Data Labels on the Plot'
+              title: 'Founded objects per time (5 sec beet)'
           };
 
  
