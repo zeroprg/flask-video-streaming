@@ -32,7 +32,7 @@ imgs =  [open(f + '.jpg', 'rb').read() for f in ['1', '2', '3']]
     
 pnt = 0
 IMAGE_BUFFER = 4000
-PARAMS_BUFFER = 3
+PARAMS_BUFFER = 10
 THREAD_NUMBERS = 2
 
 def classify_frame( net, inputQueue, outputQueue):
@@ -131,7 +131,7 @@ def get_frame(vs):
                             cv2.putText(frame, label, (startX, y),
                                     cv2.FONT_HERSHEY_SIMPLEX, 0.5, COLORS[idx], 2)
                             key = CLASSES[idx]
-                            A = [confidence,startX,endX, startY, endY]
+                            A = [confidence,startX,endX, startY, endY, int(time.time())]
                             #print(A)
                             if( not key in classes): classes[key] = [A]
                             else: classes[key].append(A)
@@ -298,7 +298,7 @@ def base64ToStr(b):
 def detect():
     """Video streaming generator function."""
     while True:
-         print('imagesQueue:', imagesQueue.empty())
+         #print('imagesQueue:', imagesQueue.empty())
          while(not imagesQueue.empty()):
         	 iterable = imagesQueue.get()
 	         yield b'--frame\r\nContent-Type: image/jpeg\r\n\r\n' + iterable + b'\r\n'
@@ -322,10 +322,11 @@ def gen_params():
     #uncomment as soon will be ready
     #print('Request to params1', paramsQueue.empty())
     #while(paramsQueue.empty()): a=0
-    
-    classes = paramsQueue.get()
-    #print(classes)
-    params = scrn_stats.refresh(classes)
+    params = None
+    while(not paramsQueue.empty()):
+        classes = paramsQueue.get()
+        #print(classes)
+        params = scrn_stats.refresh(classes)
     #print(params)
     x = json.dumps(params)    
     return x

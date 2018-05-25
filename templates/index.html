@@ -26,7 +26,7 @@
               //r2.send();
               //r.onreadystatechange
 
-          MAX_BUFFER = 50000
+          MAX_BUFFER = 1000
           window.setInterval(function(){
               ajaxCallFunction();  //calling every 10 second
           }, 1000);
@@ -52,6 +52,7 @@
                              data[i].x.push(traces[j].x[0])
                              data[i].y.push(traces[j].y[0])
                              data[i].text.push(traces[j].text[0])
+                             data[i].type ='scatter'
                        }
                        if( data[i].x.length >= MAX_BUFFER ) {
                          data[i].x.shift();
@@ -60,7 +61,7 @@
                        }  
    
                      }    
-                     Plotly.newPlot('myDiv', data, layout);
+                     Plotly.newPlot('myDiv', data,layout);
                  }
               };
           }

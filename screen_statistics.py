@@ -8,8 +8,8 @@ import numpy as np
 import math
 import dhash
 
-SCENE_FRAMES = 3
-IMAGES = {"background": [], "bicycle": [], "bus": [], "car": [], "cat": [],"dog": [], "horse": [], "motorbike": [], "person": [],  "train": []}
+SCENE_FRAMES = 10
+IMAGES = {"diningtable":[],"train":[],"chair": [], "bicycle": [], "bus": [], "car": [], "cat": [],"dog": [], "horse": [], "motorbike": [], "person": [],  "train": []}
 hash_delta = 65
 mse_delta = 55
 #ssim_delta = 0.6
@@ -97,8 +97,9 @@ class Screen_statistic(object):
     def countDifferentImagesByMSE(self, orig_classes, classes):
          for key,value in classes.items():
              if( not key in self.images_counter ): continue
-             if(self.frame_counter > SCENE_FRAMES ):
-                 if( len(self.orig_classes[key])>0 ): self.orig_classes[key].pop(0)            
+             #if(self.frame_counter > SCENE_FRAMES ):
+             #    self.orig_classes[key] =[] 
+                 #if( len(self.orig_classes[key])>0 ): self.orig_classes[key].pop(0)            
 
              #Check how big the box
 
@@ -107,26 +108,28 @@ class Screen_statistic(object):
                  orig_classes[key] = value
                  self.images_counter[key] = len(value)
                  continue
+
+
+             #for orig_key, orig_value in orig_classes.items():
+             #    if(orig_key == key ):
+             #        mse = 0.0
+             #        the_same = 0
+                     #print(orig_value)
+             #    if(orig_key == key ):continue
                  
              for orig_key, orig_value in orig_classes.items():
-                 if(orig_key == key ):
-                     mse = 0.0
-                     the_same = 0
-                     print(orig_value)
-                 if(orig_key == key ):continue
                  
-             for orig_key, orig_value in orig_classes.items():
+           
                  if(orig_key == key ):
-                     mse = 0.0
-                     the_same = 0
-                     print(orig_value)
-                     print("len(orig_value)", len(orig_value))
-                     
-                     
+                     #print(orig_value)
+                     #print("len(orig_value)", len(orig_value))
                      temp=[]  
                      for _value in value:
                          Break = False
                          for _orig_value in orig_value:
+                             if(int(time.time()) - _orig_value[5] > 10 ):
+                                 orig_value.remove(_orig_value)
+                                 continue
                              #mse = ((_orig_value   _value)**2).mean()
                              #mse0 = _orig_value[0] - _value[0]
                              #mse0 = mse0*mse0
@@ -147,8 +150,8 @@ class Screen_statistic(object):
                          if not Break: temp.append(_value)
                      #new_ones = len(value) - the_same
                      #self.images_counter[key] += new_ones
-                     print("temp:", temp)            
-                     print("len(temp)", len(temp))
+                     #print("temp:", temp)            
+                     #print("len(temp)", len(temp))
                      
                      orig_value.extend(temp)
                      
@@ -172,13 +175,15 @@ class Screen_statistic(object):
     def refresh(self, classes):
         print(self.frame_counter)
         self.frame_counter += 1
-        ret = self.getParametersJSON(self.orig_classes)
+        #ret = self.getParametersJSON(self.orig_classes)
         if(self.frame_counter > SCENE_FRAMES ):
             self.frame_counter = 0
             self.images_counter = IMAGES
+            #self.orig_classes = {}
   
              
         self.countDifferentImagesByMSE(self.orig_classes, classes)
+        ret = self.getParametersJSON(self.orig_classes)
         return ret
 
     def getParametersJSON(self, orig_classes):
