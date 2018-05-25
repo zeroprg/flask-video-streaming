@@ -32,8 +32,8 @@ imgs =  [open(f + '.jpg', 'rb').read() for f in ['1', '2', '3']]
     
 pnt = 0
 IMAGE_BUFFER = 4000
-PARAMS_BUFFER = 160
-THREAD_NUMBERS = 1
+PARAMS_BUFFER = 3
+THREAD_NUMBERS = 2
 
 def classify_frame( net, inputQueue, outputQueue):
         # keep looping
@@ -135,11 +135,11 @@ def get_frame(vs):
                             #print(A)
                             if( not key in classes): classes[key] = [A]
                             else: classes[key].append(A)
-                            paramsQueue.put(classes)
+                            #paramsQueue.put(classes)
             
             jpg = cv2.imencode('.jpg', frame)[1].tobytes()
             imagesQueue.put(jpg)
-
+            paramsQueue.put(classes)
             # Accumulate statistic
             #print('Test4 - scrn_stats: ' , scrn_stats )
             #p_scrn_stats = Process(scrn_stats.refresh, args=(classes,))
@@ -299,10 +299,10 @@ def detect():
     """Video streaming generator function."""
     while True:
          print('imagesQueue:', imagesQueue.empty())
-#        while(imagesQueue.empty()):
-         iterable = imagesQueue.get()
-         yield b'--frame\r\nContent-Type: image/jpeg\r\n\r\n' + iterable + b'\r\n'
-    #frame = camera.get_frame()
+         while(not imagesQueue.empty()):
+        	 iterable = imagesQueue.get()
+	         yield b'--frame\r\nContent-Type: image/jpeg\r\n\r\n' + iterable + b'\r\n'
+	 #frame = camera.get_frame()
     #time.sleep(1)
     
     #while(imagesQueue.empty()):time.sleep(0.1)
