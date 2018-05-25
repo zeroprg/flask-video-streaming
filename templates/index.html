@@ -14,10 +14,22 @@
       <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
       <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
       <script>
-          MAX_BUFFER = 10000
+          /*var img = document.getElementById('image')
+          var source = new EventSource("{{ url_for('video_feed') }}")
+          source.addEventListener('image',function (e) {
+              img.src = 'data:image/png:base64,' + e.data;
+              console.log(img.src)
+              });
+          */
+                        //var r2 = new XMLHttpRequest(); 
+              //r2.open('GET', "{{ url_for('video_feed') }}", true);
+              //r2.send();
+              //r.onreadystatechange
+
+          MAX_BUFFER = 50000
           window.setInterval(function(){
-              ajaxCallFunction();  //calling every 5 second
-          }, 5000);
+              ajaxCallFunction();  //calling every 10 second
+          }, 10000);
    
           function ajaxCallFunction(){
             //this function uses ajax to interact with the server
@@ -26,7 +38,6 @@
              // r.multipart = true;
               r.open('GET', "{{ url_for('params_feed') }}", true);
               r.send();
-              //r.onreadystatechange
               r.onprogress = function () {
                   
                  console.log(r.responseText);
@@ -72,7 +83,7 @@
                       color: 'grey',
                   }
               },
-              title: 'Founded objects per time (5 sec beet)'
+              title: 'Founded objects per time (10 sec beet)'
           };
 
  

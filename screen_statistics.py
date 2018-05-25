@@ -94,7 +94,7 @@ class Screen_statistic(object):
 
 # Check if any simular image by Mean Square Error where parameter is numpy array :
 #  A = np.array([confidence,startX,endX, startY, endY])
-    def countDifferentImagesByMSE(self, orig_classes: dict, classes: dict):
+    def countDifferentImagesByMSE(self, orig_classes, classes):
 
 
         for key,value in classes.items():
@@ -110,15 +110,18 @@ class Screen_statistic(object):
                 self.images_counter[key] = len(value)
                 continue
                 
-            for orig_key, orig_value in classes.items():
+            for orig_key, orig_value in orig_classes.items():
                 if(orig_key == key ):
                     mse = 0.0
                     the_same = 0
                     print(orig_value)
-                    temp=[]
-                    for _orig_value in orig_value:
-                        for _value in value:    
-                            
+                    print("len(orig_value)", len(orig_value))
+                    
+                    
+                    temp=[]  
+                    for _value in value:
+                        Break = False
+                        for _orig_value in orig_value:
                             #mse = ((_orig_value - _value)**2).mean()
                             #mse0 = _orig_value[0] - _value[0]
                             #mse0 = mse0*mse0
@@ -134,14 +137,19 @@ class Screen_statistic(object):
                                 #print(mse)
                                 #if(self.isAnySimularImageByHashCode(self.image_hashes, key,_value[5])):
                                 #the_same +=1
-                                #value.remove(_value)
-                                continue
-                            else:
-                                temp.append([_value])
+                                Break = True
+                                break
+                        if not Break: temp.append(_value)
                     #new_ones = len(value) - the_same
                     #self.images_counter[key] += new_ones
+                    print("temp:", temp)            
+                    print("len(temp)", len(temp))
                     
-                    orig_value.append(temp)
+                    orig_value.extend(temp)
+                    
+                    print("orig_value:", orig_value)            
+                    print("len(orig_value)", len(orig_value))
+                    
                     self.images_counter[key] =  len(orig_value)
                     #print( key, ":", self.images_counter[key])
 
@@ -152,20 +160,21 @@ class Screen_statistic(object):
         self.images_counter   = IMAGES
         self.orig_classes     = {}
         self.frame_counter    = 0
-        self.paramsQueue = params_queue
+        
    
 
     
     def refresh(self, classes):
         print(self.frame_counter)
         self.frame_counter += 1
-        self.paramsQueue.put(self.getParametersJSON(self.orig_classes))
+        ret = self.getParametersJSON(self.orig_classes)
         if(self.frame_counter > SCENE_FRAMES ):
             self.frame_counter = 0
             self.images_counter = IMAGES
   
              
         self.countDifferentImagesByMSE(self.orig_classes, classes)
+        return ret
 
     def getParametersJSON(self, orig_classes):
         ret =[]
@@ -194,13 +203,8 @@ class Trace(dict):
         dict.__init__(self)
         self.x = list()
         self.y = list()
-        self.mode = 'lines'
-        self.type = 'scatter'
         self.name = ''
         self.text = list()
-        self.textposition = 'top center',
-        self.textfont = {'family': 'Raleway, sans-serif'}
-        self.marker = { 'size': 12 }
 
 
     def toJSON(self):

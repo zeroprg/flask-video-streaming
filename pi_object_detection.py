@@ -10,16 +10,18 @@ import numpy as np
 import argparse
 import imutils
 import time
+from time import gmtime, strftime
 import cv2
 import json
 from screen_statistics import Screen_statistic
 from flask import Flask, render_template, Response
+import base64
 # initialize the list of class labels MobileNet SSD was trained to
 # detect, then generate a set of bounding box colors for each class
 CLASSES = ["background", "aeroplane", "bicycle", "bird", "boat",
 	"bottle", "bus", "car", "cat", "chair", "cow", "diningtable",
 	"dog", "horse", "motorbike", "person", "pottedplant", "sheep",
-	"sofa", "train", "tvmonitor"]
+	"sofa", "train", "tvmonitor","__"]
 
 COLORS = np.random.uniform(0, 255, size=(len(CLASSES), 3))
 
@@ -29,9 +31,9 @@ imgs =  [open(f + '.jpg', 'rb').read() for f in ['1', '2', '3']]
 
     
 pnt = 0
-IMAGE_BUFFER = 40
-PARAMS_BUFFER = 10
-THREAD_NUMBERS = 3
+IMAGE_BUFFER = 4000
+PARAMS_BUFFER = 160
+THREAD_NUMBERS = 1
 
 def classify_frame( net, inputQueue, outputQueue):
         # keep looping
@@ -41,9 +43,13 @@ def classify_frame( net, inputQueue, outputQueue):
                         # grab the frame from the input queue, resize it, and
                         # construct a blob from it
                         frame = inputQueue.get()
-                        frame = cv2.resize(frame, (400, 400))
+                        frame = cv2.resize(frame, (300, 300))
+                        cols = frame.shape[1]
+                        rows = frame.shape[0]
                         blob = cv2.dnn.blobFromImage(frame, 0.007843,
-                                (400, 400), 127.5)
+                                (300, 300), (127.5,127.5,127.5), False)
+
+
 
                         # set the blob as input to our deep learning object
                         # detector and obtain the detections
@@ -51,16 +57,15 @@ def classify_frame( net, inputQueue, outputQueue):
                         detections = net.forward()
 
                         # write the detections to the output queue
-                        outputQueue.put(detections)
+                        outputQueue.put(detections)#(detections,rows,cols))
 
 
 
 def get_frame(vs):
     # loop over the frames from the video stream
     detections = None
-    pnt = 0
+    cols,rows = 0,0
     while True:
-            
             if( imagesQueue.full() ): continue
             #dictionary of detected objects
             classes = {}
@@ -70,7 +75,7 @@ def get_frame(vs):
             #print('Test 2- flag: ' , flag )
             if not flag:
                     continue
-            frame = imutils.resize(frame, width=640)
+            #frame = imutils.resize(frame, width=640)
             (fH, fW) = frame.shape[:2]
             #print('Test 2.5- frame: ' , frame )
             # if the input queue *is* empty, give the current frame to
@@ -81,6 +86,9 @@ def get_frame(vs):
             # if the output queue *is not* empty, grab the detections
             if not outputQueue.empty():
                     detections = outputQueue.get()
+                    #detections = object_detected[0]
+                    #cols = object_detected[1]
+                    #rows = object_detected[2]
 
             # check to see if our detectios are not None (and if so, we'll
             # draw the detections on the frame)
@@ -101,6 +109,15 @@ def get_frame(vs):
                             # the `detections`, then compute the (x, y)-coordinates
                             # of the bounding box for the object
                             idx = int(detections[0, 0, i, 1])
+                            
+
+                            #xLeftBottom = int(detections[0, 0, i, 3] * cols)
+                            #yLeftBottom = int(detections[0, 0, i, 4] * rows)
+                            #xRightTop   = int(detections[0, 0, i, 5] * cols)
+                            #yRightTop   = int(detections[0, 0, i, 6] * rows)
+
+                            
+                            
                             dims = np.array([fW, fH, fW, fH])
                             box = detections[0, 0, i, 3:7] * dims
                             (startX, startY, endX, endY) = box.astype("int")
@@ -118,6 +135,7 @@ def get_frame(vs):
                             #print(A)
                             if( not key in classes): classes[key] = [A]
                             else: classes[key].append(A)
+                            paramsQueue.put(classes)
             
             jpg = cv2.imencode('.jpg', frame)[1].tobytes()
             imagesQueue.put(jpg)
@@ -127,7 +145,8 @@ def get_frame(vs):
             #p_scrn_stats = Process(scrn_stats.refresh, args=(classes,))
             #p_scrn_stats.daemon = True
             #p_scrn_stats.start()
-            scrn_stats.refresh(classes)
+            
+            
 
             # show the output frame when need to test is working or not
             #---> uncommment me
@@ -197,7 +216,7 @@ if (__name__ == '__main__'):
             help="path to Caffe 'deploy' prototxt file")
     ap.add_argument("-m", "--model", required=True,
             help="path to Caffe pre-trained model")
-    ap.add_argument("-c", "--confidence", type=float, default=0.15,
+    ap.add_argument("-c", "--confidence", type=float, default=0.35,
             help="minimum probability to filter weak detections")
     args = vars(ap.parse_args())
     
@@ -271,27 +290,44 @@ def gen(camera):
         frame = camera.get_frame()
         yield (b'--frame\r\n'
                b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
+def strToBase64(s):
+    return base64.b64encode(s.encode('utf-8'))
+def base64ToStr(b):
+    return base64.b64decode(b).decode('utf-8')
 
 def detect():
     """Video streaming generator function."""
-    old = imgs[0]
     while True:
-       
-        #frame = camera.get_frame()
-        #time.sleep(1)
-        
-        #while(imagesQueue.empty()):time.sleep(0.1)
-        iterable = imagesQueue.get()
-        #else: iterable = old
-        
-        yield b'--frame\r\nContent-Type: image/jpeg\r\n\r\n' + iterable + b'\r\n'
-
+         print('imagesQueue:', imagesQueue.empty())
+#        while(imagesQueue.empty()):
+         iterable = imagesQueue.get()
+         yield b'--frame\r\nContent-Type: image/jpeg\r\n\r\n' + iterable + b'\r\n'
+    #frame = camera.get_frame()
+    #time.sleep(1)
+    
+    #while(imagesQueue.empty()):time.sleep(0.1)
+    #img = imagesQueue.get()
+    #b64 = base64ToStr(img) # base64.encodestring(img.decode())
+    #b64 = base64.encodestring(img).decode()
+    #else: iterable = old
+    #curr_time = strftime("%H:%M:%S", gmtime()) # curr_time.encode('utf-8') +
+    #print(b64)
+    #Content-Type:text/event-stream\r\nCash-Control:max-age=0,no-cache\r\nConnection:keep-alive\r\n
+    #ret = 'id:"'+ curr_time +'"\r\nevent:image\ndata: ' + b64 +'\n\n'
+    #print(ret)
+    #return ret
 def gen_params():
     """Parameters streaming generator function."""
     #scrn_stats.orig_classes
     #uncomment as soon will be ready
-    while(paramsQueue.empty()):time.sleep(0.1)
-    x = json.dumps(paramsQueue.get())    
+    #print('Request to params1', paramsQueue.empty())
+    #while(paramsQueue.empty()): a=0
+    
+    classes = paramsQueue.get()
+    #print(classes)
+    params = scrn_stats.refresh(classes)
+    #print(params)
+    x = json.dumps(params)    
     return x
   
 
@@ -299,7 +335,7 @@ def gen_params():
 def video_feed():
     """Video streaming route. Put this in the src attribute of an img tag."""
     # gen(Camera()),
-    return Response( detect(), 
+    return Response( detect(), #mimetype='text/event-stream')
                     mimetype='multipart/x-mixed-replace; boundary=frame')
 
 @app.route('/params_feed')
