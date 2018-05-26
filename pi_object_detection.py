@@ -31,9 +31,9 @@ imgs =  [open(f + '.jpg', 'rb').read() for f in ['1', '2', '3']]
 
     
 pnt = 0
-IMAGE_BUFFER = 4000
+IMAGE_BUFFER =9400
 PARAMS_BUFFER = 10
-THREAD_NUMBERS = 2
+THREAD_NUMBERS = 3
 
 def classify_frame( net, inputQueue, outputQueue):
         # keep looping
@@ -197,10 +197,14 @@ paramsQueue = Queue(maxsize=PARAMS_BUFFER)
 imagesQueue.put(imgs[0])
 imagesQueue.put(imgs[1])
 imagesQueue.put(imgs[2])
+imagesQueue.put(imgs[0])
+imagesQueue.put(imgs[1])
+imagesQueue.put(imgs[2])
+
 detections = None
 vs = None
 fps = None
-
+p_get_frame = None
 
 if (__name__ == '__main__'):
     # construct the argument parse and parse the arguments
@@ -216,7 +220,7 @@ if (__name__ == '__main__'):
             help="path to Caffe 'deploy' prototxt file")
     ap.add_argument("-m", "--model", required=True,
             help="path to Caffe pre-trained model")
-    ap.add_argument("-c", "--confidence", type=float, default=0.35,
+    ap.add_argument("-c", "--confidence", type=float, default=0.15,
             help="minimum probability to filter weak detections")
     args = vars(ap.parse_args())
     
@@ -255,11 +259,19 @@ def start():
         p_classifier.daemon = True
         p_classifier.start()
 
+
     # initialize the video stream, allow the cammera sensor to warmup,
     # and initialize the FPS counter
     print("[INFO] starting video stream...")
     if args['video_file'] != '':
-        vs = cv2.VideoCapture(args['video_file'])
+       p_get_frame = initialize_video_stream(args['video_file'])
+    return p_get_frame
+
+# initialize the video stream, allow the cammera sensor to warmup,
+# and initialize the FPS counter
+def initialize_video_stream(video_file):
+    print("[INFO] starting video stream...")
+    vs = cv2.VideoCapture(args['video_file'])
     print("[INFO] Video stream: ", vs)
     # vs = VideoStream(usePiCamera=True).start()
     time.sleep(2.0)
@@ -271,10 +283,9 @@ def start():
 
     # show the output frame when need to test is working or not
     p_get_frame = Process(target=get_frame, args=(vs,))
-    p_get_frame.daemon = True
+    p_get_frame.daemon = False
     p_get_frame.start()
     return p_get_frame
-
 
 ###################### Flask API #########################
 app = Flask(__name__)
@@ -323,7 +334,7 @@ def gen_params():
     #print('Request to params1', paramsQueue.empty())
     #while(paramsQueue.empty()): a=0
     params = None
-    while(not paramsQueue.empty()):
+    if(not paramsQueue.empty()):
         classes = paramsQueue.get()
         #print(classes)
         params = scrn_stats.refresh(classes)
@@ -346,7 +357,7 @@ def params_feed():
                     mimetype='text/plain')
 
 if (__name__ == '__main__'):
-    p_get_frame = start()
+    start()
     app.run(host='0.0.0.0', threaded=True)
     # debug mode    
     #app.run(debug=True, use_debugger=False, use_reloader=False)

@@ -110,12 +110,6 @@ class Screen_statistic(object):
                  continue
 
 
-             #for orig_key, orig_value in orig_classes.items():
-             #    if(orig_key == key ):
-             #        mse = 0.0
-             #        the_same = 0
-                     #print(orig_value)
-             #    if(orig_key == key ):continue
                  
              for orig_key, orig_value in orig_classes.items():
                  
@@ -127,7 +121,7 @@ class Screen_statistic(object):
                      for _value in value:
                          Break = False
                          for _orig_value in orig_value:
-                             if(int(time.time()) - _orig_value[5] > 10 ):
+                             if(int(time.time()) - _orig_value[5] > SCENE_FRAMES ):
                                  orig_value.remove(_orig_value)
                                  continue
                              #mse = ((_orig_value   _value)**2).mean()
@@ -155,8 +149,8 @@ class Screen_statistic(object):
                      
                      orig_value.extend(temp)
                      
-                     print("orig_value:", orig_value)            
-                     print("len(orig_value)", len(orig_value))
+                     #print("orig_value:", orig_value)            
+                     #print("len(orig_value)", len(orig_value))
                      
                      self.images_counter[key] =  len(orig_value)
 
@@ -179,8 +173,8 @@ class Screen_statistic(object):
         if(self.frame_counter > SCENE_FRAMES ):
             self.frame_counter = 0
             self.images_counter = IMAGES
-            #self.orig_classes = {}
-  
+            for key in self.orig_classes:
+                self.orig_classes[key] = [] #.pull(0)   
              
         self.countDifferentImagesByMSE(self.orig_classes, classes)
         ret = self.getParametersJSON(self.orig_classes)
@@ -190,7 +184,8 @@ class Screen_statistic(object):
         ret =[]
         for key in orig_classes:
             _array = orig_classes[key]
-            _array_length = len(_array)           
+            _array_length = len(_array)
+            if _array_length == 0:continue
             prob_total = 0 
             for value in _array:
                  prob_total += value[0]
