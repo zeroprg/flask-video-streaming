@@ -4,7 +4,7 @@
   </head>
   <body>
       <h1>Artificial Intelegence Camera </h1>
-      <img id="image" style="-webkit-user-select: none;"  width="640" height="480" src="{{ url_for('video_feed') }}">
+      <img id="image" style="-webkit-user-select: none;"   src="{{ url_for('video_feed') }}">
       <!--h1>Objects founded:</h1-->
       <div id="myDiv"><!-- Plotly chart will be drawn inside this DIV --></div>
       <!-- Optional JavaScript -->
@@ -26,11 +26,11 @@
               //r2.send();
               //r.onreadystatechange
 
-          MAX_BUFFER = 300
+          MAX_BUFFER = 3000
           PLOT_TYPE = 'bar'
           
           window.setInterval(function(){
-              ajaxCallFunction();  //calling every 10 second
+              ajaxCallFunction();  //calling every 5 second
           }, 1000);
          
           function ajaxCallFunction(){
@@ -47,9 +47,10 @@
                      var traces = JSON.parse(r.responseText);
                      //console.log("traces = " + traces);
                      if(traces == null || traces.length == 0) return
-                     if( data.length == 0) data.push.apply(data,traces)
+                     
                      for( j = 0 ; j< traces.length; j++){
-                        var k = 0 
+                        var k = 0
+                        if( data.length == 0) {data.push(traces[j]); continue}
                         for( i = 0 ; i< data.length; i++){
                            if( traces[j].name == data[i].name ) {
                              data[i].x.push(traces[j].x[0]);

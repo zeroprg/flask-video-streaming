@@ -1,3 +1,4 @@
+
 # USAGE
 # python pi_object_detection.py --prototxt MobileNetSSD_deploy.prototxt.txt --model MobileNetSSD_deploy.caffemodel
 
@@ -11,6 +12,7 @@ import argparse
 import imutils
 import time
 from time import gmtime, strftime
+
 import cv2
 import json
 from screen_statistics import Screen_statistic
@@ -25,15 +27,17 @@ CLASSES = ["background", "aeroplane", "bicycle", "bird", "boat",
 
 COLORS = np.random.uniform(0, 255, size=(len(CLASSES), 3))
 
+
 """An emulated camera implementation that streams a repeated sequence of
 files 1.jpg, 2.jpg and 3.jpg at a rate of one frame per second."""
 imgs =  [open(f + '.jpg', 'rb').read() for f in ['1', '2', '3']]
 
-    
+
 pnt = 0
-IMAGE_BUFFER =9400
-PARAMS_BUFFER = 10
-THREAD_NUMBERS = 3
+IMAGE_BUFFER =5000
+PARAMS_BUFFER = 20
+RECOGNZED_FRAME =4
+THREAD_NUMBERS = 3 # must be less then 4 for PI
 
 def classify_frame( net, inputQueue, outputQueue):
         # keep looping
@@ -42,6 +46,8 @@ def classify_frame( net, inputQueue, outputQueue):
                 if not inputQueue.empty():
                         # grab the frame from the input queue, resize it, and
                         # construct a blob from it
+                        print('inputQueue.qsize()',inputQueue.qsize())
+                        print('outputQueue.qsize()',outputQueue.qsize())
                         frame = inputQueue.get()
                         frame = cv2.resize(frame, (300, 300))
                         cols = frame.shape[1]
@@ -65,23 +71,25 @@ def get_frame(vs):
     # loop over the frames from the video stream
     detections = None
     cols,rows = 0,0
-    while True:
-            if( imagesQueue.full() ): continue
+    i = 0
+    while  True:
+            print("imagesQueue.qsize()", imagesQueue.qsize())
             #dictionary of detected objects
+            if imagesQueue.full():
+                    imagesQueue.get()
+                    continue
             classes = {}
-            # grab the frame from the threaded video stream, resize it, and
+	    # grab the frame from the threaded video stream, resize it, and
             # grab its imensions
             flag,frame = vs.read()
             #print('Test 2- flag: ' , flag )
-            if not flag:
-                    continue
+            if not flag: continue
             #frame = imutils.resize(frame, width=640)
             (fH, fW) = frame.shape[:2]
-            #print('Test 2.5- frame: ' , frame )
-            # if the input queue *is* empty, give the current frame to
-            # classify
-            #if inputQueue.empty():
-            inputQueue.put(frame)
+            if i < RECOGNZED_FRAME: i+= 1
+            else:
+                i =0
+                inputQueue.put(frame)
 
             # if the output queue *is not* empty, grab the detections
             if not outputQueue.empty():
@@ -109,15 +117,14 @@ def get_frame(vs):
                             # the `detections`, then compute the (x, y)-coordinates
                             # of the bounding box for the object
                             idx = int(detections[0, 0, i, 1])
-                            
+
 
                             #xLeftBottom = int(detections[0, 0, i, 3] * cols)
                             #yLeftBottom = int(detections[0, 0, i, 4] * rows)
                             #xRightTop   = int(detections[0, 0, i, 5] * cols)
                             #yRightTop   = int(detections[0, 0, i, 6] * rows)
 
-                            
-                            
+
                             dims = np.array([fW, fH, fW, fH])
                             box = detections[0, 0, i, 3:7] * dims
                             (startX, startY, endX, endY) = box.astype("int")
@@ -139,7 +146,9 @@ def get_frame(vs):
             
             jpg = cv2.imencode('.jpg', frame)[1].tobytes()
             imagesQueue.put(jpg)
+            #if(i%8 == 0 ):
             paramsQueue.put(classes)
+                
             # Accumulate statistic
             #print('Test4 - scrn_stats: ' , scrn_stats )
             #p_scrn_stats = Process(scrn_stats.refresh, args=(classes,))
@@ -190,8 +199,8 @@ args = {}
 
 # initialize the input queue (frames), output queue (detections),
 # and the list of actual detections returned by the child process
-inputQueue = Queue(maxsize=100)
-outputQueue = Queue(maxsize=100)
+inputQueue = Queue(maxsize=IMAGE_BUFFER)
+outputQueue = Queue(maxsize=IMAGE_BUFFER)
 imagesQueue = Queue(maxsize=IMAGE_BUFFER)
 paramsQueue = Queue(maxsize=PARAMS_BUFFER)
 imagesQueue.put(imgs[0])
@@ -220,7 +229,7 @@ if (__name__ == '__main__'):
             help="path to Caffe 'deploy' prototxt file")
     ap.add_argument("-m", "--model", required=True,
             help="path to Caffe pre-trained model")
-    ap.add_argument("-c", "--confidence", type=float, default=0.15,
+    ap.add_argument("-c", "--confidence", type=float, default=0.25,
             help="minimum probability to filter weak detections")
     args = vars(ap.parse_args())
     
@@ -256,7 +265,7 @@ def start():
     for i in range(THREAD_NUMBERS):
         p_classifier = Process(target=classify_frame, args=(net,inputQueue,
                 outputQueue,))
-        p_classifier.daemon = True
+        p_classifier.daemon = False
         p_classifier.start()
 
 
@@ -283,7 +292,7 @@ def initialize_video_stream(video_file):
 
     # show the output frame when need to test is working or not
     p_get_frame = Process(target=get_frame, args=(vs,))
-    p_get_frame.daemon = False
+    p_get_frame.daemon = True
     p_get_frame.start()
     return p_get_frame
 
@@ -311,22 +320,11 @@ def detect():
     while True:
          #print('imagesQueue:', imagesQueue.empty())
          while(not imagesQueue.empty()):
-        	 iterable = imagesQueue.get()
-	         yield b'--frame\r\nContent-Type: image/jpeg\r\n\r\n' + iterable + b'\r\n'
-	 #frame = camera.get_frame()
-    #time.sleep(1)
-    
-    #while(imagesQueue.empty()):time.sleep(0.1)
-    #img = imagesQueue.get()
-    #b64 = base64ToStr(img) # base64.encodestring(img.decode())
-    #b64 = base64.encodestring(img).decode()
-    #else: iterable = old
-    #curr_time = strftime("%H:%M:%S", gmtime()) # curr_time.encode('utf-8') +
-    #print(b64)
-    #Content-Type:text/event-stream\r\nCash-Control:max-age=0,no-cache\r\nConnection:keep-alive\r\n
-    #ret = 'id:"'+ curr_time +'"\r\nevent:image\ndata: ' + b64 +'\n\n'
-    #print(ret)
-    #return ret
+             iterable = imagesQueue.get()
+             yield b'--frame\r\nContent-Type: image/jpeg\r\n\r\n' + iterable + b'\r\n'
+
+
+
 def gen_params():
     """Parameters streaming generator function."""
     #scrn_stats.orig_classes
@@ -334,12 +332,13 @@ def gen_params():
     #print('Request to params1', paramsQueue.empty())
     #while(paramsQueue.empty()): a=0
     params = None
+    x ="{}"
     if(not paramsQueue.empty()):
         classes = paramsQueue.get()
         #print(classes)
         params = scrn_stats.refresh(classes)
     #print(params)
-    x = json.dumps(params)    
+        x = json.dumps(params)    
     return x
   
 

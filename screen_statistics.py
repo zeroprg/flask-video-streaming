@@ -8,28 +8,13 @@ import numpy as np
 import math
 import dhash
 
-SCENE_FRAMES = 10
+SCENE_FRAMES = 20
 IMAGES = {"diningtable":[],"train":[],"chair": [], "bicycle": [], "bus": [], "car": [], "cat": [],"dog": [], "horse": [], "motorbike": [], "person": [],  "train": []}
 hash_delta = 65
 mse_delta = 55
 #ssim_delta = 0.6
 #initial height of the image stored in app
 
-def dhash_own(image, hashSize=8):
-    	# convert the image to grayscale and compute the hash
-	image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-
-	# resize the input image, adding a single column (width) so we
-	# can compute the horizontal gradient
-	resized = cv2.resize(image, (hashSize + 1, hashSize))
- 
-	# compute the (relative) horizontal gradient between adjacent
-	# column pixels
-	diff = resized[:, 1:] > resized[:, :-1]
- 
-	# convert the difference image to a hash
-	return sum([(2 << i)>>1 for (i, v) in enumerate(diff.flatten()) if v])
-    
 
 def mse(imageA, imageB):
 	# the 'Mean Squared Error' between the two images is the
@@ -162,6 +147,36 @@ class Screen_statistic(object):
         self.images_counter   = IMAGES
         self.orig_classes     = {}
         self.frame_counter    = 0
+        
+    def imcrop(img, y1,y2,x1,x2): 
+     
+        if x1 < 0 or y1 < 0 or x2 > img.shape[1] or y2 > img.shape[0]:
+            img, x1, x2, y1, y2 = pad_img_to_fit_bbox(img, x1, x2, y1, y2)
+        return img[y1:y2, x1:x2, :]
+
+    def pad_img_to_fit_bbox(img, x1, x2, y1, y2):
+        img = np.pad(img, ((np.abs(np.minimum(0, y1)), np.maximum(y2 - img.shape[0], 0)),
+                   (np.abs(np.minimum(0, x1)), np.maximum(x2 - img.shape[1], 0)), (0,0)), mode="constant")
+        y1 += np.abs(np.minimum(0, y1))
+        y2 += np.abs(np.minimum(0, y1))
+        x1 += np.abs(np.minimum(0, x1))
+        x2 += np.abs(np.minimum(0, x1))
+        return img, x1, x2, y1, y2
+
+    def dhash_own(image, hashSize=8):
+            # convert the image to grayscale and compute the hash
+            image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+
+            # resize the input image, adding a single column (width) so we
+            # can compute the horizontal gradient
+            resized = cv2.resize(image, (hashSize + 1, hashSize))
+     
+            # compute the (relative) horizontal gradient between adjacent
+            # column pixels
+            diff = resized[:, 1:] > resized[:, :-1]
+     
+            # convert the difference image to a hash
+            return sum([(2 << i)>>1 for (i, v) in enumerate(diff.flatten()) if v])
         
    
 

@@ -1,15 +1,9 @@
 python3 pi_object_detection.py --video_file "http://91.220.230.164:80/cgi-bin/faststream.jpg?stream=half&fps=15&rand=COUNTER" --prototxt MobileNetSSD_deploy.prototxt.txt --model MobileNetSSD_deploy.caffemodel
 
 python3 pi_object_detection.py --video_file http://38.101.209.29:8082/mjpg/video.mjpg?COUNTER  --prototxt MobileNetSSD_deploy.prototxt.txt --model MobileNetSSD_deploy.caffemodel
-python3 pi_object_detection.py --video_file http://208.72.70.171:80/mjpg/video.mjpg?COUNTER --prototxt MobileNetSSD_deploy.prototxt.txt --model MobileNetSSD_deploy.caffemodel
-python3 pi_object_detection.py --video_file "http://104.157.73.60:80/cgi-bin/faststream.jpg?stream=half&amp;fps=15&amp;rand=COUNTER" --prototxt MobileNetSSD_deploy.prototxt.txt --model MobileNetSSD_deploy.caffemodel
-python3 pi_object_detection.py --video_file "http://192.168.1.73:81/videostream.cgi?loginuse=GwEBAA%3D%3D&loginpas=Nw0AG1ZceWtl&_=15255843588410.6653500917047492" --prototxt MobileNetSSD_deploy.prototxt.txt --model MobileNetSSD_deploy.caffemodel
+
 python3 pi_object_detection.py --video_file ~/Downloads/1522899193.flv --prototxt MobileNetSSD_deploy.prototxt.txt --model MobileNetSSD_deploy.caffemode
 
-http://195.78.105.17:81/cgi-bin/snapshot.cgi?chn=0&amp;amp;u=admin&amp;amp;p=&amp;amp;q=0
-python3 pi_object_detection.py --video_file "http://144.190.160.183:80/mjpg/video.mjpg?COUNTER" --prototxt MobileNetSSD_deploy.prototxt.txt --model MobileNetSSD_deploy.caffemodel
+python3 pi_object_detection.py --video_file http://201.134.13.98:80/mjpg/video.mjpg?COUNTER --prototxt MobileNetSSD_deploy.prototxt.txt --model MobileNetSSD_deploy.caffemodel
 
-python3 pi_object_detection. --video_file "http://91.220.230.164:80/cgi-bin/faststream.jpg?stream=half&amp;fps=15&amp;rand=COUNTER" --prototxt MobileNetSSD_deploy.prototxt.txt --model MobileNetSSD_deploy.caffemodel
-python3 pi_object_detection.py --video_file "http://212.68.79.187/record/current.jpg?rand=439259" --prototxt MobileNetSSD_deploy.prototxt.txt --model MobileNetSSD_deploy.caffemodel
-python3 pi_object_detection. --video_file "http://195.113.240.144:8081/mjpg/video.mjpg?COUNTER" --prototxt MobileNetSSD_deploy.prototxt.txt --model MobileNetSSD_deploy.caffemodel
-
+python3 pi_object_detection.py --video_file http://138.26.107.148/mjpg/video.mjpg?COUNTER --prototxt MobileNetSSD_deploy.prototxt.txt --model MobileNetSSD_deploy.caffemodel
