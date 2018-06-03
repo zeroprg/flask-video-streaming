@@ -1,6 +1,6 @@
 
 # import the necessary packages
-from skimage.measure import structural_similarity as ssim
+#from skimage.measure import structural_similarity as ssim
 import time
 from time import gmtime, strftime
 import cv2

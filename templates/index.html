@@ -26,12 +26,16 @@
               //r2.send();
               //r.onreadystatechange
 
-          MAX_BUFFER = 3000
+          MAX_BUFFER = 300
           PLOT_TYPE = 'bar'
+
           
           window.setInterval(function(){
+             // img = document.getElemetById("image");
+             // img.src ="{{ url_for('video_feed') }}?rand='+Math.random()
+
               ajaxCallFunction();  //calling every 5 second
-          }, 1000);
+          }, 12000);
          
           function ajaxCallFunction(){
             //this function uses ajax to interact with the server

@@ -34,9 +34,9 @@ imgs =  [open(f + '.jpg', 'rb').read() for f in ['1', '2', '3']]
 
 
 pnt = 0
-IMAGE_BUFFER =5000
-PARAMS_BUFFER = 20
-RECOGNZED_FRAME =4
+IMAGE_BUFFER =2000
+PARAMS_BUFFER = 2000
+RECOGNZED_FRAME =1
 THREAD_NUMBERS = 3 # must be less then 4 for PI
 
 def classify_frame( net, inputQueue, outputQueue):
@@ -49,6 +49,7 @@ def classify_frame( net, inputQueue, outputQueue):
                         print('inputQueue.qsize()',inputQueue.qsize())
                         print('outputQueue.qsize()',outputQueue.qsize())
                         frame = inputQueue.get()
+                        #inputQueue.task_done()
                         frame = cv2.resize(frame, (300, 300))
                         cols = frame.shape[1]
                         rows = frame.shape[0]
@@ -68,20 +69,16 @@ def classify_frame( net, inputQueue, outputQueue):
 
 
 def get_frame(vs):
-    # loop over the frames from the video stream
-    detections = None
+    # loop over the frames from the video stream 
     cols,rows = 0,0
     i = 0
     while  True:
-            print("imagesQueue.qsize()", imagesQueue.qsize())
+            #print("imagesQueue.qsize()", imagesQueue.qsize())
             #dictionary of detected objects
-            if imagesQueue.full():
-                    imagesQueue.get()
-                    continue
             classes = {}
 	    # grab the frame from the threaded video stream, resize it, and
             # grab its imensions
-            flag,frame = vs.read()
+            flag,frame = vs.read()        
             #print('Test 2- flag: ' , flag )
             if not flag: continue
             #frame = imutils.resize(frame, width=640)
@@ -92,8 +89,10 @@ def get_frame(vs):
                 inputQueue.put(frame)
 
             # if the output queue *is not* empty, grab the detections
+            detections = None
             if not outputQueue.empty():
                     detections = outputQueue.get()
+                    #outputQueue.task_done() 
                     #detections = object_detected[0]
                     #cols = object_detected[1]
                     #rows = object_detected[2]
@@ -101,6 +100,7 @@ def get_frame(vs):
             # check to see if our detectios are not None (and if so, we'll
             # draw the detections on the frame)
             #print('Test3- detections: ' , detections )
+            #print("Test 2.5")
             if detections is not None:
                     # loop over the detections
                     for i in np.arange(0, detections.shape[2]):
@@ -142,13 +142,22 @@ def get_frame(vs):
                             #print(A)
                             if( not key in classes): classes[key] = [A]
                             else: classes[key].append(A)
-                            #paramsQueue.put(classes)
+                    if paramsQueue.full():
+                        print("paramsQueue is full")
+                        paramsQueue.get()
+                        paramsQueue.put(classes)
+                        continue
+                    paramsQueue.put(classes)
+
             
+            if imagesQueue.full():
+                    print("imagesQueue is full")
+                    imagesQueue.get()
+                    #imagesQueue.task_done()
             jpg = cv2.imencode('.jpg', frame)[1].tobytes()
             imagesQueue.put(jpg)
-            #if(i%8 == 0 ):
-            paramsQueue.put(classes)
-                
+
+               
             # Accumulate statistic
             #print('Test4 - scrn_stats: ' , scrn_stats )
             #p_scrn_stats = Process(scrn_stats.refresh, args=(classes,))
@@ -203,6 +212,8 @@ inputQueue = Queue(maxsize=IMAGE_BUFFER)
 outputQueue = Queue(maxsize=IMAGE_BUFFER)
 imagesQueue = Queue(maxsize=IMAGE_BUFFER)
 paramsQueue = Queue(maxsize=PARAMS_BUFFER)
+   
+
 imagesQueue.put(imgs[0])
 imagesQueue.put(imgs[1])
 imagesQueue.put(imgs[2])
@@ -292,7 +303,7 @@ def initialize_video_stream(video_file):
 
     # show the output frame when need to test is working or not
     p_get_frame = Process(target=get_frame, args=(vs,))
-    p_get_frame.daemon = True
+    p_get_frame.daemon = False
     p_get_frame.start()
     return p_get_frame
 
@@ -318,10 +329,10 @@ def base64ToStr(b):
 def detect():
     """Video streaming generator function."""
     while True:
-         #print('imagesQueue:', imagesQueue.empty())
-         while(not imagesQueue.empty()):
-             iterable = imagesQueue.get()
-             yield b'--frame\r\nContent-Type: image/jpeg\r\n\r\n' + iterable + b'\r\n'
+        # print('imagesQueue isEmpty:', imagesQueue.empty())
+         if imagesQueue.qsize()>0:
+         #imagesQueue.task_done()
+             yield b'--frame\r\nContent-Type: image/jpeg\r\n\r\n' + imagesQueue.get() + b'\r\n'
 
 
 
@@ -335,7 +346,8 @@ def gen_params():
     x ="{}"
     if(not paramsQueue.empty()):
         classes = paramsQueue.get()
-        #print(classes)
+        #paramsQueue.task_done()
+        print(classes)
         params = scrn_stats.refresh(classes)
     #print(params)
         x = json.dumps(params)    
@@ -345,7 +357,7 @@ def gen_params():
 @app.route('/video_feed')
 def video_feed():
     """Video streaming route. Put this in the src attribute of an img tag."""
-    # gen(Camera()),
+   
     return Response( detect(), #mimetype='text/event-stream')
                     mimetype='multipart/x-mixed-replace; boundary=frame')
 
