@@ -9,3 +9,6 @@ python3 pi_object_detection.py --video_file http://201.134.13.98:80/mjpg/video.m
 python3 pi_object_detection.py --video_file http://138.26.107.148/mjpg/video.mjpg?COUNTER --prototxt MobileNetSSD_deploy.prototxt.txt --model MobileNetSSD_deploy.caffemodel
 
 python3 pi_object_detection.py --video_file "http://85.4.124.169:9000/mjpg/video.mjpg?timestamp=1528255719317" --prototxt MobileNetSSD_deploy.prototxt.txt --model MobileNetSSD_deploy.caffemodel
+
+python3 pi_object_detection.py --video_file "http://192.168.1.73:81/videostream.cgi?loginuse=GwEBAA%3D%3D&loginpas=Nw0AG1ZceWtl&_=15282579520910.657573406191367" --prototxt MobileNetSSD_deploy.prototxt.txt --model MobileNetSSD_deploy.caffemodel
+
