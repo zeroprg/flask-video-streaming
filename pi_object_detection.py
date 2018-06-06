@@ -33,17 +33,17 @@ files 1.jpg, 2.jpg and 3.jpg at a rate of one frame per second."""
 imgs =  [open(f + '.jpg', 'rb').read() for f in ['1', '2', '3']]
 
 
-pnt = 0
-IMAGE_BUFFER =5000
-PARAMS_BUFFER = 20
-RECOGNZED_FRAME =4
-THREAD_NUMBERS = 3 # must be less then 4 for PI
+#pnt = 0
+IMAGE_BUFFER = 5
+PARAMS_BUFFER =   5000
+RECOGNZED_FRAME = 2
+THREAD_NUMBERS  = 4 # must be less then 4 for PI
 
 def classify_frame( net, inputQueue, outputQueue):
         # keep looping
         while True:
                 # check to see if there is a frame in our input queue
-                if not inputQueue.empty():
+                while not inputQueue.empty():
                         # grab the frame from the input queue, resize it, and
                         # construct a blob from it
                         print('inputQueue.qsize()',inputQueue.qsize())
@@ -72,12 +72,14 @@ def get_frame(vs):
     detections = None
     cols,rows = 0,0
     i = 0
+    _thr = RECOGNZED_FRAME
     while  True:
-            print("imagesQueue.qsize()", imagesQueue.qsize())
+            #print("imagesQueue.qsize()", imagesQueue.qsize())
+            #if imagesQueue.qsize() > 20: _thr = int(imagesQueue.qsize()/20)
             #dictionary of detected objects
-            if imagesQueue.full():
-                    imagesQueue.get()
-                    continue
+            #if imagesQueue.full():
+            #        imagesQueue.get()
+            #        continue
             classes = {}
 	    # grab the frame from the threaded video stream, resize it, and
             # grab its imensions
@@ -86,68 +88,72 @@ def get_frame(vs):
             if not flag: continue
             #frame = imutils.resize(frame, width=640)
             (fH, fW) = frame.shape[:2]
-            if i < RECOGNZED_FRAME: i+= 1
+            if i < _thr: i+= 1
             else:
                 i =0
                 inputQueue.put(frame)
 
             # if the output queue *is not* empty, grab the detections
-            if not outputQueue.empty():
+            while not outputQueue.empty():
                     detections = outputQueue.get()
                     #detections = object_detected[0]
                     #cols = object_detected[1]
                     #rows = object_detected[2]
 
-            # check to see if our detectios are not None (and if so, we'll
-            # draw the detections on the frame)
-            #print('Test3- detections: ' , detections )
-            if detections is not None:
-                    # loop over the detections
-                    for i in np.arange(0, detections.shape[2]):
-                            # extract the confidence (i.e., probability) associated
-                            # with the prediction
-                            confidence = detections[0, 0, i, 2]
+                    # check to see if our detectios are not None (and if so, we'll
+                    # draw the detections on the frame)
+                    #print('Test3- detections: ' , detections )
+                    if detections is not None:
+                            # loop over the detections
+                            for i in np.arange(0, detections.shape[2]):
+                                    # extract the confidence (i.e., probability) associated
+                                    # with the prediction
+                                    confidence = detections[0, 0, i, 2]
 
-                            # filter out weak detections by ensuring the `confidence`
-                            # is greater than the minimum confidence
-                            if confidence < args["confidence"]:
-                                    continue
+                                    # filter out weak detections by ensuring the `confidence`
+                                    # is greater than the minimum confidence
+                                    if confidence < args["confidence"]:
+                                            continue
 
-                            # otherwise, extract the index of the class label from
-                            # the `detections`, then compute the (x, y)-coordinates
-                            # of the bounding box for the object
-                            idx = int(detections[0, 0, i, 1])
-
-
-                            #xLeftBottom = int(detections[0, 0, i, 3] * cols)
-                            #yLeftBottom = int(detections[0, 0, i, 4] * rows)
-                            #xRightTop   = int(detections[0, 0, i, 5] * cols)
-                            #yRightTop   = int(detections[0, 0, i, 6] * rows)
+                                    # otherwise, extract the index of the class label from
+                                    # the `detections`, then compute the (x, y)-coordinates
+                                    # of the bounding box for the object
+                                    idx = int(detections[0, 0, i, 1])
 
 
-                            dims = np.array([fW, fH, fW, fH])
-                            box = detections[0, 0, i, 3:7] * dims
-                            (startX, startY, endX, endY) = box.astype("int")
+                                    #xLeftBottom = int(detections[0, 0, i, 3] * cols)
+                                    #yLeftBottom = int(detections[0, 0, i, 4] * rows)
+                                    #xRightTop   = int(detections[0, 0, i, 5] * cols)
+                                    #yRightTop   = int(detections[0, 0, i, 6] * rows)
 
-                            # draw the prediction on the frame
-                            label = "{}: {:.2f}%".format(CLASSES[idx],
-                                    confidence * 100)
-                            cv2.rectangle(frame, (startX, startY), (endX, endY),
-                                    COLORS[idx], 2)
-                            y = startY - 15 if startY - 15 > 15 else startY + 15
-                            cv2.putText(frame, label, (startX, y),
-                                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, COLORS[idx], 2)
-                            key = CLASSES[idx]
-                            A = [confidence,startX,endX, startY, endY, int(time.time())]
-                            #print(A)
-                            if( not key in classes): classes[key] = [A]
-                            else: classes[key].append(A)
-                            #paramsQueue.put(classes)
+
+                                    dims = np.array([fW, fH, fW, fH])
+                                    box = detections[0, 0, i, 3:7] * dims
+                                    (startX, startY, endX, endY) = box.astype("int")
+
+                                    # draw the prediction on the frame
+                                    label = "{}: {:.2f}%".format(CLASSES[idx],
+                                            confidence * 100)
+                                    cv2.rectangle(frame, (startX, startY), (endX, endY),
+                                            COLORS[idx], 2)
+                                    y = startY - 15 if startY - 15 > 15 else startY + 15
+                                    cv2.putText(frame, label, (startX, y),
+                                            cv2.FONT_HERSHEY_SIMPLEX, 0.5, COLORS[idx], 2)
+                                    key = CLASSES[idx]
+                                    A = [confidence,startX,endX, startY, endY, int(time.time())]
+                                    #print(A)
+                                    if( not key in classes): classes[key] = [A]
+                                    else: classes[key].append(A)
+                                    
             
-            jpg = cv2.imencode('.jpg', frame)[1].tobytes()
-            imagesQueue.put(jpg)
-            #if(i%8 == 0 ):
-            paramsQueue.put(classes)
+            #jpg = cv2.imencode('.jpg', frame)[1].tobytes()
+            #imagesQueue.put(jpg)            
+          
+            params = scrn_stats.refresh(classes)
+            #print(params)
+            x = json.dumps(params)
+            paramsQueue.put(x)
+
                 
             # Accumulate statistic
             #print('Test4 - scrn_stats: ' , scrn_stats )
@@ -201,14 +207,9 @@ args = {}
 # and the list of actual detections returned by the child process
 inputQueue = Queue(maxsize=IMAGE_BUFFER)
 outputQueue = Queue(maxsize=IMAGE_BUFFER)
-imagesQueue = Queue(maxsize=IMAGE_BUFFER)
+#imagesQueue = Queue(maxsize=IMAGE_BUFFER)
 paramsQueue = Queue(maxsize=PARAMS_BUFFER)
-imagesQueue.put(imgs[0])
-imagesQueue.put(imgs[1])
-imagesQueue.put(imgs[2])
-imagesQueue.put(imgs[0])
-imagesQueue.put(imgs[1])
-imagesQueue.put(imgs[2])
+
 
 detections = None
 vs = None
@@ -283,7 +284,7 @@ def initialize_video_stream(video_file):
     vs = cv2.VideoCapture(args['video_file'])
     print("[INFO] Video stream: ", vs)
     # vs = VideoStream(usePiCamera=True).start()
-    time.sleep(2.0)
+    time.sleep(1.0)
     fps = FPS().start()
     if(vs is None):
         print("[INFO] starting video stream failed.")
@@ -292,7 +293,7 @@ def initialize_video_stream(video_file):
 
     # show the output frame when need to test is working or not
     p_get_frame = Process(target=get_frame, args=(vs,))
-    p_get_frame.daemon = True
+    p_get_frame.daemon = False
     p_get_frame.start()
     return p_get_frame
 
@@ -327,20 +328,11 @@ def detect():
 
 def gen_params():
     """Parameters streaming generator function."""
-    #scrn_stats.orig_classes
-    #uncomment as soon will be ready
-    #print('Request to params1', paramsQueue.empty())
-    #while(paramsQueue.empty()): a=0
-    params = None
-    x ="{}"
-    if(not paramsQueue.empty()):
-        classes = paramsQueue.get()
-        #print(classes)
-        params = scrn_stats.refresh(classes)
-    #print(params)
-        x = json.dumps(params)    
+    x =""
+    if not paramsQueue.empty():
+        x = paramsQueue.get()
+        print(x)
     return x
-  
 
 @app.route('/video_feed')
 def video_feed():

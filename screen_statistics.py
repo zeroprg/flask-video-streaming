@@ -8,7 +8,7 @@ import numpy as np
 import math
 import dhash
 
-SCENE_FRAMES = 20
+SCENE_FRAMES = 10
 IMAGES = {"diningtable":[],"train":[],"chair": [], "bicycle": [], "bus": [], "car": [], "cat": [],"dog": [], "horse": [], "motorbike": [], "person": [],  "train": []}
 hash_delta = 65
 mse_delta = 55
