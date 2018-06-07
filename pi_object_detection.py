@@ -54,9 +54,6 @@ def classify_frame( net, inputQueue, outputQueue):
                         rows = frame.shape[0]
                         blob = cv2.dnn.blobFromImage(frame, 0.007843,
                                 (300, 300), (127.5,127.5,127.5), False)
-
-
-
                         # set the blob as input to our deep learning object
                         # detector and obtain the detections
                         net.setInput(blob)
@@ -74,12 +71,6 @@ def get_frame(vs):
     i = 0
     _thr = RECOGNZED_FRAME
     while  True:
-            #print("imagesQueue.qsize()", imagesQueue.qsize())
-            #if imagesQueue.qsize() > 20: _thr = int(imagesQueue.qsize()/20)
-            #dictionary of detected objects
-            #if imagesQueue.full():
-            #        imagesQueue.get()
-            #        continue
             classes = {}
 	    # grab the frame from the threaded video stream, resize it, and
             # grab its imensions
@@ -96,13 +87,6 @@ def get_frame(vs):
             # if the output queue *is not* empty, grab the detections
             while not outputQueue.empty():
                     detections = outputQueue.get()
-                    #detections = object_detected[0]
-                    #cols = object_detected[1]
-                    #rows = object_detected[2]
-
-                    # check to see if our detectios are not None (and if so, we'll
-                    # draw the detections on the frame)
-                    #print('Test3- detections: ' , detections )
                     if detections is not None:
                             # loop over the detections
                             for i in np.arange(0, detections.shape[2]):
@@ -119,14 +103,6 @@ def get_frame(vs):
                                     # the `detections`, then compute the (x, y)-coordinates
                                     # of the bounding box for the object
                                     idx = int(detections[0, 0, i, 1])
-
-
-                                    #xLeftBottom = int(detections[0, 0, i, 3] * cols)
-                                    #yLeftBottom = int(detections[0, 0, i, 4] * rows)
-                                    #xRightTop   = int(detections[0, 0, i, 5] * cols)
-                                    #yRightTop   = int(detections[0, 0, i, 6] * rows)
-
-
                                     dims = np.array([fW, fH, fW, fH])
                                     box = detections[0, 0, i, 3:7] * dims
                                     (startX, startY, endX, endY) = box.astype("int")
@@ -155,32 +131,7 @@ def get_frame(vs):
             paramsQueue.put(x)
 
                 
-            # Accumulate statistic
-            #print('Test4 - scrn_stats: ' , scrn_stats )
-            #p_scrn_stats = Process(scrn_stats.refresh, args=(classes,))
-            #p_scrn_stats.daemon = True
-            #p_scrn_stats.start()
-            
-            
 
-            # show the output frame when need to test is working or not
-            #---> uncommment me
-            #print(pnt)
-            #pnt += 1
-            #pnt %= IMAGE_BUFFER
-            
-            #if (__name__ == '__main__'):
-            #    cv2.imshow("Frame", frame)
-            #    key = cv2.waitKey(1) & 0xFF
-                # update the FPS counter
-            #    ps.update()
-            
-            #--> uncomment this one when run as from other module
-            #jpeg = cv2.imencode('.jpg', frame)[1].tobytes()
-            #print(jpeg)
-            #yield jpeg
-            
-            #cv2.imencode('.jpg', frame)[1].tostring()
 
     if (__name__ == '__main__'):
     # stop the timer and display FPS information
@@ -207,7 +158,7 @@ args = {}
 # and the list of actual detections returned by the child process
 inputQueue = Queue(maxsize=IMAGE_BUFFER)
 outputQueue = Queue(maxsize=IMAGE_BUFFER)
-#imagesQueue = Queue(maxsize=IMAGE_BUFFER)
+
 paramsQueue = Queue(maxsize=PARAMS_BUFFER)
 
 
@@ -218,8 +169,18 @@ p_get_frame = None
 
 if (__name__ == '__main__'):
     # construct the argument parse and parse the arguments
-    #initialise Screen statistic object
-    show_video = True
+# I named config file as  file config.txt and stored it 
+# in the same directory as the script
+    args = {}
+    with open('config.txt') as f:
+        for line in f:
+            if separator in line:
+                # Find the name and value by splitting the string
+                name, value = line.split(separator, 1)
+                # Assign key value pair to dict
+                # strip() removes white space from the ends of strings
+                args[name.strip()] = value.strip()
+
     global scrn_stats
     scrn_stats = Screen_statistic(paramsQueue)
 
@@ -232,23 +193,10 @@ if (__name__ == '__main__'):
             help="path to Caffe pre-trained model")
     ap.add_argument("-c", "--confidence", type=float, default=0.25,
             help="minimum probability to filter weak detections")
-    args = vars(ap.parse_args())
+    more_args = vars(ap.parse_args())
     
+    args.update(more_args)
 
-    
-else:
-
-# I named config file as  file config.txt and stored it 
-# in the same directory as the script
-
-    with open('config.txt') as f:
-        for line in f:
-            if separator in line:
-                # Find the name and value by splitting the string
-                name, value = line.split(separator, 1)
-                # Assign key value pair to dict
-                # strip() removes white space from the ends of strings
-                args[name.strip()] = value.strip()
     print(args)
 
 
@@ -303,7 +251,8 @@ app = Flask(__name__)
 @app.route('/')
 def index():
     """Video streaming home page."""
-    return render_template('index.html')
+    video_url = args['video_file']
+    return render_template('index.html', **locals())
 
 def gen(camera):
     """Video streaming generator function."""
@@ -350,7 +299,5 @@ def params_feed():
 if (__name__ == '__main__'):
     start()
     app.run(host='0.0.0.0', threaded=True)
-    # debug mode    
-    #app.run(debug=True, use_debugger=False, use_reloader=False)
-    # if the `q` key was pressed, break from the loop
+
 
