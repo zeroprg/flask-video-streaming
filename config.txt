@@ -1,4 +1,4 @@
-video_file=~/Downloads/1522899193.flv
+video_file=http://192.168.1.73:81/videostream.cgi?loginuse=GwEBAA%3D%3D&loginpas=Nw0AG1ZceWtl&_=15282579520910.657573406191367
 prototxt=MobileNetSSD_deploy.prototxt.txt
 model=MobileNetSSD_deploy.caffemodel
-confidence=0.80
+confidence=0.20

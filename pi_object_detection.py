@@ -187,13 +187,14 @@ if (__name__ == '__main__'):
     ap = argparse.ArgumentParser()
     ap.add_argument("-v","--video_file", required=False,
             help="video file , could be access to remote location." )
-    ap.add_argument("-p", "--prototxt", required=True,
+    ap.add_argument("-p", "--prototxt", required=False,
             help="path to Caffe 'deploy' prototxt file")
-    ap.add_argument("-m", "--model", required=True,
+    ap.add_argument("-m", "--model", required=False,
             help="path to Caffe pre-trained model")
     ap.add_argument("-c", "--confidence", type=float, default=0.25,
             help="minimum probability to filter weak detections")
     more_args = vars(ap.parse_args())
+    more_args =  {k: v for k, v in more_args.items() if v is not None}
     
     args.update(more_args)
 
