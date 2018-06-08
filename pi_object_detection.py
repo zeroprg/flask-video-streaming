@@ -35,9 +35,9 @@ imgs =  [open(f + '.jpg', 'rb').read() for f in ['1', '2', '3']]
 
 #pnt = 0
 IMAGE_BUFFER = 5
-PARAMS_BUFFER =   5000
-RECOGNZED_FRAME = 2
-THREAD_NUMBERS  = 4 # must be less then 4 for PI
+#PARAMS_BUFFER =   40
+RECOGNZED_FRAME = 1
+THREAD_NUMBERS  = 3 # must be less then 4 for PI
 
 def classify_frame( net, inputQueue, outputQueue):
         # keep looping
@@ -159,7 +159,7 @@ args = {}
 inputQueue = Queue(maxsize=IMAGE_BUFFER)
 outputQueue = Queue(maxsize=IMAGE_BUFFER)
 
-paramsQueue = Queue(maxsize=PARAMS_BUFFER)
+paramsQueue = Queue()
 
 
 detections = None
@@ -191,11 +191,13 @@ if (__name__ == '__main__'):
             help="path to Caffe 'deploy' prototxt file")
     ap.add_argument("-m", "--model", required=False,
             help="path to Caffe pre-trained model")
-    ap.add_argument("-c", "--confidence", type=float, default=0.25,
+    ap.add_argument("-c", "--confidence", type=float, default=0.67,
             help="minimum probability to filter weak detections")
     more_args = vars(ap.parse_args())
+
     more_args =  {k: v for k, v in more_args.items() if v is not None}
-    
+    #if more_args["confidence"] == 0.0:more_args["confidence"] = args["confidence"]
+
     args.update(more_args)
 
     print(args)
