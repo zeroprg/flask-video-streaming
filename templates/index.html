@@ -1,12 +1,27 @@
 <html>
   <head>
     <title>Artificial Intelegence Camera </title>
+    <style>
+        #fixed-width-image {  width: 500px; height: auto;} 
+    </style>
   </head>
   <body>
-      <h1>Artificial Intellegence Camera </h1>
-      <img id="image" style="-webkit-user-select: none;" src="{{video_url}}">
-      <h3>Total objects founded:</h3>
-      <div id="myDiv"><!-- Plotly chart will be drawn inside this DIV --></div>
+      <h1>Artificial Intellegence Cameras </h1>
+      <table>
+      <tr>
+      <td><img id="fixed-width-image" style="-webkit-user-select: none;" src="{{video_url1}}"></td>
+      <td><img id="fixed-width-image" style="-webkit-user-select: none;" src="video_feed?cam=0"></td>
+      </tr>
+      <tr> 
+      <td><img id="fixed-width-image" style="-webkit-user-select: none;" src="{{video_url2}}"></td>
+      <td><img id="fixed-width-image" style="-webkit-user-select: none;" src="video_feed?cam=1"></td>
+      </tr>
+      </table>
+      <h3>Total objects founded for camera 0:</h3>      
+      <div id="myDiv0"><!-- Plotly chart will be drawn inside this DIV --></div>
+      <h3>Total objects founded for camera 1:</h3>
+      <div id="myDiv1"><!-- Plotly chart will be drawn inside this DIV --></div>
+
       <!-- Optional JavaScript -->
       <!-- jQuery first, then Popper.js, then Bootstrap JS -->
       <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
@@ -14,24 +29,18 @@
       <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
       <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
       <script>
-          /*var img = document.getElementById('image')
-          var source = new EventSource("{{ url_for('video_feed') }}")
-          source.addEventListener('image',function (e) {
-              img.src = 'data:image/png:base64,' + e.data;
-              console.log(img.src)
-              });
-          */
-                        //var r2 = new XMLHttpRequest(); 
+              //var r2 = new XMLHttpRequest(); 
               //r2.open('GET', "{{ url_for('video_feed') }}", true);
               //r2.send();
               //r.onreadystatechange
 
           MAX_BUFFER = 10000
+          BEAT = 1
           PLOT_TYPE = 'bar'
           
           window.setInterval(function(){
               ajaxCallFunction();  //calling every 5 second
-          }, 1000);
+          }, BEAT*1000);
          
           function ajaxCallFunction(){
             //this function uses ajax to interact with the server
@@ -50,17 +59,25 @@
                      
                      for( j = 0 ; j< traces.length; j++){
                         var k = 0
-                        if( data.length == 0) {data.push(traces[j]); continue}
-                        for( i = 0 ; i< data.length; i++){
-                           if( traces[j].name == data[i].name ) {
-                             data[i].x.push(traces[j].x[0]);
-                             data[i].y.push(traces[j].y[0]);
-                             data[i].text.push(traces[j].text[0]);
-                             data[i].type = PLOT_TYPE
-                             if( data[i].x.length >= MAX_BUFFER ) {
-                                 data[i].x.shift();
-                                 data[i].y.shift();
-                                 data[i].text.shift();
+                        tr = traces[j]
+                        cam = tr.cam
+                        /*if( data == undefined) {
+                          data = [[]];
+                          tr = traces[j]
+                          data[tr.cam].push(tr);
+                          continue;
+                          } 
+                        */  
+                        for( i = 0 ; i< data[cam].length; i++){
+                           if( tr.name == data[cam][i].name ) {
+                             data[cam][i].x.push(tr.x);
+                             data[cam][i].y.push(tr.y);
+                             data[cam][i].text.push(tr.text + ' cam:' + cam);
+                             data[cam][i].type = PLOT_TYPE
+                             if( data[cam][i].x.length >= MAX_BUFFER ) {
+                                 data[cam][i].x.shift();
+                                 data[cam][i].y.shift();
+                                 data[cam][i].text.shift();
                              }  
 
                            } else {
@@ -68,23 +85,22 @@
                            }
                         }
                        // check if this a new object not existed before
-                       if( k == data.length ){
+                        if( k == data[cam].length ){
                              _data = {"x": [],"y": [],"text": []};
-                             _data.x.push(traces[j].x[0]);
-                             _data.y.push(traces[j].y[0]);
-                             _data.text.push(traces[j].text[0]);
+                             _data.x.push(traces[j].x);
+                             _data.y.push(traces[j].y);
+                             _data.text.push(traces[j].text + ' cam:' + traces[j].cam);
                              _data.name = traces[j].name;
                              _data.type = PLOT_TYPE
-                           data.push(_data)
-                       }    
+                           data[cam].push(_data)
+                         }    
                      }  
-                     Plotly.newPlot('myDiv', data,layout);
+                     Plotly.newPlot('myDiv'+cam, data[cam],layout);
                  }
               };
           }
     
-          var data = []
-
+          var data = [[],[]];
           var layout = {
               xaxis: {
                   autorange: true
@@ -101,7 +117,7 @@
                       color: 'grey',
                   }
               },
-              title: 'Founded objects per time (1 sec beet)'
+              title: 'Founded objects per time (6 sec beet)'
           };
 
  
