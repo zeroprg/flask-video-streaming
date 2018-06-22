@@ -1,4 +1,10 @@
-video_file=~/Downloads/1522899193.flv
+#video_file=http://38.101.209.29:8082/mjpg/video.mjpg?COUNTER
+#video_file2=http://138.26.107.148/mjpg/video.mjpg?COUNTER
+
+
+video_file=http://38.101.209.29:8082/mjpg/video.mjpg?COUNTER
+#video_file2=http://112.161.180.19:8080/cam_1.cgi
+video_file2=http://138.26.107.148/mjpg/video.mjpg?COUNTER
 prototxt=MobileNetSSD_deploy.prototxt.txt
 model=MobileNetSSD_deploy.caffemodel
-confidence=0.80
+confidence=0.69

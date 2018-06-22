@@ -2,14 +2,13 @@
 # import the necessary packages
 #from skimage.measure import structural_similarity as ssim
 import time
-from time import gmtime, strftime
+from time import localtime, strftime
 import cv2
 import numpy as np
 import math
 import dhash
 
-SCENE_FRAMES = 20
-IMAGES = {"diningtable":[],"train":[],"chair": [], "bicycle": [], "bus": [], "car": [], "cat": [],"dog": [], "horse": [], "motorbike": [], "person": [],  "train": []}
+SCENE_FRAMES = 5
 hash_delta = 65
 mse_delta = 55
 #ssim_delta = 0.6
@@ -56,11 +55,11 @@ class Screen_statistic(object):
     """An emulated camera implementation that streams a repeated sequence of images"""
 
 
-    def isAnySimularImageByHashCode(self, image_hashes: dict, key, image):
+    def isAnySimularImageByHashCode(self, image_hashes, key, hash):
         dim = image.shape[:2]
         if( dim[0] < 30 or dim[1] < 30 ): return True
         hashes = image_hashes[key]
-        imageHash =  dhash_own(image)
+        imageHash =  hash # dhash_own(image)
         print("image_hash:" , image_hash)
         self.image_hashes[key].append(imageHash) 
         if(len(hashes) == 0 ):
@@ -68,13 +67,12 @@ class Screen_statistic(object):
 
         for _imageHash in hashes:
             delta = dhash.get_num_bits_different(imageHash, _imageHash)
-            
             if( delta < hash_delta):
                 #print( key, delta ) 
                 return True
 #            elif ( compare_ssim(_image , image) > ssim_delta ):
 #                return True
-                
+
         return False
 
 # Check if any simular image by Mean Square Error where parameter is numpy array :
@@ -144,7 +142,6 @@ class Screen_statistic(object):
 
     def __init__(self, params_queue):
         self.image_hashes     = {}
-        self.images_counter   = IMAGES
         self.orig_classes     = {}
         self.frame_counter    = 0
         
@@ -177,42 +174,39 @@ class Screen_statistic(object):
      
             # convert the difference image to a hash
             return sum([(2 << i)>>1 for (i, v) in enumerate(diff.flatten()) if v])
-        
-   
 
-    
-    def refresh(self, classes):
-        print(self.frame_counter)
-        self.frame_counter += 1
-        #ret = self.getParametersJSON(self.orig_classes)
+
+
+
+    def refresh(self, hashes, cam):
+        #print(self.frame_counter)
         if(self.frame_counter > SCENE_FRAMES ):
             self.frame_counter = 0
             self.images_counter = IMAGES
-            for key in self.orig_classes:
-                self.orig_classes[key] = [] #.pull(0)   
-             
-        self.countDifferentImagesByMSE(self.orig_classes, classes)
-        ret = self.getParametersJSON(self.orig_classes)
+        
+        #self.frame_counter += 1
+        IMAGES = { "car": 0, "cat": 0,"dog": 0,  "person": 0}    
+        for key in hashes:
+            IMAGES[key] = len(hashes[key])
+            #print(hashes[key])
+            #print(self.orig_classes.get(key,[]))
+        ret = self.getParametersJSON(IMAGES, cam)
+        
         return ret
 
-    def getParametersJSON(self, orig_classes):
+    def getParametersJSON(self, images, cam):
         ret =[]
-        for key in orig_classes:
-            _array = orig_classes[key]
-            _array_length = len(_array)
-            if _array_length == 0:continue
-            prob_total = 0 
-            for value in _array:
-                 prob_total += value[0]
-                 
-            prob_total /= _array_length
+        for key in images:
+            #print(images[key])
+            if images[key] == 0: continue
             trace = Trace()
             trace.name = key
-            tm = strftime("%H:%M:%S", gmtime())
-            
-            trace.x.append(tm)
-            trace.y.append(self.images_counter[key])
-            trace.text.append(str(int(prob_total*100))+ '%')
+            trace.cam = cam
+            tm = strftime("%H:%M:%S", localtime())
+
+            trace.x = tm
+            trace.y = images[key]
+            trace.text = key
             ret.append(trace.__dict__)
             #print( trace.__dict__ )
         return ret
@@ -221,13 +215,14 @@ class Screen_statistic(object):
 class Trace(dict):
     def __init__(self):
         dict.__init__(self)
-        self.x = list()
-        self.y = list()
+        self.cam = 0
+        self.x = 0
+        self.y = 0
         self.name = ''
-        self.text = list()
+        self.text = ''
 
 
     def toJSON(self):
-            return json.dumps(self, default=lambda o: o.__dict__, 
-                sort_keys=True, indent=4)        
+            return json.dumps(self, default=lambda o: o.__dict__,
+                sort_keys=True, indent=4)
 
