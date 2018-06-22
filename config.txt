@@ -2,9 +2,9 @@
 #video_file2=http://138.26.107.148/mjpg/video.mjpg?COUNTER
 
 
-video_file=http://192.168.1.80:81/videostream.cgi?loginuse=GwEBAA%3D%3D&loginpas=Nw0AG1ZceWtl&_=15282579520910.657573406191367
-video_file2=http://192.168.1.72:81/videostream.cgi?loginuse=GwEBAA%3D%3D&loginpas=Nw0AG1ZceWtl&_=15282579520910.657573406191367
-
+video_file=http://38.101.209.29:8082/mjpg/video.mjpg?COUNTER
+video_file2=http://112.161.180.19:8080/cam_1.cgi
+#video_file2=http://138.26.107.148/mjpg/video.mjpg?COUNTER
 prototxt=MobileNetSSD_deploy.prototxt.txt
 model=MobileNetSSD_deploy.caffemodel
 confidence=0.69
