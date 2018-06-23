@@ -206,9 +206,8 @@ def fetchImagesFromQueueToVideo(filename, imagesQueue, size):
     
 def fetchParamsFromQueueToDB(db, paramsQueue):
     #_array = []
-    while(paramsQueue.qsize() > 0):
+    while(paramsQueue.qsize() > 0):paramsQueue.get()
         #_array.append(paramsQueue.get())
-	 paramsQueue.get()
     # connect to DB and store array of parameters here
 
 
