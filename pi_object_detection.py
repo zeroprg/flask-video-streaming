@@ -197,17 +197,18 @@ def fetchImagesFromQueueToVideo(filename, imagesQueue, size):
     #fgbg= cv2.createBackgroundSubtractorMOG2()
     #print(fgbd)
     while(imagesQueue.qsize() > 2):
-    #    fgmask = imagesQueue.get() #fgbg.apply(imagesQueue.get())
-         np.save(filename,imagesQueue.get())
+         fgmask = imagesQueue.get() #fgbg.apply(imagesQueue.get())
+    #     np.save(filename,imagesQueue.get())
     #    out.write(fgmask)
         #cv2.imshow('img',fgmask)   
     #out.release()
     
     
 def fetchParamsFromQueueToDB(db, paramsQueue):
-    _array = []
+    #_array = []
     while(paramsQueue.qsize() > 0):
-        _array.append(paramsQueue.get())
+        #_array.append(paramsQueue.get())
+	paramsQueue.get()
     # connect to DB and store array of parameters here
 
 
