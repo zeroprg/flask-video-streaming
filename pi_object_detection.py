@@ -148,7 +148,7 @@ def get_frame(vss):
                             label = "{}: {:.2f}%".format(key,confidence * 100)
                             if key in subject_of_interes:
                                 #crop_img = frame[startY:endY, startX:endX]
-                                cv2.imwrite('images/'+str(hash)+'.jpg',frame)
+                                cv2.imwrite('images/'+str(hash)+'.jpg',crop_img_data)
 
                             cv2.rectangle(frame, (startX-10, startY-10), (endX+10, endY+10),
                                     COLORS[idx], 2)
