@@ -208,7 +208,7 @@ def fetchParamsFromQueueToDB(db, paramsQueue):
     #_array = []
     while(paramsQueue.qsize() > 0):
         #_array.append(paramsQueue.get())
-	paramsQueue.get()
+	 paramsQueue.get()
     # connect to DB and store array of parameters here
 
 
