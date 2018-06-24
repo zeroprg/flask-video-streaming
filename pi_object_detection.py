@@ -27,18 +27,18 @@ import base64
 CLASSES = ["background", "aeroplane", "bicycle", "bird", "boat",
 	"bottle", "bus", "car", "cat", "chair", "cow", "diningtable",
 	"dog", "horse", "motorbike", "person", "pottedplant", "sheep",
-	"sofa", "train", "tvmonitor"]#,"_X_","_X_","_X_","_X_","_X_","_X_","_X_","_X_","_X_","_X_","_X_","_X_","_X_","_X_","_X_","_X_","_X_","_X_","_X_","_X_","_X_","_X_","_X_"]
-LOOKED = { "car": [], "cat": [],"dog": [], "person": [], "pottedplant":[], "bottle":[]}
-subject_of_interes = ["dog"]
+	"sofa", "train", "tvmonitor"]
+LOOKED = { "car": [], "cat": [],"dog": [], "person": [], "pottedplant":[], "bottle":[], "chair":[]}
+subject_of_interes = ["person","chair","sofa","car"]
 COLORS = np.random.uniform(0, 255, size=(len(CLASSES), 3))
 
-VIDEO_FILENAME = 'imagescd fl   /camera'
+VIDEO_FILENAME = 'images'
 NUMBER_OF_FILES = 100
 HASH_DELTA = 55
 PARAMS_BUFFER =  8
 IMAGES_BUFFER = 100
 RECOGNZED_FRAME = 1
-THREAD_NUMBERS  = 10 # must be less then 4 for PI
+THREAD_NUMBERS  = 2 # must be less then 4 for PI
 videos = []
 
 def classify_frame( net, inputQueue, outputQueue):
@@ -74,8 +74,10 @@ def get_frame(vss):
     k = 0
     _thr = RECOGNZED_FRAME
     hashes = []
+    base64EncodedImgs = []
     for cam in range(len(vss)):
         hashes.append(LOOKED)
+        base64EncodedImgs.append(LOOKED)
     while  True:
       print(j)
       for cam in range(len(vss)):
@@ -142,27 +144,31 @@ def get_frame(vss):
                                 #print("delta: ", delta)
                                 if delta < HASH_DELTA: break
                                 else: diffr +=1
+                            # process further only  if image is really different from other ones   
                             if len(hashes[cam][key]) == diffr and hash !=0:
                                 hashes[cam][key].append(hash)
+                                if key in subject_of_interes:
+                                    #use it if you 100% sure you need save this image on disk
+                                    #cv2.imwrite('images/'+str(hash)+'.jpg',crop_img_data)
+                                    imgb = crop_img_data.tobytes()
+                                    encoded = 'data:image/gif;base64,' +  str(base64.b64encode(imgb))
+                                    print(encoded)
+                                    base64EncodedImgs[cam][key].append(encoded)
                             print("cam:", cam, "key:", key, "hashes:", hashes[cam][key])
                             label = "{}: {:.2f}%".format(key,confidence * 100)
-                            if key in subject_of_interes:
-                                #crop_img = frame[startY:endY, startX:endX]
-                                cv2.imwrite('images/'+str(hash)+'.jpg',frame)
 
                             cv2.rectangle(frame, (startX-10, startY-10), (endX+10, endY+10),
                                     COLORS[idx], 2)
                             y = startY - 15 if startY - 15 > 15 else startY + 15
                             cv2.putText(frame, label, (startX, y),
                                     cv2.FONT_HERSHEY_SIMPLEX, 0.5, COLORS[idx], 2)
-
                                                        
 
             
             imagesQueue[cam].put(frame)
 
                            
-            params = scrn_stats.refresh(hashes[cam], cam)
+            params = scrn_stats.refresh(hashes[cam],base64EncodedImgs[cam], cam)
                    
             print(params)
             #if paramsQueue.qsize()> PARAMS_BUFFER: continue

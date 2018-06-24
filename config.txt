@@ -4,7 +4,9 @@
 
 video_file=http://38.101.209.29:8082/mjpg/video.mjpg?COUNTER
 #video_file2=http://112.161.180.19:8080/cam_1.cgi
-video_file2=http://138.26.107.148/mjpg/video.mjpg?COUNTER
+#video_file2=http://138.26.107.148/mjpg/video.mjpg?COUNTER
+#video_file2=http://92.154.61.153:8080/oneshotimage1?1529845789
+video_file2=http://37.142.116.227/cgi-bin/camera?resolution=640&amp;amp;quality=1&amp;amp;Language=0&amp;amp;1529847411
 prototxt=MobileNetSSD_deploy.prototxt.txt
 model=MobileNetSSD_deploy.caffemodel
-confidence=0.69
+confidence=0.25

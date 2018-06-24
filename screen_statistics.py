@@ -178,35 +178,30 @@ class Screen_statistic(object):
 
 
 
-    def refresh(self, hashes, cam):
+    def refresh(self, hashes,base64EncodedImgs, cam):
         #print(self.frame_counter)
         if(self.frame_counter > SCENE_FRAMES ):
             self.frame_counter = 0
             self.images_counter = IMAGES
         
-        #self.frame_counter += 1
-        IMAGES = { "car": 0, "cat": 0,"dog": 0,  "person": 0}    
-        for key in hashes:
-            IMAGES[key] = len(hashes[key])
-            #print(hashes[key])
-            #print(self.orig_classes.get(key,[]))
-        ret = self.getParametersJSON(IMAGES, cam)
+        ret = self.getParametersJSON(hashes, base64EncodedImgs, cam)
         
         return ret
 
-    def getParametersJSON(self, images, cam):
+    def getParametersJSON(self, hashes, base64EncodedImgs, cam):
         ret =[]
-        for key in images:
+        for key in hashes:
             #print(images[key])
-            if images[key] == 0: continue
+            if len(hashes[key]) == 0: continue
             trace = Trace()
             trace.name = key
             trace.cam = cam
             tm = strftime("%H:%M:%S", localtime())
 
             trace.x = tm
-            trace.y = images[key]
+            trace.y = len(hashes[key])
             trace.text = key
+            trace.base64EncodedImgs = base64EncodedImgs[key]
             ret.append(trace.__dict__)
             #print( trace.__dict__ )
         return ret
@@ -220,7 +215,7 @@ class Trace(dict):
         self.y = 0
         self.name = ''
         self.text = ''
-
+        self.base64EncodedImgs = []
 
     def toJSON(self):
             return json.dumps(self, default=lambda o: o.__dict__,
