@@ -13,7 +13,8 @@ import argparse
 import imutils
 import time
 import dhash
-from PIL import Image
+
+from PIL import Image, ImageEnhance
 from time import gmtime, strftime
 
 import cv2
@@ -27,17 +28,19 @@ CLASSES = ["background", "aeroplane", "bicycle", "bird", "boat",
 	"bottle", "bus", "car", "cat", "chair", "cow", "diningtable",
 	"dog", "horse", "motorbike", "person", "pottedplant", "sheep",
 	"sofa", "train", "tvmonitor"]
-LOOKED = { "car": [], "cat": [],"dog": [], "person": [], "pottedplant":[], "bottle":[], "chair":[]}
+LOOKED1 = { "car": [], "cat": [],"dog": [], "person": [], "pottedplant":[], "bottle":[], "chair":[]}
+
 subject_of_interes = ["person","chair","sofa","car"]
 COLORS = np.random.uniform(0, 255, size=(len(CLASSES), 3))
 
 VIDEO_FILENAME = 'images'
+ENCODING = "utf-8"
 NUMBER_OF_FILES = 100
-HASH_DELTA = 55
-PARAMS_BUFFER =  8
+HASH_DELTA = 5
+PARAMS_BUFFER =  5
 IMAGES_BUFFER = 100
 RECOGNZED_FRAME = 1
-THREAD_NUMBERS  = 2 # must be less then 4 for PI
+THREAD_NUMBERS  = 5 # must be less then 4 for PI
 videos = []
 
 def classify_frame( net, inputQueue, outputQueue):
@@ -73,10 +76,9 @@ def get_frame(vss):
     k = 0
     _thr = RECOGNZED_FRAME
     hashes = []
-    base64EncodedImgs = []
+
     for cam in range(len(vss)):
-        hashes.append(LOOKED)
-        base64EncodedImgs.append(LOOKED)
+        hashes.append(LOOKED1)
     while  True:
       print(j)
       for cam in range(len(vss)):
@@ -124,6 +126,8 @@ def get_frame(vss):
                             hash=0
                             try:
                                 crop_img = Image.fromarray(crop_img_data)
+                                #crop_img = cv2.cvtColor( crop_img, cv2.COLOR_RGB2GRAY )
+                                #crop_img = ImageEnhance.Contrast(crop_img)
                                 hash = dhash.dhash_int(crop_img)
                             except: None
                                 #continue
@@ -131,11 +135,11 @@ def get_frame(vss):
                             key = CLASSES[idx]
                             
                             print("cam:", cam, "key:",key,"hash:",hash)
-                            if not key in LOOKED: continue
+                            if not key in LOOKED1: continue
                             if (hashes[cam]).get(key, None)== None:
                                 hashes[cam][key] = [hash]
                                 continue
-                            _hashes = []
+                            #_hashes = []
                             diffr = 0
                             for _hash in hashes[cam][key]:
                                 delta = dhash.get_num_bits_different(_hash, hash)
@@ -149,25 +153,26 @@ def get_frame(vss):
                                     #use it if you 100% sure you need save this image on disk
                                     #cv2.imwrite('images/'+str(hash)+'.jpg',crop_img_data)
                                     imgb = crop_img_data.tobytes()
-                                    encoded = 'data:image/gif;base64,' +  (base64.b64encode(imgb)).decode("utf-8")
-                                    print(encoded)
-                                    base64EncodedImgs[cam][key].append(encoded)
+                                    
+                                    encoded =  (base64.b64encode(imgb)).decode(ENCODING)
+                                    catchedObjQueue.put( str(cam) + ";" + key + ";" +encoded)
+                                    
                             print("cam:", cam, "key:", key, "hashes:", hashes[cam][key])
                             label = "{}: {:.2f}%".format(key,confidence * 100)
                             cv2.rectangle(frame, (startX-10, startY-10), (endX+10, endY+10),
-                                    COLORS[idx], 2)
-                            y = startY - 15 if startY - 15 > 15 else startY + 15
-                            cv2.putText(frame, label, (startX, y),
-                                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, COLORS[idx], 2)
+                                    COLORS[idx], 1)
+                            #y = startY - 15 if startY - 15 > 15 else startY + 15
+                            #cv2.putText(frame, label, (startX, y),
+                            #        cv2.FONT_HERSHEY_SIMPLEX, 0.5, COLORS[idx], 2)
                                                        
 
             
             imagesQueue[cam].put(frame)
 
                            
-            params = scrn_stats.refresh(hashes[cam],base64EncodedImgs[cam], cam)
+            params = scrn_stats.refresh(hashes[cam], cam)
                    
-            print(params)
+            #print(params)
             #if paramsQueue.qsize()> PARAMS_BUFFER: continue
             paramsQueue.put( params )
             print('paramsQueue.qsize()',paramsQueue.qsize())  
@@ -181,7 +186,8 @@ def get_frame(vss):
       j+=1
       if j >= PARAMS_BUFFER:
          j = 0
-         for cam in range(len(vss)): hashes[cam] = {}
+         for cam in range(len(vss)): 
+            hashes[cam] = {}
       
 
     if (__name__ == '__main__'):
@@ -210,7 +216,9 @@ def fetchImagesFromQueueToVideo(filename, imagesQueue, size):
     
 def fetchParamsFromQueueToDB(db, paramsQueue):
     #_array = []
-    while(paramsQueue.qsize() > 0):paramsQueue.get()
+    while(paramsQueue.qsize() > 0):
+        paramsQueue.get()
+        catchedObjQueue.get()
         #_array.append(paramsQueue.get())
     # connect to DB and store array of parameters here
 
@@ -235,7 +243,7 @@ inputQueue =  []
 imagesQueue = []
 outputQueue = []
 paramsQueue = Queue()
-
+catchedObjQueue = Queue()
 
 detections = None
 vs = None
@@ -378,6 +386,14 @@ def gen_params():
     x = json.dumps(x) 
     #print(x)
     return x
+def gen_images():
+    """Imsges streaming generator function."""
+    x = []
+    while not catchedObjQueue.empty():
+        x += catchedObjQueue.get()
+    x = json.dumps(x) 
+    #print(x)
+    return x    
 
 @app.route('/video_feed',methods=['GET'])
 def video_feed():
@@ -392,6 +408,11 @@ def params_feed():
     """Parameters streaming route. Put this in the src attribute of an img tag."""
     return Response( gen_params(),
                     mimetype='text/plain')
+@app.route('/images_feed')
+def images_feed():
+    """Images streaming route. Put this in the src attribute of an img tag."""
+    return Response( gen_images(),
+                    mimetype='text/plain')                    
 
 if (__name__ == '__main__'):
     start()
