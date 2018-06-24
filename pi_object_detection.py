@@ -1,5 +1,3 @@
-
-
 # USAGE
 # python pi_object_detection.py 
 # import the necessary packages
@@ -35,12 +33,12 @@ COLORS = np.random.uniform(0, 255, size=(len(CLASSES), 3))
 
 VIDEO_FILENAME = 'images'
 ENCODING = "utf-8"
-NUMBER_OF_FILES = 100
-HASH_DELTA = 35
-PARAMS_BUFFER =  5
-IMAGES_BUFFER = 100
+NUMBER_OF_FILES = 10
+HASH_DELTA = 50
+PARAMS_BUFFER =  6
+IMAGES_BUFFER = 20
 RECOGNZED_FRAME = 1
-THREAD_NUMBERS  = 5 # must be less then 4 for PI
+THREAD_NUMBERS  = 4 #  must be less then 4 for PI
 videos = []
 
 def classify_frame( net, inputQueue, outputQueue):
@@ -50,8 +48,8 @@ def classify_frame( net, inputQueue, outputQueue):
                 #while not inputQueue.empty():
                 # grab the frame from the input queue, resize it, and
                 # construct a blob from it
-                print('inputQueue.qsize()',inputQueue.qsize())
-                print('outputQueue.qsize()',outputQueue.qsize())
+                #print('inputQueue.qsize()',inputQueue.qsize())
+                #print('outputQueue.qsize()',outputQueue.qsize())
                 frame = inputQueue.get()
                 frame = cv2.resize(frame, (300, 300))
                 cols = frame.shape[1]
@@ -180,8 +178,8 @@ def get_frame(vss):
                 k+=1
                 fetchImagesFromQueueToVideo(VIDEO_FILENAME+str(cam)+'_'+str(k), imagesQueue[cam],(640,480))
                 k %= NUMBER_OF_FILES
-            if paramsQueue.qsize() > IMAGES_BUFFER:  
-                fetchParamsFromQueueToDB("dbname", paramsQueue)
+            if catchedObjQueue.qsize() > IMAGES_BUFFER or paramsQueue.qsize() > IMAGES_BUFFER:
+                fetchParamsFromQueuesToDB("dbname")
 
       j+=1
       if j >= PARAMS_BUFFER:
@@ -214,11 +212,13 @@ def fetchImagesFromQueueToVideo(filename, imagesQueue, size):
     #out.release()
     
     
-def fetchParamsFromQueueToDB(db, paramsQueue):
+def fetchParamsFromQueuesToDB(db):
     #_array = []
-    while(paramsQueue.qsize() > 0):
+    while not paramsQueue.empty():
         paramsQueue.get()
+    while not catchedObjQueue.empty():
         catchedObjQueue.get()
+        # catchedObjQueue.get()
         #_array.append(paramsQueue.get())
     # connect to DB and store array of parameters here
 
@@ -388,12 +388,8 @@ def gen_params():
     return x
 def gen_images():
     """Imsges streaming generator function."""
-    x = []
-    while not catchedObjQueue.empty():
-        x += catchedObjQueue.get()
-    x = json.dumps(x) 
-    #print(x)
-    return x    
+
+    return catchedObjQueue.get()   
 
 @app.route('/video_feed',methods=['GET'])
 def video_feed():
