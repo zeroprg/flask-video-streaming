@@ -1,8 +1,7 @@
 
 
 # USAGE
-# python pi_object_detection.py --prototxt MobileNetSSD_deploy.prototxt.txt --model MobileNetSSD_deploy.caffemodel
-
+# python pi_object_detection.py 
 # import the necessary packages
 from imutils.video import VideoStream
 from imutils.video import FPS
@@ -96,7 +95,6 @@ def get_frame(vss):
             # if the output queue *is not* empty, grab the detections
             detections = outputQueue[cam].get()
             #print(detections)
-    
             if detections is not None:
 
                     # loop over the detections
@@ -151,12 +149,11 @@ def get_frame(vss):
                                     #use it if you 100% sure you need save this image on disk
                                     #cv2.imwrite('images/'+str(hash)+'.jpg',crop_img_data)
                                     imgb = crop_img_data.tobytes()
-                                    encoded = 'data:image/gif;base64,' +  str(base64.b64encode(imgb))
+                                    encoded = 'data:image/gif;base64,' +  (base64.b64encode(imgb)).decode("utf-8")
                                     print(encoded)
                                     base64EncodedImgs[cam][key].append(encoded)
                             print("cam:", cam, "key:", key, "hashes:", hashes[cam][key])
                             label = "{}: {:.2f}%".format(key,confidence * 100)
-
                             cv2.rectangle(frame, (startX-10, startY-10), (endX+10, endY+10),
                                     COLORS[idx], 2)
                             y = startY - 15 if startY - 15 > 15 else startY + 15
@@ -212,9 +209,9 @@ def fetchImagesFromQueueToVideo(filename, imagesQueue, size):
     
     
 def fetchParamsFromQueueToDB(db, paramsQueue):
-    _array = []
-    while(paramsQueue.qsize() > 0):
-        _array.append(paramsQueue.get())
+    #_array = []
+    while(paramsQueue.qsize() > 0):paramsQueue.get()
+        #_array.append(paramsQueue.get())
     # connect to DB and store array of parameters here
 
 
@@ -399,5 +396,3 @@ def params_feed():
 if (__name__ == '__main__'):
     start()
     app.run(host='0.0.0.0', threaded=True)
-
-
