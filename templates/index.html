@@ -1,28 +1,190 @@
 <html>
-  <head>
-    <title>Artificial Intelegence Camera </title>
-    <style>
-        #fixed-width-image {  width: 500px; height: auto;} 
-    </style>
-  </head>
-  <body>
-      <h1>Artificial Intellegence Cameras </h1>
-       
+<head>
+  <title>Artificial Intellegence Cameras</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+  <style>
+  #fixed-width-image {  width: 500px; height: auto;} 
+  body {font-family: Arial;}
+
+    /* Style the tab */
+    .tab {
+        overflow: hidden;
+        border: 1px solid #ccc;
+        background-color: #f1f1f1;
+    }
+
+    /* Style the buttons inside the tab */
+    .tab button {
+        background-color: inherit;
+        float: left;
+        border: none;
+        outline: none;
+        cursor: pointer;
+        padding: 14px 16px;
+        transition: 0.3s;
+        font-size: 17px;
+    }
+
+    /* Change background color of buttons on hover */
+    .tab button:hover {
+        background-color: #ddd;
+    }
+
+    /* Create an active/current tablink class */
+    .tab button.active {
+        background-color: #ccc;
+    }
+
+    /* Style the tab content */
+    .tabcontent {
+        display: none;
+        padding: 6px 12px;
+        border: 1px solid #ccc;
+        border-top: none;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <h1>Artificial Intellegence Cameras </h1>
+  <p>This example demonstrates AI image recognizing  web server works with any IP Cameras feed.</p>      
+    
+  <div class="row">
+    <div class="col-sm-6">
+      <h5>camera {{video_url1}}:</h5>
       <img id="fixed-width-image" style="-webkit-user-select: none;" src="video_feed?cam=0">
-         <h3>Total objects founded for camera {{video_url1}}:</h3> 
-         <div id="myDiv0"><!-- Plotly chart will be drawn inside this DIV --></div>
-      <img id="fixed-width-image" style="-webkit-user-select: none;" src="video_feed?cam=1">
-         <h3>Total objects founded for camera {{video_url2}}:</h3>
-         <div id="myDiv1"><!-- Plotly chart will be drawn inside this DIV --></div>
+    </div>
+    <div class="col-sm-6">      
+         <div class="tab">
+            <button class="tablinks" onclick="openCity(event, 'Eventsnotifyer0')">Events notifyer</button>
+            <button class="tablinks" onclick="openCity(event, 'Downloadimages0')">Download images</button>
+            <button class="tablinks" onclick="openCity(event, 'Objectsfilter0')">Objects filter</button>
+         </div>
+          <div id="Eventsnotifyer0" class="tabcontent" style="display: block;">
+            <h3>Events notifyer</h3>
+            <p>Specify Events which will triger eMail or SMS/Voice notify.</p>
+              if <select name="objects">
+                <option value="person">person</option>
+                <option value="car">car</option>
+                <option value="dog">dog</option>
+                <option value="cat">cat</option>
+              </select> and 
+              <select name="quantity">
+                <option value="quantity">quantity</option>
+                <option value="time">time(sec.)</option>
+              </select> 
+              <select name="&gt;>">
+                <option value="&gt;">&gt;</option>
+                <option value="&lt;">&lt;</option>
+                <option value="=">=</option>
+              </select>              
+              <input type="number" id="quantity" name="quantity" placeholder="0" min="0" max="100" />
+              <br>
+              Notify me by 
+              <select name="eMail;>">
+                <option value="email;">email</option>
+                <option value="sms">SMS</option>
+                <option value="voice">voice</option>
+              </select> 
+              :
+              <input type="text"placeholder="" min="0" max="100" />
+          </div>
+
+          <div id="Downloadimages0" class="tabcontent">
+            <h3>Download images</h3>
+            <p>Download images.</p> 
+          </div>
+
+          <div id="Objectsfilter0" class="tabcontent">
+            <h3>Objects filter</h3>
+            <p>Objects filter.</p>
+          </div>
+  </div>
+
+  </div>
+   
+
+  <div id= "myDiv0" class="col-sm-12" style="height:250px; width:100%"/>
+  <div class="row">
+    <div class="col-sm-6">
+      <h5> camera {{video_url2}}:</h5>
+      <img id="fixed-width-image" style="-webkit-user-select: none;" src="video_feed?cam=1"/>
+    </div>
+    <div class="col-sm-6">      
+         <div class="tab">
+            <button class="tablinks" onclick="openCity(event, 'Eventsnotifyer1')">Events notifyer</button>
+            <button class="tablinks" onclick="openCity(event, 'Downloadimages1')">Download images</button>
+            <button class="tablinks" onclick="openCity(event, 'Objectsfilter1')">Objects filter</button>
+         </div>
+          <div id="Eventsnotifyer1" class="tabcontent" style="display: block;">
+            <h3>Events notifyer</h3>
+            <p>Specify Events which will triger eMail or SMS/Voice notify.</p>
+              if <select name="objects">
+                <option value="person">person</option>
+                <option value="car">car</option>
+                <option value="dog">dog</option>
+                <option value="cat">cat</option>
+              </select> and 
+              <select name="quantity">
+                <option value="quantity">quantity</option>
+                <option value="time">time(sec.)</option>
+              </select> 
+              <select name="&gt;>">
+                <option value="&gt;">&gt;</option>
+                <option value="&lt;">&lt;</option>
+                <option value="=">=</option>
+              </select>              
+              <input type="number" id="quantity" name="quantity" placeholder="0" min="0" max="100" />
+              <br>
+              Notify me by 
+              <select name="eMail;>">
+                <option value="email;">email</option>
+                <option value="sms">SMS</option>
+                <option value="voice">voice</option>
+              </select> 
+              :
+              <input type="text"placeholder="" min="0" max="100" />
+          </div>
+
+          <div id="Downloadimages1" class="tabcontent">
+            <h3>Download images</h3>
+            <p>Download images.</p> 
+          </div>
+
+          <div id="Objectsfilter1" class="tabcontent">
+            <h3>Objects filter</h3>
+            <p>Objects filter.</p>
+          </div>
+  </div>
+  
+  <div id= "myDiv1" class="col-sm-12" style="height:250px; width:100%"/>
+
+</div>
 
 
-      <!-- Optional JavaScript -->
-      <!-- jQuery first, then Popper.js, then Bootstrap JS -->
-      <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
-      <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
-      <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
-      <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
-      <script>
+
+<script>
+function openCity(evt, cityName) {
+    var i, tabcontent, tablinks;
+    tabcontent = document.getElementsByClassName("tabcontent");
+    for (i = 0; i < tabcontent.length; i++) {
+        tabcontent[i].style.display = "none";
+    }
+    tablinks = document.getElementsByClassName("tablinks");
+    for (i = 0; i < tablinks.length; i++) {
+        tablinks[i].className = tablinks[i].className.replace(" active", "");
+    }
+    document.getElementById(cityName).style.display = "block";
+    evt.currentTarget.className += " active";
+}
+</script>    
+<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+<script>
               //var r2 = new XMLHttpRequest(); 
               //r2.open('GET', "{{ url_for('video_feed') }}", true);
               //r2.send();
