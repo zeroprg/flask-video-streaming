@@ -5,6 +5,8 @@ from imutils.video import VideoStream
 from imutils.video import FPS
 from multiprocessing import Process
 from multiprocessing import Queue
+
+import os
 import imagehash
 import numpy as np
 import argparse
@@ -27,18 +29,21 @@ CLASSES = ["background", "aeroplane", "bicycle", "bird", "boat",
 	"dog", "horse", "motorbike", "person", "pottedplant", "sheep",
 	"sofa", "train", "tvmonitor"]
 LOOKED1 = { "car": [], "cat": [],"dog": [], "person": [], "pottedplant":[], "bottle":[], "chair":[]}
+LOOKED2 = { "car": [], "cat": [],"dog": [], "person": [], "pottedplant":[], "bottle":[], "chair":[]}
 
-subject_of_interes = ["person","chair","sofa","car"]
+subject_of_interes = ["person","car","bus"]
 COLORS = np.random.uniform(0, 255, size=(len(CLASSES), 3))
+
+IMAGES_FOLDER = "static/img/"
 
 VIDEO_FILENAME = 'images'
 ENCODING = "utf-8"
 NUMBER_OF_FILES = 10
-HASH_DELTA = 50
-PARAMS_BUFFER =  6
+HASH_DELTA = 57
+PARAMS_BUFFER =  25
 IMAGES_BUFFER = 20
 RECOGNZED_FRAME = 1
-THREAD_NUMBERS  = 4 #  must be less then 4 for PI
+THREAD_NUMBERS  = 3 #  must be less then 4 for PI
 videos = []
 
 def classify_frame( net, inputQueue, outputQueue):
@@ -62,7 +67,7 @@ def classify_frame( net, inputQueue, outputQueue):
                 detections = net.forward()
 
                 # write the detections to the output queue
-                outputQueue.put(detections)#(detections,rows,cols))
+                outputQueue.put(detections)
 
 
 
@@ -74,9 +79,11 @@ def get_frame(vss):
     k = 0
     _thr = RECOGNZED_FRAME
     hashes = []
+    filenames = []
 
     for cam in range(len(vss)):
         hashes.append(LOOKED1)
+        filenames.append(LOOKED2)
     while  True:
       print(j)
       for cam in range(len(vss)):
@@ -136,6 +143,8 @@ def get_frame(vss):
                             if not key in LOOKED1: continue
                             if (hashes[cam]).get(key, None)== None:
                                 hashes[cam][key] = [hash]
+                                filename = key+str(cam)+'_'+ str(hash)+'.jpg'
+                                filenames[cam][key] = [filename]
                                 continue
                             #_hashes = []
                             diffr = 0
@@ -149,28 +158,27 @@ def get_frame(vss):
                                 hashes[cam][key].append(hash)
                                 if key in subject_of_interes:
                                     #use it if you 100% sure you need save this image on disk
-                                    #cv2.imwrite('images/'+str(hash)+'.jpg',crop_img_data)
+                                    filename = key+str(cam)+'_'+ str(time.time()).replace(".","_")+ '.jpg'
+                                    filenames[cam][key].append(filename)
+                                    cv2.imwrite(IMAGES_FOLDER + filename,crop_img_data)
                                     imgb = crop_img_data.tobytes()
                                     
                                     encoded =  (base64.b64encode(imgb)).decode(ENCODING)
-                                    catchedObjQueue.put( str(cam) + ";" + key + ";" +encoded)
+                                    #catchedObjQueue.put( str(cam) + ";" + key + ";" +encoded)
+                                    print("cam:", cam, "key:", key, "filenames:", filenames[cam][key])
                                     
                             print("cam:", cam, "key:", key, "hashes:", hashes[cam][key])
-                            label = "{}: {:.2f}%".format(key,confidence * 100)
+                           
+                            #label = "{}: {:.2f}%".format(key,confidence * 100)
                             cv2.rectangle(frame, (startX-10, startY-10), (endX+10, endY+10),
                                     COLORS[idx], 1)
                             #y = startY - 15 if startY - 15 > 15 else startY + 15
                             #cv2.putText(frame, label, (startX, y),
                             #        cv2.FONT_HERSHEY_SIMPLEX, 0.5, COLORS[idx], 2)
                                                        
-
-            
             imagesQueue[cam].put(frame)
-
-                           
-            params = scrn_stats.refresh(hashes[cam], cam)
-                   
-            #print(params)
+            params = scrn_stats.refresh(hashes[cam],filenames[cam], cam)
+            print(params)
             #if paramsQueue.qsize()> PARAMS_BUFFER: continue
             paramsQueue.put( params )
             print('paramsQueue.qsize()',paramsQueue.qsize())  
@@ -178,7 +186,7 @@ def get_frame(vss):
                 k+=1
                 fetchImagesFromQueueToVideo(VIDEO_FILENAME+str(cam)+'_'+str(k), imagesQueue[cam],(640,480))
                 k %= NUMBER_OF_FILES
-            if catchedObjQueue.qsize() > IMAGES_BUFFER or paramsQueue.qsize() > IMAGES_BUFFER:
+            if paramsQueue.qsize() > IMAGES_BUFFER:
                 fetchParamsFromQueuesToDB("dbname")
 
       j+=1
@@ -186,6 +194,7 @@ def get_frame(vss):
          j = 0
          for cam in range(len(vss)): 
             hashes[cam] = {}
+            filenames[cam] = {} 
       
 
     if (__name__ == '__main__'):
@@ -216,9 +225,6 @@ def fetchParamsFromQueuesToDB(db):
     #_array = []
     while not paramsQueue.empty():
         paramsQueue.get()
-    while not catchedObjQueue.empty():
-        catchedObjQueue.get()
-        # catchedObjQueue.get()
         #_array.append(paramsQueue.get())
     # connect to DB and store array of parameters here
 
@@ -243,7 +249,7 @@ inputQueue =  []
 imagesQueue = []
 outputQueue = []
 paramsQueue = Queue()
-catchedObjQueue = Queue()
+#catchedObjQueue = Queue()
 
 detections = None
 vs = None
@@ -348,7 +354,28 @@ def initialize_video_streams():
     return p_get_frame
 
 ###################### Flask API #########################
-app = Flask(__name__)
+app = Flask(__name__, static_url_path='/static')
+
+
+# Set the directory you want to start from
+def traverse_dir(rootDir="."):
+    fnames = [] 
+    for i in range(0,1):fnames.append([])
+    
+    for dirName, subdirList, fileList in os.walk(rootDir):
+        #print('Found directory: %s' % dirName)
+        for fname in fileList:
+            #print('\t%s' % fname)
+            for i in range(0,1):
+                if fname.startswith("cam" + str(i)): 
+                    fnames[i].append(fname)
+    print('fnames:', fnames)            
+    return fnames        
+
+@app.route('/static/<path:filename>')
+def serve_static(filename):
+    root_dir = os.path.dirname(os.getcwd())
+    return send_from_directory(os.path.join(root_dir, 'static', 'js'),   filename) 
 
 @app.route('/')
 def index():
@@ -356,7 +383,8 @@ def index():
     video_url1 = args['video_file']
     if args.get('video_file2',None) != None:
         video_url2 = args['video_file2']             
-        
+    images_filenames = traverse_dir(IMAGES_FOLDER)         
+    img_folder = IMAGES_FOLDER
     return render_template('index.html', **locals())
 
 def gen(camera):
@@ -386,10 +414,9 @@ def gen_params():
     x = json.dumps(x) 
     #print(x)
     return x
-def gen_images():
-    """Imsges streaming generator function."""
-
-    return catchedObjQueue.get()   
+#def gen_images():
+#   """Imsges streaming generator function."""
+#   return catchedObjQueue.get()   
 
 @app.route('/video_feed',methods=['GET'])
 def video_feed():
@@ -404,11 +431,11 @@ def params_feed():
     """Parameters streaming route. Put this in the src attribute of an img tag."""
     return Response( gen_params(),
                     mimetype='text/plain')
-@app.route('/images_feed')
-def images_feed():
-    """Images streaming route. Put this in the src attribute of an img tag."""
-    return Response( gen_images(),
-                    mimetype='text/plain')                    
+#@app.route('/images_feed')
+#def images_feed():
+#    """Images streaming route. Put this in the src attribute of an img tag."""
+#    return Response( gen_images(),
+#                    mimetype='text/plain')                    
 
 if (__name__ == '__main__'):
     start()

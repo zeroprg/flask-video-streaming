@@ -7,7 +7,43 @@
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
   <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
   <style>
-  #fixed-width-image {  width: 500px; height: auto;} 
+
+#thumbwrap {
+	margin:5px auto;
+	overflow: hidden;
+    resize: both;
+    width:  100%;
+    height: 100px; 
+    max-width: 500px;
+    max-height: 500px;
+}
+.thumb {
+	float:left; /* must be floated for same cross browser position of larger image */
+	position:relative;
+	margin:3px;
+	
+}
+.thumb img { 
+	border:1px solid #000;
+	vertical-align:bottom;
+}
+.thumb:hover {
+	border:0; /* IE6 needs this to show large image */
+	z-index:1;
+}
+.thumb span { 
+	position:absolute;
+	visibility:hidden;
+}
+.thumb:hover span { 
+	visibility:visible;
+	top:37px; left:37px; 
+}
+
+
+
+
+  
   body {font-family: Arial;}
 
     /* Style the tab */
@@ -57,12 +93,11 @@
   <div class="row">
     <div class="col-sm-6">
       <h5>camera {{video_url1}}:</h5>
-      <img id="fixed-width-image" style="-webkit-user-select: none;" src="video_feed?cam=0">
+      <img style="-webkit-user-select: none; width:100%" src="video_feed?cam=0">
     </div>
     <div class="col-sm-6">      
          <div class="tab">
             <button class="tablinks" onclick="openCity(event, 'Eventsnotifyer0')">Events notifyer</button>
-            <button class="tablinks" onclick="openCity(event, 'Downloadimages0')">Download images</button>
             <button class="tablinks" onclick="openCity(event, 'Objectsfilter0')">Objects filter</button>
          </div>
           <div id="Eventsnotifyer0" class="tabcontent" style="display: block;">
@@ -95,14 +130,21 @@
               <input type="text"placeholder="" min="0" max="100" />
           </div>
 
-          <div id="Downloadimages0" class="tabcontent">
-            <h3>Download images</h3>
-            <p>Download images.</p> 
-          </div>
-
-          <div id="Objectsfilter0" class="tabcontent">
-            <h3>Objects filter</h3>
-            <p>Objects filter.</p>
+          <div id="Objectsfilter0">
+            <p>Click on the image to enlarge it.</p>            
+            <div id="thumbwrap" class="slider">
+              {% for result in images_filenames[0] %}
+                <a class="thumb" target="_blank" href="{{img_folder}}{{result}}">
+                  <img src="{{img_folder}}{{result}}" style="width:25px;height:25px;"  alt="">
+                  <span><img src="{{img_folder}}{{result}}" alt=""></span>
+                </a>
+                <!--
+                <a target="_blank" href="{{img_folder}}{{result }}">
+                  <img src="{{img_folder}}{{result}}" alt="timestamp" style="width:50px">
+                </a>
+                -->
+              {% endfor %}
+            </div> 
           </div>
   </div>
 
@@ -113,12 +155,11 @@
   <div class="row">
     <div class="col-sm-6">
       <h5> camera {{video_url2}}:</h5>
-      <img id="fixed-width-image" style="-webkit-user-select: none;" src="video_feed?cam=1"/>
+      <img style="-webkit-user-select: none; width:100%" src="video_feed?cam=1"/>
     </div>
     <div class="col-sm-6">      
          <div class="tab">
             <button class="tablinks" onclick="openCity(event, 'Eventsnotifyer1')">Events notifyer</button>
-            <button class="tablinks" onclick="openCity(event, 'Downloadimages1')">Download images</button>
             <button class="tablinks" onclick="openCity(event, 'Objectsfilter1')">Objects filter</button>
          </div>
           <div id="Eventsnotifyer1" class="tabcontent" style="display: block;">
@@ -151,14 +192,16 @@
               <input type="text"placeholder="" min="0" max="100" />
           </div>
 
-          <div id="Downloadimages1" class="tabcontent">
-            <h3>Download images</h3>
-            <p>Download images.</p> 
-          </div>
-
           <div id="Objectsfilter1" class="tabcontent">
-            <h3>Objects filter</h3>
-            <p>Objects filter.</p>
+            <p>Click on the image to enlarge it.</p>            
+            <div id="thumbwrap" class="slider">
+              {% for result in images_filenames[1] %}
+                <a class="thumb" target="_blank" href="{{img_folder}}{{result}}">
+                  <img src="{{img_folder}}{{result}}" style="width:25px;height:25px;"  alt="">
+                  <span><img src="{{img_folder}}{{result}}" alt=""></span>
+                </a>
+              {% endfor %}
+            </div> 
           </div>
   </div>
   

@@ -178,17 +178,17 @@ class Screen_statistic(object):
 
 
 
-    def refresh(self, hashes,cam):
+    def refresh(self, hashes, filenames, cam):
         #print(self.frame_counter)
         if(self.frame_counter > SCENE_FRAMES ):
             self.frame_counter = 0
             self.images_counter = IMAGES
         
-        ret = self.getParametersJSON(hashes, cam)
+        ret = self.getParametersJSON(hashes, filenames, cam)
         
         return ret
 
-    def getParametersJSON(self, hashes,  cam):
+    def getParametersJSON(self, hashes, filenames, cam):
         ret =[]
         for key in hashes:
             #print(images[key])
@@ -197,13 +197,13 @@ class Screen_statistic(object):
             trace.name = key
             trace.cam = cam
             tm = strftime("%H:%M:%S", localtime())
-
+            trace.filenames = filenames.get(key,[])
             trace.x = tm
             trace.y = len(hashes[key])
             trace.text = key
            
             ret.append(trace.__dict__)
-            #print( trace.__dict__ )
+            print( trace.__dict__ )
         return ret
 
 
@@ -215,7 +215,7 @@ class Trace(dict):
         self.y = 0
         self.name = ''
         self.text = ''
-
+        self.filenames = []  
     def toJSON(self):
             return json.dumps(self, default=lambda o: o.__dict__,
                 sort_keys=True, indent=4)
