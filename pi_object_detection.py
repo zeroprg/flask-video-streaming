@@ -143,7 +143,7 @@ def get_frame(vss):
                             if not key in LOOKED1: continue
                             if (hashes[cam]).get(key, None)== None:
                                 hashes[cam][key] = [hash]
-                                filename = key+str(cam)+'_'+ str(hash)+'.jpg'
+                                filename = str(cam)+'_' + key +'_'+ str(time.time()).replace(".","_")+ '.jpg'
                                 filenames[cam][key] = [filename]
                                 continue
                             #_hashes = []
@@ -158,7 +158,7 @@ def get_frame(vss):
                                 hashes[cam][key].append(hash)
                                 if key in subject_of_interes:
                                     #use it if you 100% sure you need save this image on disk
-                                    filename = key+str(cam)+'_'+ str(time.time()).replace(".","_")+ '.jpg'
+                                    filename = str(cam)+'_' + key +'_'+ str(time.time()).replace(".","_")+ '.jpg'
                                     filenames[cam][key].append(filename)
                                     cv2.imwrite(IMAGES_FOLDER + filename,crop_img_data)
                                     imgb = crop_img_data.tobytes()
@@ -359,17 +359,12 @@ app = Flask(__name__, static_url_path='/static')
 
 # Set the directory you want to start from
 def traverse_dir(rootDir="."):
-    fnames = [] 
-    for i in range(0,1):fnames.append([])
-    
+    fnames = []    
     for dirName, subdirList, fileList in os.walk(rootDir):
         #print('Found directory: %s' % dirName)
         for fname in fileList:
-            #print('\t%s' % fname)
-            for i in range(0,1):
-                if fname.startswith("cam" + str(i)): 
-                    fnames[i].append(fname)
-    print('fnames:', fnames)            
+            fnames.append(fname)
+                
     return fnames        
 
 @app.route('/static/<path:filename>')
@@ -383,7 +378,9 @@ def index():
     video_url1 = args['video_file']
     if args.get('video_file2',None) != None:
         video_url2 = args['video_file2']             
-    images_filenames = traverse_dir(IMAGES_FOLDER)         
+    images_filenames = traverse_dir(IMAGES_FOLDER)
+
+    print(images_filenames)
     img_folder = IMAGES_FOLDER
     return render_template('index.html', **locals())
 

@@ -13,9 +13,9 @@
 	overflow: hidden;
     resize: both;
     width:  100%;
-    height: 100px; 
+    height: 100%; 
     max-width: 500px;
-    max-height: 500px;
+    max-height: 400px;
 }
 .thumb {
 	float:left; /* must be floated for same cross browser position of larger image */
@@ -133,25 +133,23 @@
           <div id="Objectsfilter0">
             <p>Click on the image to enlarge it.</p>            
             <div id="thumbwrap" class="slider">
-              {% for result in images_filenames[0] %}
+              {% for result in images_filenames %}
+                {% if result.startswith("0_") %}
                 <a class="thumb" target="_blank" href="{{img_folder}}{{result}}">
                   <img src="{{img_folder}}{{result}}" style="width:25px;height:25px;"  alt="">
                   <span><img src="{{img_folder}}{{result}}" alt=""></span>
                 </a>
-                <!--
-                <a target="_blank" href="{{img_folder}}{{result }}">
-                  <img src="{{img_folder}}{{result}}" alt="timestamp" style="width:50px">
-                </a>
-                -->
+                {% endif %}
               {% endfor %}
             </div> 
           </div>
   </div>
 
-  </div>
-   
-
   <div id= "myDiv0" class="col-sm-12" style="height:250px; width:100%"/>
+  </div>
+  
+
+  
   <div class="row">
     <div class="col-sm-6">
       <h5> camera {{video_url2}}:</h5>
@@ -195,11 +193,13 @@
           <div id="Objectsfilter1" class="tabcontent">
             <p>Click on the image to enlarge it.</p>            
             <div id="thumbwrap" class="slider">
-              {% for result in images_filenames[1] %}
+              {% for result in images_filenames %}
+                {% if result.startswith("1_") %}
                 <a class="thumb" target="_blank" href="{{img_folder}}{{result}}">
                   <img src="{{img_folder}}{{result}}" style="width:25px;height:25px;"  alt="">
                   <span><img src="{{img_folder}}{{result}}" alt=""></span>
                 </a>
+                {% endif %}
               {% endfor %}
             </div> 
           </div>
