@@ -89,8 +89,7 @@ def get_frame(vss):
     while  True:
       logging.debug(j)
       for cam in range(len(vss)):
-            
-	    # grab the frame from the threaded video stream, resize it, and
+	        # grab the frame from the threaded video stream, resize it, and
             # grab its imensions
             flag,frame = vss[cam].read()
             
@@ -360,9 +359,9 @@ app = Flask(__name__, static_url_path='/static')
 
 
 # Set the directory you want to start from
-def traverse_dir(rootDir=".", wildcard="*"):
-    print("Test!!!!")
-    return sorted(glob.glob(rootDir + wildcard), key=os.path.getmtime)
+def traverse_dir(rootDir=".", wildcard="*"):    
+    return sorted(glob.glob(rootDir + wildcard), key=os.path.getmtime, reverse=True)
+    
 
 
 @app.route('/static/<path:filename>')
@@ -379,9 +378,9 @@ def index():
     start = int(start)
     video_urls=videos
     images_filenames=[]
-    for i in range(0,1):
-        images_filenames += traverse_dir(IMAGES_FOLDER,str(i)+"_*")[start:start+IMG_PAGINATOR]
-    
+    #for i in range(0,1):
+    images_filenames = traverse_dir(IMAGES_FOLDER,str(0)+"_*")[start:start+IMG_PAGINATOR]
+    images_filenames.extend( traverse_dir(IMAGES_FOLDER,str(1)+"_*")[start:start+IMG_PAGINATOR])
     img_folder = IMAGES_FOLDER
     img_paginator = IMG_PAGINATOR
     return render_template('index.html', **locals())
@@ -394,7 +393,13 @@ def moreimgs():
     return Response( gen_array_of_imgs(cam,start,direction), mimetype='text/plain')
 
 def gen_array_of_imgs(cam,start,direction):
-    images_filenames =  traverse_dir(IMAGES_FOLDER, str(cam)+"_*")[start:start+direction*IMG_PAGINATOR]    
+    a = start
+    b = start+direction*IMG_PAGINATOR
+    if start > start+direction*IMG_PAGINATOR: 
+        b = start
+        a = start+direction*IMG_PAGINATOR
+
+    images_filenames =  traverse_dir(IMAGES_FOLDER, str(cam)+"_*")[a:b]    
     x = json.dumps(images_filenames) 
     return x
 

@@ -25,6 +25,7 @@
 }
 .thumb img { 
 	border:1px solid #000;
+	
 	vertical-align:bottom;
 }
 .thumb:hover {
@@ -132,15 +133,15 @@
 
           <div id="Objectsfilter{{cam}}" class="tabcontent" style="display: block;">
             <p>
-                <button type="button" class ="moreimgs"  onclick="showmore(-1,{{cam}})">&lt;&lt;&lt;</button>
-                <button type="button" class ="moreimgs"  onclick="showmore(1,{{cam}})">&gt;&gt;&gt;</button>
-            </p>          
+                <button type="button" class ="moreimgs"  onclick="showmore(1,{{cam}})">Rewind</button>
+                <button type="button" class ="moreimgs"  onclick="showmore(-1,{{cam}})">Forward</button>
+              </p>          
             <div id="cam{{cam}}" class="slider,thumbwrap">
               {% for result in images_filenames %}
                 {% if result.startswith(img_folder + cam + "_") %}
                 <a class="thumb" target="_blank" href="{{result}}">
-                  <img src="{{result}}" style="width:25px;"  alt="">
-                  <span><img src="{{result}}" alt=""></span>
+                  <img src="{{result}}" style="width:50px;max-height:70px;"  alt="">
+                  <span><img src="{{result}}" style="width:250px;"   alt=""></span>
                 </a>
                 {% endif %}
               {% endfor %}
@@ -175,6 +176,8 @@ var start = 0
 function showmore(direction, cam)
 {
   //  var cam = $(this).attr("data-cam"); 
+
+   if (start + direction*{{img_paginator}} < 0) return;
   
     $.ajax({
       url: "/moreimgs?start=" + start + "&cam=" + cam + "&direction="+direction,
@@ -182,7 +185,7 @@ function showmore(direction, cam)
       success: function(response) {
        // parse array of images filenames
        console.log(response)
-       start += {{img_paginator}}
+       start = start + direction*{{img_paginator}}
        filenames = JSON.parse(response)
        a = ''
        for (i = 0; i < filenames.length; i++) {
@@ -192,8 +195,8 @@ function showmore(direction, cam)
           
           //_date =  new Date(parseFloat(before_last_one +'.'+last_one.substring(0, last_one.length -4))).toISOString();
             a +='<a class="thumb" target="_blank" href="' + filenames[i]+ '">' +
-                  '<img src="'+filenames[i]+ '" style="width:25px;">' +
-                  '<span><img src="' + filenames[i]+ '" ></span>'+
+                  '<img src="'+filenames[i]+ '" style="width:50px;max-height: 70px;">' +
+                  '<span><img src="' + filenames[i]+ '" style="width:250px;"></span>'+
                 '</a>'
         }
 
@@ -206,6 +209,7 @@ function showmore(direction, cam)
     });
 
 };
+
 
           MAX_BUFFER = 10000
           BEAT = 10
