@@ -2,11 +2,14 @@
 # import the necessary packages
 #from skimage.measure import structural_similarity as ssim
 import time
+import logging
+
 from time import localtime, strftime
 import cv2
 import numpy as np
 import math
 import dhash
+
 
 SCENE_FRAMES = 5
 hash_delta = 65
@@ -30,14 +33,14 @@ def mse(imageA, imageB):
 
 def dsize(img,**options):
     height, width = img.shape[:2]
-    print ("Image height: {0} and width: {1} before resizing ".format( height, width) )
+    logging.debug ("Image height: {0} and width: {1} before resizing ".format( height, width) )
     original_height = options.get("original_height")
     if( original_height and original_height > 0 ):        
         ratio = height/original_height
         dsize = (int(height /ratio), int(width /ratio))
     else:
         dsize = (height, width)
-    print ("Image height: {0} and width: {1} after resizing ".format( height, width) ) 
+    logging.debug ("Image height: {0} and width: {1} after resizing ".format( height, width) ) 
     return dsize
 
 """ Resize image to initial height """
@@ -60,7 +63,7 @@ class Screen_statistic(object):
         if( dim[0] < 30 or dim[1] < 30 ): return True
         hashes = image_hashes[key]
         imageHash =  hash # dhash_own(image)
-        print("image_hash:" , image_hash)
+        logging.debug("image_hash:" , image_hash)
         self.image_hashes[key].append(imageHash) 
         if(len(hashes) == 0 ):
             return False
@@ -68,7 +71,7 @@ class Screen_statistic(object):
         for _imageHash in hashes:
             delta = dhash.get_num_bits_different(imageHash, _imageHash)
             if( delta < hash_delta):
-                #print( key, delta ) 
+                #logging.debug( key, delta ) 
                 return True
 #            elif ( compare_ssim(_image , image) > ssim_delta ):
 #                return True
@@ -98,8 +101,8 @@ class Screen_statistic(object):
                  
            
                  if(orig_key == key ):
-                     #print(orig_value)
-                     #print("len(orig_value)", len(orig_value))
+                     #logging.debug(orig_value)
+                     #logging.debug("len(orig_value)", len(orig_value))
                      temp=[]  
                      for _value in value:
                          Break = False
@@ -114,12 +117,12 @@ class Screen_statistic(object):
                              #mse2 = _orig_value[2] - _value[2]
                              mse3 = _orig_value[3] - _value[3]
                              #mse4 = _orig_value[4] - _value[4]
-                             #print(mse)
+                             #logging.debug(mse)
                              # the same
                              mse = math.sqrt((mse1*mse1 +  mse3*mse3 )/2)
-                             #print(mse)
+                             #logging.debug(mse)
                              if(mse < mse_delta):
-                                 #print(mse)
+                                 #logging.debug(mse)
                                  #if(self.isAnySimularImageByHashCode(self.image_hashes, key,_value[5])):
                                  #the_same +=1
                                  Break = True
@@ -127,13 +130,13 @@ class Screen_statistic(object):
                          if not Break: temp.append(_value)
                      #new_ones = len(value) - the_same
                      #self.images_counter[key] += new_ones
-                     #print("temp:", temp)            
-                     #print("len(temp)", len(temp))
+                     #logging.debug("temp:", temp)            
+                     #logging.debug("len(temp)", len(temp))
                      
                      orig_value.extend(temp)
                      
-                     #print("orig_value:", orig_value)            
-                     #print("len(orig_value)", len(orig_value))
+                     #logging.debug("orig_value:", orig_value)            
+                     #logging.debug("len(orig_value)", len(orig_value))
                      
                      self.images_counter[key] =  len(orig_value)
 
@@ -179,7 +182,7 @@ class Screen_statistic(object):
 
 
     def refresh(self, hashes, filenames, cam):
-        #print(self.frame_counter)
+        #logging.debug(self.frame_counter)
         if(self.frame_counter > SCENE_FRAMES ):
             self.frame_counter = 0
             self.images_counter = IMAGES
@@ -191,7 +194,7 @@ class Screen_statistic(object):
     def getParametersJSON(self, hashes, filenames, cam):
         ret =[]
         for key in hashes:
-            #print(images[key])
+            #logging.debug(images[key])
             if len(hashes[key]) == 0: continue
             trace = Trace()
             trace.name = key
@@ -203,7 +206,7 @@ class Screen_statistic(object):
             trace.text = key
            
             ret.append(trace.__dict__)
-            print( trace.__dict__ )
+            logging.debug( trace.__dict__ )
         return ret
 
 

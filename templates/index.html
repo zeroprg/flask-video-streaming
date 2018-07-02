@@ -8,13 +8,13 @@
   <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
   <style>
 
-#thumbwrap {
+.thumbwrap {
 	margin:5px auto;
 	overflow: hidden;
     resize: both;
     width:  100%;
     height: 100%; 
-    max-width: 500px;
+    max-width: 550px;
     max-height: 400px;
 }
 .thumb {
@@ -89,18 +89,18 @@
 <div class="container">
   <h1>Artificial Intellegence Cameras </h1>
   <p>This example demonstrates AI image recognizing  web server works with any IP Cameras feed.</p>      
-    
+  {% for cam,video_url in video_urls %}
   <div class="row">
     <div class="col-sm-6">
-      <h5>camera {{video_url1}}:</h5>
-      <img style="-webkit-user-select: none; width:100%" src="video_feed?cam=0">
+      <h5>camera URL: {{video_url}}:</h5>
+      <img style="-webkit-user-select: none; width:100%" src="video_feed?cam={{cam}}">
     </div>
     <div class="col-sm-6">      
          <div class="tab">
-            <button class="tablinks" onclick="openCity(event, 'Eventsnotifyer0')">Events notifyer</button>
-            <button class="tablinks" onclick="openCity(event, 'Objectsfilter0')">Objects filter</button>
+            <button class="tablinks" onclick="openTab(event, 'Eventsnotifyer{{cam}}')">Events notifyer</button>
+            <button class="tablinks" onclick="openTab(event, 'Objectsfilter{{cam}}')">Objects filter</button>
          </div>
-          <div id="Eventsnotifyer0" class="tabcontent" style="display: block;">
+          <div id="Eventsnotifyer{{cam}}" class="tabcontent">
             <h3>Events notifyer</h3>
             <p>Specify Events which will triger eMail or SMS/Voice notify.</p>
               if <select name="objects">
@@ -130,89 +130,32 @@
               <input type="text"placeholder="" min="0" max="100" />
           </div>
 
-          <div id="Objectsfilter0">
-            <p>Click on the image to enlarge it.</p>            
-            <div id="thumbwrap" class="slider">
+          <div id="Objectsfilter{{cam}}" class="tabcontent" style="display: block;">
+            <p>
+                <button type="button" class ="moreimgs"  onclick="showmore(-1,{{cam}})">&lt;&lt;&lt;</button>
+                <button type="button" class ="moreimgs"  onclick="showmore(1,{{cam}})">&gt;&gt;&gt;</button>
+            </p>          
+            <div id="cam{{cam}}" class="slider,thumbwrap">
               {% for result in images_filenames %}
-                {% if result.startswith("0_") %}
-                <a class="thumb" target="_blank" href="{{img_folder}}{{result}}">
-                  <img src="{{img_folder}}{{result}}" style="width:25px;height:25px;"  alt="">
-                  <span><img src="{{img_folder}}{{result}}" alt=""></span>
+                {% if result.startswith(img_folder + cam + "_") %}
+                <a class="thumb" target="_blank" href="{{result}}">
+                  <img src="{{result}}" style="width:25px;"  alt="">
+                  <span><img src="{{result}}" alt=""></span>
                 </a>
                 {% endif %}
               {% endfor %}
             </div> 
           </div>
-  </div>
-
-  <div id= "myDiv0" class="col-sm-12" style="height:250px; width:100%"/>
-  </div>
-  
-
-  
-  <div class="row">
-    <div class="col-sm-6">
-      <h5> camera {{video_url2}}:</h5>
-      <img style="-webkit-user-select: none; width:100%" src="video_feed?cam=1"/>
     </div>
-    <div class="col-sm-6">      
-         <div class="tab">
-            <button class="tablinks" onclick="openCity(event, 'Eventsnotifyer1')">Events notifyer</button>
-            <button class="tablinks" onclick="openCity(event, 'Objectsfilter1')">Objects filter</button>
-         </div>
-          <div id="Eventsnotifyer1" class="tabcontent" style="display: block;">
-            <h3>Events notifyer</h3>
-            <p>Specify Events which will triger eMail or SMS/Voice notify.</p>
-              if <select name="objects">
-                <option value="person">person</option>
-                <option value="car">car</option>
-                <option value="dog">dog</option>
-                <option value="cat">cat</option>
-              </select> and 
-              <select name="quantity">
-                <option value="quantity">quantity</option>
-                <option value="time">time(sec.)</option>
-              </select> 
-              <select name="&gt;>">
-                <option value="&gt;">&gt;</option>
-                <option value="&lt;">&lt;</option>
-                <option value="=">=</option>
-              </select>              
-              <input type="number" id="quantity" name="quantity" placeholder="0" min="0" max="100" />
-              <br>
-              Notify me by 
-              <select name="eMail;>">
-                <option value="email;">email</option>
-                <option value="sms">SMS</option>
-                <option value="voice">voice</option>
-              </select> 
-              :
-              <input type="text"placeholder="" min="0" max="100" />
-          </div>
-
-          <div id="Objectsfilter1" class="tabcontent">
-            <p>Click on the image to enlarge it.</p>            
-            <div id="thumbwrap" class="slider">
-              {% for result in images_filenames %}
-                {% if result.startswith("1_") %}
-                <a class="thumb" target="_blank" href="{{img_folder}}{{result}}">
-                  <img src="{{img_folder}}{{result}}" style="width:25px;height:25px;"  alt="">
-                  <span><img src="{{img_folder}}{{result}}" alt=""></span>
-                </a>
-                {% endif %}
-              {% endfor %}
-            </div> 
-          </div>
-  </div>
-  
-  <div id= "myDiv1" class="col-sm-12" style="height:250px; width:100%"/>
-
+    <div id= "myDiv{{cam}}" class="col-sm-12" style="height:250px; width:100%"></div>
+ </div>
+ {% endfor %}
 </div>
 
 
 
 <script>
-function openCity(evt, cityName) {
+function openTab(evt, cityName) {
     var i, tabcontent, tablinks;
     tabcontent = document.getElementsByClassName("tabcontent");
     for (i = 0; i < tabcontent.length; i++) {
@@ -228,10 +171,41 @@ function openCity(evt, cityName) {
 </script>    
 <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
 <script>
-              //var r2 = new XMLHttpRequest(); 
-              //r2.open('GET', "{{ url_for('video_feed') }}", true);
-              //r2.send();
-              //r.onreadystatechange
+var start = 0
+function showmore(direction, cam)
+{
+  //  var cam = $(this).attr("data-cam"); 
+  
+    $.ajax({
+      url: "/moreimgs?start=" + start + "&cam=" + cam + "&direction="+direction,
+      type: "get",      
+      success: function(response) {
+       // parse array of images filenames
+       console.log(response)
+       start += {{img_paginator}}
+       filenames = JSON.parse(response)
+       a = ''
+       for (i = 0; i < filenames.length; i++) {
+          _filename = filenames[i].split("_");
+          last_one = _filename[_filename.length -1 ]
+          before_last_one = _filename[_filename.length - 2 ]
+          
+          //_date =  new Date(parseFloat(before_last_one +'.'+last_one.substring(0, last_one.length -4))).toISOString();
+            a +='<a class="thumb" target="_blank" href="' + filenames[i]+ '">' +
+                  '<img src="'+filenames[i]+ '" style="width:25px;">' +
+                  '<span><img src="' + filenames[i]+ '" ></span>'+
+                '</a>'
+        }
+
+
+        $('#cam' + cam ).html(a);
+      },
+      error: function(xhr) {
+        //Do Something to handle error
+      }
+    });
+
+};
 
           MAX_BUFFER = 10000
           BEAT = 10
