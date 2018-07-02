@@ -89,7 +89,7 @@
 
 <div class="container">
   <h1>Artificial Intellegence Cameras </h1>
-  <p>This example demonstrates AI image recognizing  web server works with any IP Cameras feed.</p>      
+  <p>This example demonstrates AI image recognizing  web server works with any IP Cameras feed.More details on <a href="http://aicameras.ca">http://aicameras.ca</a></p>      
   {% for cam,video_url in video_urls %}
   <div class="row">
     <div class="col-sm-6">
@@ -134,7 +134,7 @@
           <div id="Objectsfilter{{cam}}" class="tabcontent" style="display: block;">
             <p>
                 <button type="button" class ="moreimgs"  onclick="showmore(1,{{cam}})">Rewind</button>
-                <button type="button" class ="moreimgs"  onclick="showmore(-1,{{cam}})">Forward</button>
+                <button type="button" class ="moreimgs"  onclick="showmore(-1,{{cam}})">Forward/Refresh</button>
               </p>          
             <div id="cam{{cam}}" class="slider,thumbwrap">
               {% for result in images_filenames %}
@@ -177,7 +177,7 @@ function showmore(direction, cam)
 {
   //  var cam = $(this).attr("data-cam"); 
 
-   if (start + direction*{{img_paginator}} < 0) return;
+    if (start + direction*{{img_paginator}} < 0) direction = -direction
   
     $.ajax({
       url: "/moreimgs?start=" + start + "&cam=" + cam + "&direction="+direction,
@@ -212,7 +212,7 @@ function showmore(direction, cam)
 
 
           MAX_BUFFER = 10000
-          BEAT = 10
+          BEAT = 1
           PLOT_TYPE = 'bar'
           
           window.setInterval(function(){
