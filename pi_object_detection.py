@@ -159,7 +159,8 @@ def get_frame(vss):
                                 hashes[cam][key].append(hash)
                                 if key in subject_of_interes:
                                     #use it if you 100% sure you need save this image on disk
-                                    filename = str(cam)+'_' + key +'_'+ str(time.time()).replace(".","_")+ '.jpg'
+                                    #filename = str(cam)+'_' + key +'_'+ str(time.time()).replace(".","_")+ '.jpg'
+                                    filename = str(cam)+'_' + key +'_'+ str(hash)+ '.jpg'
                                     filenames[cam][key].append(filename)
                                     cv2.imwrite(IMAGES_FOLDER + filename,crop_img_data)
                                     imgb = crop_img_data.tobytes()
