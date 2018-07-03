@@ -360,8 +360,16 @@ app = Flask(__name__, static_url_path='/static')
 
 
 # Set the directory you want to start from
-def traverse_dir(rootDir=".", wildcard="*"):    
-    return sorted(glob.glob(rootDir + wildcard), key=os.path.getmtime, reverse=True)
+def traverse_dir(start, end, rootDir=".", wildcard="*"):    
+    ret = []
+    i = 0
+    for  iter in glob.iglob(rootDir + wildcard,recursive= False):
+        if i < start : continue
+        ret.append(iter)
+        if i >= end: break
+        i+=1
+        
+    return sorted(ret, key=os.path.getmtime, reverse=True)
     
 
 
@@ -380,8 +388,8 @@ def index():
     video_urls=videos
     images_filenames=[]
     #for i in range(0,1):
-    images_filenames = traverse_dir(IMAGES_FOLDER,str(0)+"_*")[start:start+IMG_PAGINATOR]
-    images_filenames.extend( traverse_dir(IMAGES_FOLDER,str(1)+"_*")[start:start+IMG_PAGINATOR])
+    images_filenames = traverse_dir( start, start + IMG_PAGINATOR, IMAGES_FOLDER,str(0)+"_*")
+    images_filenames.extend( traverse_dir(start, start + IMG_PAGINATOR, IMAGES_FOLDER,str(1)+"_*" ))
     img_folder = IMAGES_FOLDER
     img_paginator = IMG_PAGINATOR
     return render_template('index.html', **locals())
@@ -400,7 +408,7 @@ def gen_array_of_imgs(cam,start,direction):
         b = start
         a = start+direction*IMG_PAGINATOR
 
-    images_filenames =  traverse_dir(IMAGES_FOLDER, str(cam)+"_*")[a:b]    
+    images_filenames =  traverse_dir(a,b, IMAGES_FOLDER, str(cam)+"_*")    
     x = json.dumps(images_filenames) 
     return x
 
