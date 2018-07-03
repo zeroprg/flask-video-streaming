@@ -388,7 +388,7 @@ def index():
     video_urls=videos
     images_filenames=[]
 
-    delete_file_older_then(IMAGES_FOLDER, 600)
+    delete_file_older_then(IMAGES_FOLDER, 15000)
 
     #for i in range(0,1):
     images_filenames = traverse_dir( start, start + IMG_PAGINATOR, IMAGES_FOLDER,str(0)+"_*")
@@ -467,4 +467,4 @@ def params_feed():
 
 if (__name__ == '__main__'):
     start()
-    app.run(host='0.0.0.0', threaded=True)
+    app.run(host='0.0.0.0', debug = True )#threaded=True)

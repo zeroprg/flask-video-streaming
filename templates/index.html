@@ -4,86 +4,9 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+  <link rel="stylesheet" href="static/css/main.css">
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
-  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
-  <style>
-
-.thumbwrap {
-	margin:5px auto;
-	overflow: hidden;
-    resize: both;
-    width:  100%;
-    height: 100%; 
-    max-width: 550px;
-    max-height: 400px;
-}
-.thumb {
-	float:left; /* must be floated for same cross browser position of larger image */
-	position:relative;
-	margin:3px;
-	
-}
-.thumb img { 
-	border:1px solid #000;
-	
-	vertical-align:bottom;
-}
-.thumb:hover {
-	border:0; /* IE6 needs this to show large image */
-	z-index:1;
-}
-.thumb span { 
-	position:absolute;
-	visibility:hidden;
-}
-.thumb:hover span { 
-	visibility:visible;
-	top:37px; left:37px; 
-}
-
-
-
-
-  
-  body {font-family: Arial;}
-
-    /* Style the tab */
-    .tab {
-        overflow: hidden;
-        border: 1px solid #ccc;
-        background-color: #f1f1f1;
-    }
-
-    /* Style the buttons inside the tab */
-    .tab button {
-        background-color: inherit;
-        float: left;
-        border: none;
-        outline: none;
-        cursor: pointer;
-        padding: 14px 16px;
-        transition: 0.3s;
-        font-size: 17px;
-    }
-
-    /* Change background color of buttons on hover */
-    .tab button:hover {
-        background-color: #ddd;
-    }
-
-    /* Create an active/current tablink class */
-    .tab button.active {
-        background-color: #ccc;
-    }
-
-    /* Style the tab content */
-    .tabcontent {
-        display: none;
-        padding: 6px 12px;
-        border: 1px solid #ccc;
-        border-top: none;
-    }
-  </style>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script> 
 </head>
 <body>
 
@@ -99,9 +22,9 @@
     <div class="col-sm-6">      
          <div class="tab">
             <button class="tablinks" onclick="openTab(event, 'Eventsnotifyer{{cam}}')">Events notifyer</button>
-            <button class="tablinks" onclick="openTab(event, 'Objectsfilter{{cam}}')">Objects filter</button>
+            <button class="tablinks" onclick="openTab(event, 'Objectsfilter{{cam}}')">Founded Objects</button>
          </div>
-          <div id="Eventsnotifyer{{cam}}" class="tabcontent">
+          <div id="Eventsnotifyer{{cam}}" class="tabcontent" style="display: block;">
             <h3>Events notifyer</h3>
             <p>Specify Events which will triger eMail or SMS/Voice notify.</p>
               if <select name="objects">
@@ -128,23 +51,33 @@
                 <option value="voice">voice</option>
               </select> 
               :
-              <input type="text"placeholder="" min="0" max="100" />
+              <input type="text" placeholder="" min="0" max="100" />
           </div>
 
-          <div id="Objectsfilter{{cam}}" class="tabcontent" style="display: block;">
-            <p>
-                <button type="button" class ="moreimgs"  onclick="showmore(1,{{cam}})">Rewind</button>
-                <button type="button" class ="moreimgs"  onclick="showmore(-1,{{cam}})">Forward/Refresh</button>
-              </p>          
-            <div id="cam{{cam}}" class="slider,thumbwrap">
-              {% for result in images_filenames %}
-                {% if result.startswith(img_folder + cam + "_") %}
+          <div id="Objectsfilter{{cam}}" class="tabcontent" >
+            <!-- Header -->
+            <div class="header" id="myHeader">
+              <button class="btn"  onclick="showmore(1,{{cam}});four();"><<</button>
+              <button class="btn"  onclick="four()">.</button>
+              <button class="btn"  onclick="showmore(-1,{{cam}};four();)">>></button>
+            </div>          
+          <!-- Photo Grid -->
+          <div id="cam{{cam}}" class="row">
+           {% set i = 0 %} 
+           {% for result in images_filenames %}
+             {% if result.startswith(img_folder + cam + "_") %}
+                {% if i%3 == 0 %}
+                   <div class="column">
+                {% endif %}   
                 <a class="thumb" target="_blank" href="{{result}}">
-                  <img src="{{result}}" style="width:50px;max-height:70px;"  alt="">
-                  <span><img src="{{result}}" style="width:250px;"   alt=""></span>
+                  <img src="{{result}}" style="width:100%" alt="">
                 </a>
-                {% endif %}
-              {% endfor %}
+                {% if i%3 == 0 %}
+                   </div>
+                {% endif %}   
+                {% set i= i + 1%}
+              {% endif %}
+           {% endfor %}
             </div> 
           </div>
     </div>
@@ -154,9 +87,11 @@
 </div>
 
 
+<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
 
 <script>
-function openTab(evt, cityName) {
+
+function openTab(evt, tabName) {
     var i, tabcontent, tablinks;
     tabcontent = document.getElementsByClassName("tabcontent");
     for (i = 0; i < tabcontent.length; i++) {
@@ -166,12 +101,37 @@ function openTab(evt, cityName) {
     for (i = 0; i < tablinks.length; i++) {
         tablinks[i].className = tablinks[i].className.replace(" active", "");
     }
-    document.getElementById(cityName).style.display = "block";
+    document.getElementById(tabName).style.display = "block";
     evt.currentTarget.className += " active";
 }
-</script>    
-<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
-<script>
+
+// Get the elements with class="column"
+var elements = document.getElementsByClassName("column");
+
+// Declare a loop variable
+var i;
+
+
+// Four images side by side
+function four() {
+    for (i = 0; i < elements.length; i++) {
+        elements[i].style.msFlex = "25%";  // IE10
+        elements[i].style.flex = "25%";
+    }
+}
+
+// Add active class to the current button (highlight it)
+var header = document.getElementById("myHeader");
+var btns = header.getElementsByClassName("btn");
+for (var i = 0; i < btns.length; i++) {
+  btns[i].addEventListener("click", function() {
+    var current = document.getElementsByClassName("active");
+    current[0].className = current[0].className.replace(" active", "");
+    this.className += " active";
+  });
+}
+
+
 var start = 0
 function showmore(direction, cam)
 {
@@ -187,20 +147,27 @@ function showmore(direction, cam)
        console.log(response)
        start = start + direction*{{img_paginator}}
        filenames = JSON.parse(response)
-       a = ''
+       a =  '<div>';
        for (i = 0; i < filenames.length; i++) {
-          _filename = filenames[i].split("_");
-          last_one = _filename[_filename.length -1 ]
-          before_last_one = _filename[_filename.length - 2 ]
+          //_filename = filenames[i].split("_");
+          //last_one = _filename[_filename.length -1 ];
+          //before_last_one = _filename[_filename.length - 2 ];
           
           //_date =  new Date(parseFloat(before_last_one +'.'+last_one.substring(0, last_one.length -4))).toISOString();
-            a +='<a class="thumb" target="_blank" href="' + filenames[i]+ '">' +
-                  '<img src="'+filenames[i]+ '" style="width:50px;max-height: 70px;">' +
+/*            a +='<a class="thumb" target="_blank" href="' + filenames[i]+ '">' +
+                  '<img src="'+filenames[i]+ '" style="width:35px;max-height: 70px;">' +
                   '<span><img src="' + filenames[i]+ '" style="width:250px;"></span>'+
                 '</a>'
+ */               
+              if( i%3 == 0 ) a += '</div><div class="column">'
+                
+                a+= '<a class="thumb" target="_blank" href="' + filenames[i]+ '">' +
+                        '<img src="' + filenames[i]+ '" style="width:100%;" alt="">' +
+                    '</a>'
+            
+                
         }
-
-
+        a += '</div>'
         $('#cam' + cam ).html(a);
       },
       error: function(xhr) {
@@ -209,7 +176,6 @@ function showmore(direction, cam)
     });
 
 };
-
 
           MAX_BUFFER = 10000
           BEAT = 1
@@ -297,10 +263,8 @@ function showmore(direction, cam)
               title: 'Founded objects per time (6 sec beet)'
           };
 
- 
-      </script>
-
-  </body>
+</script>
 
 
+ </body>
 </html>
