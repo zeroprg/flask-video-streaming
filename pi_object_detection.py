@@ -93,7 +93,7 @@ def get_frame(vss):
             # grab its imensions
             flag,frame = vss[cam].read()
             
-            logging.debug('cam:', cam, 'flag: ' , flag , "vs:",vs)
+            print('cam:', cam, 'flag: ' , flag , "vs:",vs)
             if not flag:
                 vss[cam] = cv2.VideoCapture(videos[cam])
                 continue
@@ -358,18 +358,18 @@ def initialize_video_streams():
 ###################### Flask API #########################
 app = Flask(__name__, static_url_path='/static')
 
+def delete_file_older_then(path, sec):
+    for f in os.listdir(path):
+       if os.stat(os.path.join(path,f)).st_mtime < time.time() - sec:
+          os.remove(os.path.join(path, f))
+
 
 # Set the directory you want to start from
 def traverse_dir(start, end, rootDir=".", wildcard="*"):    
     ret = []
-    i = 0
     for  iter in glob.iglob(rootDir + wildcard,recursive= False):
-        if i < start : continue
         ret.append(iter)
-        if i >= end: break
-        i+=1
-        
-    return sorted(ret, key=os.path.getmtime, reverse=True)
+    return sorted(ret, key=os.path.getmtime, reverse=True)[start:end]
     
 
 
@@ -387,6 +387,9 @@ def index():
     start = int(start)
     video_urls=videos
     images_filenames=[]
+
+    delete_file_older_then(IMAGES_FOLDER, 600)
+
     #for i in range(0,1):
     images_filenames = traverse_dir( start, start + IMG_PAGINATOR, IMAGES_FOLDER,str(0)+"_*")
     images_filenames.extend( traverse_dir(start, start + IMG_PAGINATOR, IMAGES_FOLDER,str(1)+"_*" ))
