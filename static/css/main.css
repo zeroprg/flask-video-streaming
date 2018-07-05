@@ -52,7 +52,7 @@ body {
     padding: 32px;
 }
 
-.row {
+.images_row {
     display: -ms-flexbox; /* IE 10 */
     display: flex;
     -ms-flex-wrap: wrap; /* IE 10 */
