@@ -43,7 +43,7 @@ COLORS = np.random.uniform(0, 255, size=(len(CLASSES), 3))
 
 IMAGES_FOLDER = "static/img/"
 
-VIDEO_FILENAME = 'images'
+DELETE_FILES_LATER = 12 * 60 * 60 # sec 
 ENCODING = "utf-8"
 NUMBER_OF_FILES = 10
 HASH_DELTA = 55
@@ -191,7 +191,7 @@ def get_frame(vss):
             logger.debug('paramsQueue.qsize()',paramsQueue.qsize())  
             if imagesQueue[cam].qsize() > IMAGES_BUFFER:
                 k+=1
-                fetchImagesFromQueueToVideo(VIDEO_FILENAME+str(cam)+'_'+str(k), imagesQueue[cam],(640,480))
+                fetchImagesFromQueueToVideo(IMAGE_FOLDER+str(cam)+'_'+str(k), imagesQueue[cam],(640,480))
                 k %= NUMBER_OF_FILES
             if paramsQueue.qsize() > IMAGES_BUFFER:
                 fetchParamsFromQueuesToDB("dbname")
@@ -368,7 +368,9 @@ app = Flask(__name__, static_url_path='/static')
 def delete_file_older_then(path, sec):
     for f in os.listdir(path):
        if os.stat(os.path.join(path,f)).st_mtime < time.time() - sec:
-          os.remove(os.path.join(path, f))
+          try: 
+            os.remove(os.path.join(path, f))
+          except OSError: pass  
 
 
 # Set the directory you want to start from
@@ -395,7 +397,7 @@ def index():
     video_urls=videos
     images_filenames=[]
 
-    delete_file_older_then(IMAGES_FOLDER, 15000)
+    delete_file_older_then(IMAGES_FOLDER, DELETE_FILES_LATER)
 
     #for i in range(0,1):
     images_filenames = traverse_dir( start, start + IMG_PAGINATOR, IMAGES_FOLDER,str(0)+"_*")
