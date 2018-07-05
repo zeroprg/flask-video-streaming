@@ -24,6 +24,11 @@ import json
 from screen_statistics import Screen_statistic
 from flask import Flask, render_template, Response, request
 import base64
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+
+
 # initialize the list of class labels MobileNet SSD was trained to
 # detect, then generate a set of bounding box colors for each class
 CLASSES = ["background", "aeroplane", "bicycle", "bird", "boat",
@@ -55,8 +60,8 @@ def classify_frame( net, inputQueue, outputQueue):
                 #while not inputQueue.empty():
                 # grab the frame from the input queue, resize it, and
                 # construct a blob from it
-                #logging.debug('inputQueue.qsize()',inputQueue.qsize())
-                #logging.debug('outputQueue.qsize()',outputQueue.qsize())
+                #logger.debug('inputQueue.qsize()',inputQueue.qsize())
+                #logger.debug('outputQueue.qsize()',outputQueue.qsize())
                 frame = inputQueue.get()
                 frame = cv2.resize(frame, (300, 300))
                 cols = frame.shape[1]
@@ -87,7 +92,7 @@ def get_frame(vss):
         hashes.append(LOOKED1)
         filenames.append(LOOKED2)
     while  True:
-      logging.debug(j)
+      logger.debug(j)
       for cam in range(len(vss)):
 	        # grab the frame from the threaded video stream, resize it, and
             # grab its imensions
@@ -102,7 +107,7 @@ def get_frame(vss):
             (fH, fW) = frame.shape[:2]
             # if the output queue *is not* empty, grab the detections
             detections = outputQueue[cam].get()
-            #logging.debug(detections)
+            #logger.debug(detections)
             if detections is not None:
 
                     # loop over the detections
@@ -140,7 +145,7 @@ def get_frame(vss):
                                 
                             key = CLASSES[idx]
                             
-                            logging.debug("cam:", cam, "key:",key,"hash:",hash)
+                            logger.debug("cam:", cam, "key:",key,"hash:",hash)
                             if not key in LOOKED1: continue
                             if (hashes[cam]).get(key, None)== None:
                                 hashes[cam][key] = [hash]
@@ -151,7 +156,7 @@ def get_frame(vss):
                             diffr = 0
                             for _hash in hashes[cam][key]:
                                 delta = dhash.get_num_bits_different(_hash, hash)
-                                #logging.debug("delta: ", delta)
+                                #logger.debug("delta: ", delta)
                                 if delta < HASH_DELTA: break
                                 else: diffr +=1
                             # process further only  if image is really different from other ones   
@@ -167,9 +172,9 @@ def get_frame(vss):
                                     
                                     encoded =  (base64.b64encode(imgb)).decode(ENCODING)
                                     #catchedObjQueue.put( str(cam) + ";" + key + ";" +encoded)
-                                    logging.debug("cam:", cam, "key:", key, "filenames:", filenames[cam][key])
+                                    logger.debug("cam:", cam, "key:", key, "filenames:", filenames[cam][key])
                                     
-                            logging.debug("cam:", cam, "key:", key, "hashes:", hashes[cam][key])
+                            logger.debug("cam:", cam, "key:", key, "hashes:", hashes[cam][key])
                            
                             #label = "{}: {:.2f}%".format(key,confidence * 100)
                             cv2.rectangle(frame, (startX-10, startY-10), (endX+10, endY+10),
@@ -180,10 +185,10 @@ def get_frame(vss):
                                                        
             imagesQueue[cam].put(frame)
             params = scrn_stats.refresh(hashes[cam],filenames[cam], cam)
-            logging.debug(params)
+            logger.info(params)
             #if paramsQueue.qsize()> PARAMS_BUFFER: continue
             paramsQueue.put( params )
-            logging.debug('paramsQueue.qsize()',paramsQueue.qsize())  
+            logger.debug('paramsQueue.qsize()',paramsQueue.qsize())  
             if imagesQueue[cam].qsize() > IMAGES_BUFFER:
                 k+=1
                 fetchImagesFromQueueToVideo(VIDEO_FILENAME+str(cam)+'_'+str(k), imagesQueue[cam],(640,480))
@@ -202,18 +207,18 @@ def get_frame(vss):
     if (__name__ == '__main__'):
     # stop the timer and display FPS information
         fps.stop()
-        logging.debug("[INFO] elapsed time: {:.2f}".format(fps.elapsed()))
-        logging.debug("[INFO] approx. FPS: {:.2f}".format(fps.fps()))
+        logger.debug("[INFO] elapsed time: {:.2f}".format(fps.elapsed()))
+        logger.debug("[INFO] approx. FPS: {:.2f}".format(fps.fps()))
 
 def fetchImagesFromQueueToVideo(filename, imagesQueue, size):
     #fourcc = cv2.VideoWriter_fourcc(*'DIVX')  # 'x264' doesn't work
     #fourcc = cv2.VideoWriter_fourcc(*'MPEG')
     # fourcc = 0x00000021  
-    #logging.debug(fourcc)
+    #logger.debug(fourcc)
     #out = cv2.VideoWriter(filename,fourcc, 29.0, size, False)  # 'False' for 1-ch instead of 3-ch for color
-    #logging.debug(out)
+    #logger.debug(out)
     #fgbg= cv2.createBackgroundSubtractorMOG2()
-    #logging.debug(fgbd)
+    #logger.debug(fgbd)
     while(imagesQueue.qsize() > 2):
     #    fgmask = imagesQueue.get() #fgbg.apply(imagesQueue.get())
          imagesQueue.get()
@@ -234,8 +239,8 @@ def fetchParamsFromQueuesToDB(db):
 def destroy():
 # stop the timer and display FPS information
     fps.stop()
-    logging.debug("[INFO] elapsed time: {:.2f}".format(fps.elapsed()))
-    logging.debug("[INFO] approx. FPS: {:.2f}".format(fps.fps()))
+    logger.debug("[INFO] elapsed time: {:.2f}".format(fps.elapsed()))
+    logger.debug("[INFO] approx. FPS: {:.2f}".format(fps.fps()))
 
     # do a bit of cleanup
     cv2.destroyAllWindows()
@@ -292,7 +297,7 @@ if (__name__ == '__main__'):
 
     args.update(more_args)
 
-    logging.debug(args)
+    logger.debug(args)
 
 
 
@@ -300,14 +305,16 @@ if (__name__ == '__main__'):
 
 def start():
     # load our serialized model from disk
-    logging.debug("[INFO] loading model...")
+    
+    
+    logger.info("[INFO] loading model...")
     net = cv2.dnn.readNetFromCaffe(args["prototxt"], args["model"])
     # construct a child process *indepedent* from our main process of
     # execution
-    logging.debug("[INFO] starting process...")
+    logger.info("[INFO] starting process...")
     # initialize the video stream, allow the cammera sensor to warmup,
     # and initialize the FPS counter
-    logging.debug("[INFO] starting video stream...")
+    logger.info("[INFO] starting video stream...")
     if args['video_file0'] != '':
        p_get_frame = initialize_video_streams()
     cam = 0
@@ -318,22 +325,22 @@ def start():
             p_classifier.daemon = False
             p_classifier.start()
         
-        logging.debug("p_classifiers for cam:",cam, " started")
+        logger.info("p_classifiers for cam:",cam, " started")
         cam += 1
     return p_get_frame
 
 # initialize the video stream, allow the cammera sensor to warmup,
 # and initialize the FPS counter
 def initialize_video_streams():
-    logging.debug("[INFO] starting video stream...")
+    logger.info("[INFO] starting video stream...")
     vs = cv2.VideoCapture(args['video_file0'])
-    logging.debug("[INFO] Video stream 0: ", vs, args['video_file0'])
+    logger.info("[INFO] Video stream 0: ", vs, args['video_file0'])
     vss.append(vs)
     videos.append(("0",args['video_file0']))
     imagesQueue.append(Queue())
     if args.get('video_file1',None) != None:
         vs = cv2.VideoCapture(args['video_file1'])
-        logging.debug("[INFO] Video stream 1: ", vs, args['video_file1'])
+        logger.info("[INFO] Video stream 1: ", vs, args['video_file1'])
         vss.append(vs)
         videos.append(("1",args['video_file1']))
         imagesQueue.append(Queue())
@@ -341,9 +348,9 @@ def initialize_video_streams():
     time.sleep(3.0)
     fps = FPS().start()
     if(vs is None):
-        logging.debug("[INFO] starting video stream(s) failed.")
+        logger.info("[INFO] starting video stream(s) failed.")
     else:
-        logging.debug("[INFO] video stream started.")
+        logger.info("[INFO] video stream started.")
         
     for vs in vss:
         inputQueue.append(Queue())
@@ -426,7 +433,7 @@ def gen(camera):
 def detect(cam):
     """Video streaming generator function."""
     while True:
-         #logging.debug('imagesQueue:', imagesQueue.empty())
+         #logger.debug('imagesQueue:', imagesQueue.empty())
          while(not imagesQueue[cam].empty()):
              iterable = imagesQueue[cam].get()
              iterable = cv2.imencode('.jpg', iterable)[1].tobytes()
@@ -440,7 +447,7 @@ def gen_params():
     while not paramsQueue.empty():
         x += paramsQueue.get()
     x = json.dumps(x) 
-    #logging.debug(x)
+    #logger.debug(x)
     return x
 #def gen_images():
 #   """Imsges streaming generator function."""
