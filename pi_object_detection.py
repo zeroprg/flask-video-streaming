@@ -322,7 +322,7 @@ def start():
         for i in range(THREAD_NUMBERS):
             p_classifier = Process(target=classify_frame, args=(net,inputQueue[cam],
                     outputQueue[cam],))
-            p_classifier.daemon = True
+            p_classifier.daemon = False
             p_classifier.start()
         
         logger.info("p_classifiers for cam:",cam, " started")
