@@ -50,7 +50,7 @@ HASH_DELTA = 55
 PARAMS_BUFFER =  10
 IMAGES_BUFFER = 20
 RECOGNZED_FRAME = 1
-THREAD_NUMBERS  = 1 #must be less then 4 for PI
+THREAD_NUMBERS  = 3 #must be less then 4 for PI
 videos = []
 IMG_PAGINATOR = 50
 def classify_frame( net, inputQueue, outputQueue):
