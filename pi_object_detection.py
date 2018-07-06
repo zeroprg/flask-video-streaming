@@ -191,7 +191,7 @@ def get_frame(vss):
             logger.debug('paramsQueue.qsize()',paramsQueue.qsize())  
             if imagesQueue[cam].qsize() > IMAGES_BUFFER:
                 k+=1
-                fetchImagesFromQueueToVideo(IMAGE_FOLDER+str(cam)+'_'+str(k), imagesQueue[cam],(640,480))
+                fetchImagesFromQueueToVideo(IMAGES_FOLDER+str(cam)+'_'+str(k), imagesQueue[cam],(640,480))
                 k %= NUMBER_OF_FILES
             if paramsQueue.qsize() > IMAGES_BUFFER:
                 fetchParamsFromQueuesToDB("dbname")
