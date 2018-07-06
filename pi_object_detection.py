@@ -98,9 +98,8 @@ def get_frame(vss,video_urls):
             # grab its imensions
             flag,frame = vss[cam].read()
             
-            print('cam:', cam, 'flag: ' , flag , "vs:",vs)
             if not flag:
-                vss[cam] = cv2.VideoCapture(video_urls[cam])
+                vss[cam] = cv2.VideoCapture(video_urls[cam][1])
                 continue
             #frame = imutils.resize(frame, width=640)
             inputQueue[cam].put(frame) 
