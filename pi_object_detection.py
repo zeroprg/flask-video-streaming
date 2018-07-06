@@ -78,7 +78,7 @@ def classify_frame( net, inputQueue, outputQueue):
 
 
 
-def get_frame(vss):
+def get_frame(vss,video_urls):
     # loop over the frames from the video stream
     detections = None
     cols,rows = 0,0
@@ -100,7 +100,7 @@ def get_frame(vss):
             
             print('cam:', cam, 'flag: ' , flag , "vs:",vs)
             if not flag:
-                vss[cam] = cv2.VideoCapture(videos[cam])
+                vss[cam] = cv2.VideoCapture(video_urls[cam])
                 continue
             #frame = imutils.resize(frame, width=640)
             inputQueue[cam].put(frame) 
@@ -357,7 +357,7 @@ def initialize_video_streams():
         outputQueue.append(Queue())
         
     # show the output frame when need to test is working or not
-    p_get_frame = Process(target=get_frame, args=(vss,))
+    p_get_frame = Process(target=get_frame, args=(vss,videos))
     p_get_frame.daemon = True
     p_get_frame.start()
     return p_get_frame
