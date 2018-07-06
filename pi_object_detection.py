@@ -50,7 +50,7 @@ HASH_DELTA = 55
 PARAMS_BUFFER =  10
 IMAGES_BUFFER = 20
 RECOGNZED_FRAME = 1
-THREAD_NUMBERS  = 2 #  must be less then 4 for PI
+THREAD_NUMBERS  = 1 #must be less then 4 for PI
 videos = []
 IMG_PAGINATOR = 50
 def classify_frame( net, inputQueue, outputQueue):
@@ -185,7 +185,7 @@ def get_frame(vss):
                                                        
             imagesQueue[cam].put(frame)
             params = scrn_stats.refresh(hashes[cam],filenames[cam], cam)
-            logger.info(params)
+            logger.debug(params)
             #if paramsQueue.qsize()> PARAMS_BUFFER: continue
             paramsQueue.put( params )
             logger.debug('paramsQueue.qsize()',paramsQueue.qsize())  
@@ -322,7 +322,7 @@ def start():
         for i in range(THREAD_NUMBERS):
             p_classifier = Process(target=classify_frame, args=(net,inputQueue[cam],
                     outputQueue[cam],))
-            p_classifier.daemon = False
+            p_classifier.daemon = True
             p_classifier.start()
         
         logger.info("p_classifiers for cam:",cam, " started")
@@ -358,7 +358,7 @@ def initialize_video_streams():
         
     # show the output frame when need to test is working or not
     p_get_frame = Process(target=get_frame, args=(vss,))
-    p_get_frame.daemon = False
+    p_get_frame.daemon = True
     p_get_frame.start()
     return p_get_frame
 
@@ -367,10 +367,10 @@ app = Flask(__name__, static_url_path='/static')
 
 def delete_file_older_then(path, sec):
     for f in os.listdir(path):
-       if os.stat(os.path.join(path,f)).st_mtime < time.time() - sec:
-          try: 
-            os.remove(os.path.join(path, f))
-          except OSError: pass  
+       try: 
+           if os.stat(os.path.join(path,f)).st_mtime < time.time() - sec:
+                os.remove(os.path.join(path, f))
+       except OSError: pass  
 
 
 # Set the directory you want to start from
