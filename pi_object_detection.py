@@ -42,7 +42,7 @@ subject_of_interes = ["person","car","bus"]
 COLORS = np.random.uniform(0, 255, size=(len(CLASSES), 3))
 
 IMAGES_FOLDER = "static/img/"
-
+DRAW_RECTANGLES = False
 DELETE_FILES_LATER = 12 * 60 * 60 # sec 
 ENCODING = "utf-8"
 NUMBER_OF_FILES = 10
@@ -176,22 +176,24 @@ def get_frame(vss,video_urls):
                             logger.debug("cam:", cam, "key:", key, "hashes:", hashes[cam][key])
                            
                             #label = "{}: {:.2f}%".format(key,confidence * 100)
-                            cv2.rectangle(frame, (startX-10, startY-10), (endX+10, endY+10),
+                            if DRAW_RECTANGLES: cv2.rectangle(frame, (startX-10, startY-10), (endX+10, endY+10),
                                     COLORS[idx], 1)
                             #y = startY - 15 if startY - 15 > 15 else startY + 15
                             #cv2.putText(frame, label, (startX, y),
                             #        cv2.FONT_HERSHEY_SIMPLEX, 0.5, COLORS[idx], 2)
                                                        
-            imagesQueue[cam].put(frame)
+            
             params = scrn_stats.refresh(hashes[cam],filenames[cam], cam)
             logger.debug(params)
             #if paramsQueue.qsize()> PARAMS_BUFFER: continue
             paramsQueue.put( params )
             logger.debug('paramsQueue.qsize()',paramsQueue.qsize())  
-            if imagesQueue[cam].qsize() > IMAGES_BUFFER:
-                k+=1
-                fetchImagesFromQueueToVideo(IMAGES_FOLDER+str(cam)+'_'+str(k), imagesQueue[cam],(640,480))
-                k %= NUMBER_OF_FILES
+            if DRAW_RECTANGLES:
+                imagesQueue[cam].put(frame)
+                if imagesQueue[cam].qsize() > IMAGES_BUFFER:
+                    k+=1
+                    fetchImagesFromQueueToVideo(IMAGES_FOLDER+str(cam)+'_'+str(k), imagesQueue[cam],(640,480))
+                    k %= NUMBER_OF_FILES
             if paramsQueue.qsize() > IMAGES_BUFFER:
                 fetchParamsFromQueuesToDB("dbname")
 
