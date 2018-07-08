@@ -194,8 +194,8 @@ def get_frame(vss,video_urls):
                     k+=1
                     fetchImagesFromQueueToVideo(IMAGES_FOLDER+str(cam)+'_'+str(k), imagesQueue[cam],(640,480))
                     k %= NUMBER_OF_FILES
-            if paramsQueue.qsize() > IMAGES_BUFFER:
-                fetchParamsFromQueuesToDB("dbname")
+            #if paramsQueue.qsize() > IMAGES_BUFFER:
+            #    fetchParamsFromQueuesToDB("dbname")
 
       j+=1
       if j >= PARAMS_BUFFER:
@@ -256,7 +256,7 @@ args = {}
 inputQueue =  []
 imagesQueue = []
 outputQueue = []
-paramsQueue = Queue()
+paramsQueue = Queue(maxsize=IMAGES_BUFFER)
 #catchedObjQueue = Queue()
 
 detections = None
