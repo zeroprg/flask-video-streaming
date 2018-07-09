@@ -346,7 +346,7 @@ def initialize_video_streams(url=None):
         arg = url
         i = len(videos)
     else:
-        arg = args.get('video_file'+ str(i),default=None)
+        arg = args.get('video_file'+ str(i),None)
     while arg is not None:    
         if not (i,arg) in videos:
             logger.info("[INFO] starting video stream...")
@@ -358,7 +358,7 @@ def initialize_video_streams(url=None):
             inputQueue.append(Queue())
             outputQueue.append(Queue())
             i+=1
-            arg = args.get('video_file'+ str(i),default=None)
+            arg = args.get('video_file'+ str(i),None)
 
     time.sleep(3.0)
     fps = FPS().start()
