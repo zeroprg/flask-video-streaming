@@ -316,8 +316,16 @@ def start():
     # initialize the video stream, allow the cammera sensor to warmup,
     # and initialize the FPS counter
     logger.info("[INFO] starting video stream...")
-    if args['video_file0'] != '':
-       p_get_frame = initialize_video_streams()
+    #if args['video_file0'] != '':
+    #   p_get_frame = initialize_video_streams()
+       
+    initialize_video_streams()
+            
+    # show the output frame when need to test is working or not
+    p_get_frame = Process(target=get_frame, args=(vss,videos))
+    p_get_frame.daemon = True
+    p_get_frame.start()
+    
     cam = 0
     for vs in vss:        
         for i in range(THREAD_NUMBERS):
@@ -332,36 +340,28 @@ def start():
 
 # initialize the video stream, allow the cammera sensor to warmup,
 # and initialize the FPS counter
-def initialize_video_streams():
-    logger.info("[INFO] starting video stream...")
-    vs = cv2.VideoCapture(args['video_file0'])
-    logger.info("[INFO] Video stream 0: ", vs, args['video_file0'])
-    vss.append(vs)
-    videos.append(("0",args['video_file0']))
-    imagesQueue.append(Queue())
-    if args.get('video_file1',None) != None:
-        vs = cv2.VideoCapture(args['video_file1'])
-        logger.info("[INFO] Video stream 1: ", vs, args['video_file1'])
-        vss.append(vs)
-        videos.append(("1",args['video_file1']))
-        imagesQueue.append(Queue())
+def initialize_video_streams(url=None):
+    i = 0   
+    if url is not None:
+        arg = url
+        i = len(videos)
+    else:
+        arg = args['video_file'+ str(i)]
+    while arg is not None:    
+        if not (i,arg) in videos:
+            logger.info("[INFO] starting video stream...")
+            vs = cv2.VideoCapture(arg)
+            logger.info("[INFO] Video stream ", str(i), ":", vs, arg)
+            vss.append(vs)
+            videos.append((str(i),arg))
+            imagesQueue.append(Queue())
+            inputQueue.append(Queue())
+            outputQueue.append(Queue())
+
 
     time.sleep(3.0)
     fps = FPS().start()
-    if(vs is None):
-        logger.info("[INFO] starting video stream(s) failed.")
-    else:
-        logger.info("[INFO] video stream started.")
-        
-    for vs in vss:
-        inputQueue.append(Queue())
-        outputQueue.append(Queue())
-        
-    # show the output frame when need to test is working or not
-    p_get_frame = Process(target=get_frame, args=(vss,videos))
-    p_get_frame.daemon = True
-    p_get_frame.start()
-    return p_get_frame
+
 
 ###################### Flask API #########################
 app = Flask(__name__, static_url_path='/static')
@@ -456,6 +456,29 @@ def gen_params():
 #   """Imsges streaming generator function."""
 #   return catchedObjQueue.get()   
 
+def ping_video_url(url):
+    """ Ping url """
+    try:
+        vs = cv2.VideoCapture(url)
+        flag,frame = vs.read()
+        ret = flag
+    except: 
+        ret = False
+    return flag    
+    
+
+@app.route('/urls',methods=['POST'])
+def urls():
+    """Add/Delete/Update a new video url, list all availabe urls."""
+    add_url    = request.args.get('add', default = None)
+    delete_url = request.args.get('delete', default = None)
+    update_url = request.args.get('update', default = None)
+    if add_url is not None:
+        if ping_video_url(add_url):
+            initialize_video_streams(add_url)
+         
+        
+        
 @app.route('/video_feed',methods=['GET'])
 def video_feed():
     """Video streaming route. Put this in the src attribute of an img tag."""
