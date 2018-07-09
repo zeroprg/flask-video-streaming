@@ -357,7 +357,8 @@ def initialize_video_streams(url=None):
             imagesQueue.append(Queue())
             inputQueue.append(Queue())
             outputQueue.append(Queue())
-
+            i+=1
+            arg = args['video_file'+ str(i)]
 
     time.sleep(3.0)
     fps = FPS().start()
