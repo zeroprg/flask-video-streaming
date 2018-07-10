@@ -468,15 +468,30 @@ def ping_video_url(url):
     return flag    
     
 
-@app.route('/urls',methods=['POST'])
+@app.route('/urls',methods=['GET'])
 def urls():
     """Add/Delete/Update a new video url, list all availabe urls."""
-    add_url    = request.args.get('add', default = None)
-    delete_url = request.args.get('delete', default = None)
-    update_url = request.args.get('update', default = None)
+    list_url   = request.args.get('list', default=None)
+    add_url    = request.args.get('add', default=None)
+    delete_url = request.args.get('delete', default=None)
+    update_url = request.args.get('update', default=None)
     if add_url is not None:
         if ping_video_url(add_url):
             initialize_video_streams(add_url)
+            return redirect("/", code=303)
+    if list_url is not None:
+        return Response(json.dumps(videos), mimetype='text/plain')
+    if delete_url is not None:
+        for video in videos:
+            if video[1] == delete_url:
+                videos.remove(video)
+                return Response('URL deleted successfully', status=200)
+    if update_url is not None:
+        index = request.args.get('index', default=None)
+        if index is not None:
+            videos[index][1] == update_url
+            return Response('URL updated successfully', status=200)            
+   
          
         
         
