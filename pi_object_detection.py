@@ -24,6 +24,7 @@ import json
 from screen_statistics import Screen_statistic
 from flask import Flask, render_template, Response, request
 import base64
+from flask_cors import CORS
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -366,6 +367,10 @@ def initialize_video_streams(url=None):
 
 ###################### Flask API #########################
 app = Flask(__name__, static_url_path='/static')
+
+CORS(app, origins="http://127.0.0.1:80", allow_headers=[
+    "Content-Type", "Authorization", "Access-Control-Allow-Credentials"],
+    supports_credentials=True)
 
 def delete_file_older_then(path, sec):
     for f in os.listdir(path):
