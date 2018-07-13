@@ -11,7 +11,7 @@
 <body>
 
 <div class="container">
-  <h1>Artificial Intellegence Cameras </h1>
+  <h1>The New Eyes of Surveillance: Artificial Intelligence and Humanizing Technology Cameras </h1>
   <p>This example demonstrates AI image recognizing  web server works with any IP Cameras feed.More details on <a href="http://aicameras.ca">http://aicameras.ca</a></p>         
   <p>Time for all cameras feeds in GMT (Greenwich Mean Time)</p>
   {% for cam,video_url in video_urls %}
@@ -244,7 +244,11 @@ function showmore(direction, cam)
               };
           }
     
-          var data = [[],[]];
+          var data = [];
+          {% for cam,video_url in video_urls %}
+             data.push([])
+          {% endfor %}
+
           var layout = {
               xaxis: {
                   autorange: true

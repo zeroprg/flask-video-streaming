@@ -24,9 +24,9 @@ import json
 from screen_statistics import Screen_statistic
 import base64
 
-from flask import Flask, render_template, Response, request
-from flask_restful.utils import cors
-from flask_cors  import cross_origin
+from flask import Flask, render_template, Response, request,redirect 
+#from flask_restful.utils import cors
+from flask_cors  import cross_origin,CORS
 
 #from flask_restful import Resource, Api
 
@@ -371,6 +371,13 @@ def initialize_video_streams(url=None):
 
 ###################### Flask API #########################
 app = Flask(__name__, static_url_path='/static')
+
+app.config['SECRET_KEY'] = 'the quick brown fox jumps over the lazy   dog'
+app.config['CORS_HEADERS'] = 'Content-Type'
+
+cors = CORS(app, resources={r"/urls": {"origins": "http://localhost:5000"}})
+
+
 #api = Api(app)
 #api.decorators=[cors.crossdomain(origin='*')]
 
@@ -476,8 +483,8 @@ def ping_video_url(url):
     
 
 @app.route('/urls',methods=['GET'])
-#@cors.crossdomain(origin='*')
-@cross_origin(origins="http://localhost*")
+@cross_origin(origin='localhost:5000')
+
 def urls():
     """Add/Delete/Update a new video url, list all availabe urls."""
     list_url   = request.args.get('list', default=None)
