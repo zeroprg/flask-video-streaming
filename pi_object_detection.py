@@ -22,9 +22,13 @@ from time import gmtime, strftime
 import cv2
 import json
 from screen_statistics import Screen_statistic
-from flask import Flask, render_template, Response, request
 import base64
-from flask_cors import CORS
+
+from flask import Flask, render_template, Response, request
+from flask_restful.utils import cors
+from flask_cors  import cross_origin
+
+#from flask_restful import Resource, Api
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -367,10 +371,8 @@ def initialize_video_streams(url=None):
 
 ###################### Flask API #########################
 app = Flask(__name__, static_url_path='/static')
-
-CORS(app, origins="http://127.0.0.1:80", allow_headers=[
-    "Content-Type", "Authorization", "Access-Control-Allow-Credentials"],
-    supports_credentials=True)
+#api = Api(app)
+#api.decorators=[cors.crossdomain(origin='*')]
 
 def delete_file_older_then(path, sec):
     for f in os.listdir(path):
@@ -474,6 +476,8 @@ def ping_video_url(url):
     
 
 @app.route('/urls',methods=['GET'])
+#@cors.crossdomain(origin='*')
+@cross_origin(origins="http://localhost*")
 def urls():
     """Add/Delete/Update a new video url, list all availabe urls."""
     list_url   = request.args.get('list', default=None)
