@@ -24,7 +24,7 @@ import json
 from screen_statistics import Screen_statistic
 import base64
 
-from flask import Flask, render_template, Response, request,redirect 
+from flask import Flask, render_template, Response, request,redirect,jsonify
 from flask_cors  import cross_origin, CORS
 
 #from flask_restful import Resource, Api
@@ -46,15 +46,15 @@ subject_of_interes = ["person","car","bus"]
 COLORS = np.random.uniform(0, 255, size=(len(CLASSES), 3))
 
 IMAGES_FOLDER = "static/img/"
-DRAW_RECTANGLES = False
-DELETE_FILES_LATER = 12 * 60 * 60 # sec 
+DRAW_RECTANGLES = True
+DELETE_FILES_LATER = 12 * 60 * 60 * 60 # sec 
 ENCODING = "utf-8"
 NUMBER_OF_FILES = 10
 HASH_DELTA = 57
 PARAMS_BUFFER =  10
 IMAGES_BUFFER = 40
 RECOGNZED_FRAME = 1
-THREAD_NUMBERS  = 1 #must be less then 4 for PI
+THREAD_NUMBERS  = 2 #must be less then 4 for PI
 videos = []
 IMG_PAGINATOR = 50
 def classify_frame( net, inputQueue, outputQueue):
@@ -191,7 +191,7 @@ def get_frame(vss,video_urls):
             logger.debug(params)
             #if paramsQueue.qsize()> PARAMS_BUFFER: continue
             paramsQueue.put( params )
-            logger.debug('paramsQueue.qsize()',paramsQueue.qsize())  
+            logger.debug('paramsQueue.qsize()',paramsQueue.qsize())
             if DRAW_RECTANGLES:
                 imagesQueue[cam].put(frame)
                 if imagesQueue[cam].qsize() > IMAGES_BUFFER:
@@ -204,9 +204,9 @@ def get_frame(vss,video_urls):
       j+=1
       if j >= PARAMS_BUFFER:
          j = 0
-         for cam in range(len(vss)): 
+         for cam in range(len(vss)):
             hashes[cam] = {}
-            filenames[cam] = {} 
+            filenames[cam] = {}
       
 
     if (__name__ == '__main__'):
@@ -345,13 +345,14 @@ def start():
 # initialize the video stream, allow the cammera sensor to warmup,
 # and initialize the FPS counter
 def initialize_video_streams(url=None):
-    i = 0   
+    i = 0
+    arg = None
     if url is not None:
         arg = url
         i = len(videos)
     else:
         arg = args.get('video_file'+ str(i),None)
-    while arg is not None:    
+    while arg is not None:
         if not (i,arg) in videos:
             logger.info("[INFO] starting video stream...")
             vs = cv2.VideoCapture(arg)
@@ -380,25 +381,25 @@ cors = CORS(app, resources={r"/urls": {"origins": "http://localhost:5000"}})
 
 def delete_file_older_then(path, sec):
     for f in os.listdir(path):
-       try: 
+       try:
            if os.stat(os.path.join(path,f)).st_mtime < time.time() - sec:
                 os.remove(os.path.join(path, f))
-       except OSError: pass  
+       except OSError: pass
 
 
 # Set the directory you want to start from
-def traverse_dir(start, end, rootDir=".", wildcard="*"):    
+def traverse_dir(start, end, rootDir=".", wildcard="*"):
     ret = []
     for  iter in glob.iglob(rootDir + wildcard,recursive= False):
         ret.append(iter)
     return sorted(ret, key=os.path.getmtime, reverse=True)[start:end]
-    
+
 
 
 @app.route('/static/<path:filename>')
 def serve_static(filename):
     root_dir = os.path.dirname(os.getcwd())
-    return send_from_directory(os.path.join(root_dir, 'static', 'js'),   filename) 
+    return send_from_directory(os.path.join(root_dir, 'static', 'js'),   filename)
 
 @app.route('/')
 def index():
@@ -407,12 +408,14 @@ def index():
     print("start", start)
     if start == None: start = 0
     start = int(start)
-    video_urls=videos
+    video_urls = []
+    for i in range(len(videos)):
+        if DRAW_RECTANGLES: video_urls.append((videos[i][0],'video_feed?cam='+str(videos[i][0])))
+        else:
+            video_urls.append((videos[i][0], videos[i][1]))
+    """ Delete old files """
     images_filenames=[]
-
     delete_file_older_then(IMAGES_FOLDER, DELETE_FILES_LATER)
-
-    #for i in range(0,1):
     images_filenames = traverse_dir( start, start + IMG_PAGINATOR, IMAGES_FOLDER,str(0)+"_*")
     images_filenames.extend( traverse_dir(start, start + IMG_PAGINATOR, IMAGES_FOLDER,str(1)+"_*" ))
     img_folder = IMAGES_FOLDER
@@ -429,12 +432,12 @@ def moreimgs():
 def gen_array_of_imgs(cam,start,direction):
     a = start
     b = start+direction*IMG_PAGINATOR
-    if start > start+direction*IMG_PAGINATOR: 
+    if start > start+direction*IMG_PAGINATOR:
         b = start
         a = start+direction*IMG_PAGINATOR
 
-    images_filenames =  traverse_dir(a,b, IMAGES_FOLDER, str(cam)+"_*")    
-    x = json.dumps(images_filenames) 
+    images_filenames =  traverse_dir(a,b, IMAGES_FOLDER, str(cam)+"_*")
+    x = json.dumps(images_filenames)
     return x
 
 def gen(camera):
@@ -461,12 +464,12 @@ def gen_params():
     x = []
     while not paramsQueue.empty():
         x += paramsQueue.get()
-    x = json.dumps(x) 
+    x = json.dumps(x)
     #logger.debug(x)
     return x
 #def gen_images():
-#   """Imsges streaming generator function."""
-#   return catchedObjQueue.get()   
+#   """Images streaming generator function."""
+#   return catchedObjQueue.get()
 
 def ping_video_url(url):
     """ Ping url """
@@ -474,10 +477,10 @@ def ping_video_url(url):
         vs = cv2.VideoCapture(url)
         flag,frame = vs.read()
         ret = flag
-    except: 
+    except:
         ret = False
-    return flag    
-    
+    return flag
+
 
 @app.route('/urls',methods=['GET'])
 @cross_origin(origin='localhost:5000')
@@ -497,16 +500,14 @@ def urls():
         for video in videos:
             if video[1] == delete_url:
                 videos.remove(video)
-                return jsonify({"message":'URL deleted successfully', "status":200})
+                return Response('{"message":"URL deleted successfully"}', mimetype='text/plain')
     if update_url is not None:
         index = request.args.get('index', default=None)
         if index is not None:
             videos[index][1] == update_url
-            return jsonify({"message":'URL updated successfully',"status":200})            
-   
-         
-        
-        
+            return Response( '{"message":"URL updated successfully"}', mimetype='text/plain')
+
+
 @app.route('/video_feed',methods=['GET'])
 def video_feed():
     """Video streaming route. Put this in the src attribute of an img tag."""
@@ -524,7 +525,7 @@ def params_feed():
 #def images_feed():
 #    """Images streaming route. Put this in the src attribute of an img tag."""
 #    return Response( gen_images(),
-#                    mimetype='text/plain')                    
+#                    mimetype='text/plain')
 
 if (__name__ == '__main__'):
     start()
