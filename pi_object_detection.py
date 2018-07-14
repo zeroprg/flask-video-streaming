@@ -27,10 +27,11 @@ import base64
 from flask import Flask, render_template, Response, request,redirect,jsonify
 from flask_cors  import cross_origin, CORS
 
-#from flask_restful import Resource, Api
-
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('logger')
 logger.setLevel(logging.INFO)
+console = logging.StreamHandler()
+logger.addHandler(console)
+logger.info('test')
 
 
 # initialize the list of class labels MobileNet SSD was trained to
@@ -46,7 +47,7 @@ subject_of_interes = ["person","car","bus"]
 COLORS = np.random.uniform(0, 255, size=(len(CLASSES), 3))
 
 IMAGES_FOLDER = "static/img/"
-DRAW_RECTANGLES = True
+DRAW_RECTANGLES = False
 DELETE_FILES_LATER = 12 * 60 * 60 * 60 # sec 
 ENCODING = "utf-8"
 NUMBER_OF_FILES = 10
@@ -54,7 +55,7 @@ HASH_DELTA = 57
 PARAMS_BUFFER =  10
 IMAGES_BUFFER = 40
 RECOGNZED_FRAME = 1
-THREAD_NUMBERS  = 2 #must be less then 4 for PI
+THREAD_NUMBERS  = 3 #must be less then 4 for PI
 videos = []
 IMG_PAGINATOR = 50
 def classify_frame( net, inputQueue, outputQueue):
@@ -96,7 +97,7 @@ def get_frame(vss,video_urls):
         hashes.append(LOOKED1)
         filenames.append(LOOKED2)
     while  True:
-      logger.debug(j)
+      logger.info(str(j)+ " len(vss): "+ str(len(vss)) )
       for cam in range(len(vss)):
 	        # grab the frame from the threaded video stream, resize it, and
             # grab its imensions
@@ -180,7 +181,7 @@ def get_frame(vss,video_urls):
                             logger.debug("cam:", cam, "key:", key, "hashes:", hashes[cam][key])
                            
                             #label = "{}: {:.2f}%".format(key,confidence * 100)
-                            if DRAW_RECTANGLES: cv2.rectangle(frame, (startX-10, startY-10), (endX+10, endY+10),
+                            if DRAW_RECTANGLES: cv2.rectangle(frame, (startX-25, startY-25), (endX+10, endY+10),
                                     COLORS[idx], 1)
                             #y = startY - 15 if startY - 15 > 15 else startY + 15
                             #cv2.putText(frame, label, (startX, y),
@@ -338,7 +339,7 @@ def start():
             p_classifier.daemon = False
             p_classifier.start()
         
-        logger.info("p_classifiers for cam:",cam, " started")
+        logger.info("p_classifiers for cam:" +str(cam)+ " started")
         cam += 1
     return p_get_frame
 
@@ -354,9 +355,9 @@ def initialize_video_streams(url=None):
         arg = args.get('video_file'+ str(i),None)
     while arg is not None:
         if not (i,arg) in videos:
-            logger.info("[INFO] starting video stream...")
+            logger.info("[INFO] starting video stream with arg: " + arg)
             vs = cv2.VideoCapture(arg)
-            logger.info("[INFO] Video stream ", str(i), ":", vs, arg)
+            logger.info("[INFO] Video stream: " + str(i) + " vs:" + str(vs) )
             vss.append(vs)
             videos.append((str(i),arg))
             imagesQueue.append(Queue())
@@ -483,7 +484,7 @@ def ping_video_url(url):
 
 
 @app.route('/urls',methods=['GET'])
-@cross_origin(origin='localhost:5000')
+@cross_origin(origin='http://localhost:5000')
 def urls():
     """Add/Delete/Update a new video url, list all availabe urls."""
     list_url   = request.args.get('list', default=None)
@@ -493,12 +494,13 @@ def urls():
     if add_url is not None:
         if ping_video_url(add_url):
             initialize_video_streams(add_url)
-            return redirect("/", code=303)
+            #return redirect("/", code=303)
+            return Response('{"message":"URL added  successfully"}', mimetype='text/plain')
     if list_url is not None:
-        return Response(json.dumps(videos), mimetype='text/plain')
+       return Response(json.dumps(videos), mimetype='text/plain')
     if delete_url is not None:
         for video in videos:
-            if video[1] == delete_url:
+            if video[0] == delete_url:
                 videos.remove(video)
                 return Response('{"message":"URL deleted successfully"}', mimetype='text/plain')
     if update_url is not None:
