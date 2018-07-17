@@ -55,7 +55,7 @@ HASH_DELTA = 57
 PARAMS_BUFFER =  10
 IMAGES_BUFFER = 40
 RECOGNZED_FRAME = 1
-THREAD_NUMBERS  = 3 #must be less then 4 for PI
+THREAD_NUMBERS  = 2 #must be less then 4 for PI
 videos = []
 IMG_PAGINATOR = 50
 def classify_frame( net, inputQueue, outputQueue):
@@ -199,8 +199,8 @@ def get_frame(vss,video_urls):
                     k+=1
                     fetchImagesFromQueueToVideo(IMAGES_FOLDER+str(cam)+'_'+str(k), imagesQueue[cam],(640,480))
                     k %= NUMBER_OF_FILES
-            #if paramsQueue.qsize() > IMAGES_BUFFER:
-            #    fetchParamsFromQueuesToDB("dbname")
+            if paramsQueue.qsize() > IMAGES_BUFFER:
+                fetchParamsFromQueuesToDB("dbname")
 
       j+=1
       if j >= PARAMS_BUFFER:
