@@ -55,7 +55,7 @@ HASH_DELTA = 57
 PARAMS_BUFFER =  10
 IMAGES_BUFFER = 40
 RECOGNZED_FRAME = 1
-THREAD_NUMBERS  = 2 #must be less then 4 for PI
+THREAD_NUMBERS  = 1 #must be less then 4 for PI
 videos = []
 IMG_PAGINATOR = 50
 def classify_frame( net, inputQueue, outputQueue):
@@ -190,7 +190,7 @@ def get_frame(vss,video_urls):
             
             params = scrn_stats.refresh(hashes[cam],filenames[cam], cam)
             logger.debug(params)
-            #if paramsQueue.qsize()> PARAMS_BUFFER: continue
+            if paramsQueue.qsize()> PARAMS_BUFFER: continue
             paramsQueue.put( params )
             logger.debug('paramsQueue.qsize()',paramsQueue.qsize())
             if DRAW_RECTANGLES:
