@@ -5,6 +5,7 @@ from imutils.video import VideoStream
 from imutils.video import FPS
 from multiprocessing import Process
 from multiprocessing import Queue
+from files import *
 
 import os
 import imagehash
@@ -47,17 +48,22 @@ subject_of_interes = ["person","car","bus"]
 COLORS = np.random.uniform(0, 255, size=(len(CLASSES), 3))
 
 IMAGES_FOLDER = "static/img/"
+PARAMS_FOLDER = "static/params/"
+
 DRAW_RECTANGLES = False
 DELETE_FILES_LATER = 12 * 60 * 60 * 60 # sec 
 ENCODING = "utf-8"
 NUMBER_OF_FILES = 10
 HASH_DELTA = 57
 PARAMS_BUFFER =  10
-IMAGES_BUFFER = 40
+IMAGES_BUFFER = 100
 RECOGNZED_FRAME = 1
 THREAD_NUMBERS  = 1 #must be less then 4 for PI
 videos = []
+
+
 IMG_PAGINATOR = 50
+
 def classify_frame( net, inputQueue, outputQueue):
         # keep looping
         while True:
@@ -85,6 +91,7 @@ def classify_frame( net, inputQueue, outputQueue):
 
 def get_frame(vss,video_urls):
     # loop over the frames from the video stream
+    conf_threshold = float(args["confidence"])
     detections = None
     cols,rows = 0,0
     j = PARAMS_BUFFER+1
@@ -97,7 +104,7 @@ def get_frame(vss,video_urls):
         hashes.append(LOOKED1)
         filenames.append(LOOKED2)
     while  True:
-      logger.info(str(j)+ " len(vss): "+ str(len(vss)) )
+      logger.debug(str(j)+ " len(vss): "+ str(len(vss)) )
       for cam in range(len(vss)):
 	        # grab the frame from the threaded video stream, resize it, and
             # grab its imensions
@@ -122,7 +129,7 @@ def get_frame(vss,video_urls):
 
                             # filter out weak detections by ensuring the `confidence`
                             # is greater than the minimum confidence
-                            if confidence < args["confidence"]:continue
+                            if confidence < conf_threshold: continue
 
                             # otherwise, extract the index of the class label from
                             # the `detections`, then compute the (x, y)-coordinates
@@ -180,17 +187,17 @@ def get_frame(vss,video_urls):
                                     
                             logger.debug("cam:", cam, "key:", key, "hashes:", hashes[cam][key])
                            
-                            #label = "{}: {:.2f}%".format(key,confidence * 100)
-                            if DRAW_RECTANGLES: cv2.rectangle(frame, (startX-25, startY-25), (endX+10, endY+10),
-                                    COLORS[idx], 1)
-                            #y = startY - 15 if startY - 15 > 15 else startY + 15
-                            #cv2.putText(frame, label, (startX, y),
-                            #        cv2.FONT_HERSHEY_SIMPLEX, 0.5, COLORS[idx], 2)
+                            
+                            if DRAW_RECTANGLES: 
+                                label = "{}: {:.2f}%".format(key,confidence * 100)
+                                cv2.rectangle(frame, (startX-25, startY-25), (endX+25, endY+25), (0,255,0), 2)
+                                y = startY - 25 if startY - 25 > 25 else startY + 25
+                                cv2.putText(frame, label, (startX, y), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,255,0), 2)
                                                        
             
             params = scrn_stats.refresh(hashes[cam],filenames[cam], cam)
             logger.debug(params)
-            if paramsQueue.qsize()> PARAMS_BUFFER: continue
+            #if paramsQueue.qsize()> PARAMS_BUFFER: continue
             paramsQueue.put( params )
             logger.debug('paramsQueue.qsize()',paramsQueue.qsize())
             if DRAW_RECTANGLES:
@@ -200,7 +207,7 @@ def get_frame(vss,video_urls):
                     fetchImagesFromQueueToVideo(IMAGES_FOLDER+str(cam)+'_'+str(k), imagesQueue[cam],(640,480))
                     k %= NUMBER_OF_FILES
             if paramsQueue.qsize() > IMAGES_BUFFER:
-                fetchParamsFromQueuesToDB("dbname")
+                persist_params(PARAMS_FOLDER + str(int(time.time())) + '.json')
 
       j+=1
       if j >= PARAMS_BUFFER:
@@ -233,14 +240,23 @@ def fetchImagesFromQueueToVideo(filename, imagesQueue, size):
         #cv2.imshow('img',fgmask)   
     #out.release()
     
-    
-def fetchParamsFromQueuesToDB(db):
-    #_array = []
+def dumpQueue(paramsQueue):
+    params_array = []
     while not paramsQueue.empty():
-        paramsQueue.get()
-        #_array.append(paramsQueue.get())
-    # connect to DB and store array of parameters here
+        a = paramsQueue.get()
+        params_array +=a
+    x = json.dumps(params_array)
+    return x
+    
+def persist_params(filename):
+    logger.info("Persisting ,filename: " + filename)
+    x = dumpQueue(paramsQueue)
+    f = open(filename,"w+")    
+    logger.info("Persisting ,x: " + x)
+    f.write(x)
+    f.close()
 
+    return x
 
 def destroy():
 # stop the timer and display FPS information
@@ -261,7 +277,8 @@ args = {}
 inputQueue =  []
 imagesQueue = []
 outputQueue = []
-paramsQueue = Queue(maxsize=IMAGES_BUFFER)
+paramsQueue = Queue(maxsize=IMAGES_BUFFER+5)
+
 #catchedObjQueue = Queue()
 
 detections = None
@@ -270,11 +287,11 @@ vss = []
 fps = None
 p_get_frame = None
 
-if (__name__ == '__main__'):
+def configure(args):
     # construct the argument parse and parse the arguments
 # I named config file as  file config.txt and stored it 
 # in the same directory as the script
-    args = {}
+
     with open('config.txt') as f:
         for line in f:
             if separator in line:
@@ -294,7 +311,7 @@ if (__name__ == '__main__'):
             help="path to Caffe 'deploy' prototxt file")
     ap.add_argument("-m", "--model", required=False,
             help="path to Caffe pre-trained model")
-    ap.add_argument("-c", "--confidence", type=float, default=0.55,
+    ap.add_argument("-c", "--confidence", type=float, required=False,
             help="minimum probability to filter weak detections")
     more_args = vars(ap.parse_args())
 
@@ -311,8 +328,7 @@ if (__name__ == '__main__'):
 
 def start():
     # load our serialized model from disk
-    
-    
+    configure(args)
     logger.info("[INFO] loading model...")
     net = cv2.dnn.readNetFromCaffe(args["prototxt"], args["model"])
     # construct a child process *indepedent* from our main process of
@@ -321,8 +337,7 @@ def start():
     # initialize the video stream, allow the cammera sensor to warmup,
     # and initialize the FPS counter
     logger.info("[INFO] starting video stream...")
-    #if args['video_file0'] != '':
-    #   p_get_frame = initialize_video_streams()
+
        
     initialize_video_streams()
             
@@ -380,22 +395,6 @@ cors = CORS(app, resources={r"/urls": {"origins": "http://localhost:5000"}})
 #api = Api(app)
 #api.decorators=[cors.crossdomain(origin='*')]
 
-def delete_file_older_then(path, sec):
-    for f in os.listdir(path):
-       try:
-           if os.stat(os.path.join(path,f)).st_mtime < time.time() - sec:
-                os.remove(os.path.join(path, f))
-       except OSError: pass
-
-
-# Set the directory you want to start from
-def traverse_dir(start, end, rootDir=".", wildcard="*"):
-    ret = []
-    for  iter in glob.iglob(rootDir + wildcard,recursive= False):
-        ret.append(iter)
-    return sorted(ret, key=os.path.getmtime, reverse=True)[start:end]
-
-
 
 @app.route('/static/<path:filename>')
 def serve_static(filename):
@@ -410,6 +409,8 @@ def index():
     if start == None: start = 0
     start = int(start)
     video_urls = []
+    img_folder = IMAGES_FOLDER
+    img_paginator = IMG_PAGINATOR
     for i in range(len(videos)):
         if DRAW_RECTANGLES: video_urls.append((videos[i][0],'video_feed?cam='+str(videos[i][0])))
         else:
@@ -417,11 +418,29 @@ def index():
     """ Delete old files """
     images_filenames=[]
     delete_file_older_then(IMAGES_FOLDER, DELETE_FILES_LATER)
-    images_filenames = traverse_dir( start, start + IMG_PAGINATOR, IMAGES_FOLDER,str(0)+"_*")
-    images_filenames.extend( traverse_dir(start, start + IMG_PAGINATOR, IMAGES_FOLDER,str(1)+"_*" ))
-    img_folder = IMAGES_FOLDER
-    img_paginator = IMG_PAGINATOR
+    delete_file_older_then(PARAMS_FOLDER, DELETE_FILES_LATER)
+    images_filenames = traverse_dir( IMAGES_FOLDER, str(0)+"_*", start, start + IMG_PAGINATOR)
+    images_filenames.extend( traverse_dir(IMAGES_FOLDER, str(1)+"_*", start, start + IMG_PAGINATOR ))
+    
     return render_template('index.html', **locals())
+
+@app.route('/moreparams')
+def moreparams():
+    """ Read list of json files or return one specific  for specific time """
+    time = request.args.get('time')
+    if time == '': time =0
+    # if time ==0 return whole list of files
+    if time == 0: 
+        return Response( gen_array_of_params(), mimetype='text/plain')
+    else:
+        return Response( open( PARAMS_FOLDER + str(int(time)) + ".json", 'r').read(), mimetype='text/plain')
+        
+def gen_array_of_params():
+    params_filenames =  traverse_dir(PARAMS_FOLDER)
+    x = json.dumps(params_filenames)
+    return x
+
+        
 
 @app.route('/moreimgs')
 def moreimgs():
@@ -437,9 +456,12 @@ def gen_array_of_imgs(cam,start,direction):
         b = start
         a = start+direction*IMG_PAGINATOR
 
-    images_filenames =  traverse_dir(a,b, IMAGES_FOLDER, str(cam)+"_*")
+    images_filenames =  traverse_dir(IMAGES_FOLDER, str(cam)+"_*", a,b)
     x = json.dumps(images_filenames)
     return x
+
+
+
 
 def gen(camera):
     """Video streaming generator function."""
@@ -462,12 +484,12 @@ def detect(cam):
 
 def gen_params():
     """Parameters streaming generator function."""
-    x = []
-    while not paramsQueue.empty():
-        x += paramsQueue.get()
-    x = json.dumps(x)
-    #logger.debug(x)
-    return x
+    if paramsQueue.qsize() > IMAGES_BUFFER:
+        ret = persist_params(PARAMS_FOLDER + str(int(time.time())) + '.json')
+    else:
+        ret = dumpQueue(paramsQueue)    
+    logger.debug(ret)
+    return ret
 #def gen_images():
 #   """Images streaming generator function."""
 #   return catchedObjQueue.get()

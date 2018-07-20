@@ -24,10 +24,11 @@
     </div>
     <div class="col-sm-6">      
          <div class="tab">
-            <button class="tablinks" onclick="openTab(event, 'Eventsnotifyer{{cam}}')">Events notifyer</button>
+            <button class="tablinks" onclick="/*eslint-disable no-unused-vars, no-undef-expression, no-param-reassign*/
+            openTab(event, 'Eventsnotifyer{{cam}}')">Events notifyer</button>
             <button class="tablinks" onclick="openTab(event, 'Objectsfilter{{cam}}')">Founded Objects</button>
          </div>
-          <div id="Eventsnotifyer{{cam}}" class="tabcontent" style="display: block;">
+          <div id="Eventsnotifyer{{cam}}" class="tabcontent">
             <h3>Events notifyer</h3>
             <p>Specify Events which will triger eMail or SMS/Voice notify.</p>
               if <select name="objects">
@@ -57,13 +58,23 @@
               <input type="text" placeholder="" min="0" max="100" />
           </div>
 
-          <div id="Objectsfilter{{cam}}" class="tabcontent" >
+          <div id="Objectsfilter{{cam}}" class="tabcontent" style="display: block;">
             <!-- Header -->
-            <div class="header" id="myHeader">
-              <button class="btn"  onclick="showmore(1,{{cam}});styleit();"><<</button>
-              <button class="btn"  onclick="start=0;showmore(1,{{cam}}); styleit()">.</button>
-              <button class="btn"  onclick="showmore(-1,{{cam}};styleit();)">>></button>
+  <!--           <nav>
+              <ul class="pagination header">
+                <li><a id = "first{{cam}}" rel="first" href="javascript:void(0)">First</a></li>
+                <li><a id = "next{{cam}}"  rel="next"  href="javascript:void(0)">Next</a></li>
+                <li><a id = "prev{{cam}}"  rel="prev"  href="javascript:void(0)">Previous</a></li>
+              </ul>
+            </nav>
+  -->          
+           <div class="header" id="myHeader">
+              <button class="btn"  onclick="showmore(1,{{cam}});" title="Back"><<</button>
+              <button class="btn"  onclick="showmore(1,{{cam}},0);">Now</button>
+              <button id="forward{{cam}}" title="Forward" class="btn" onclick="showmore(-1,{{cam}});" style="visibility:hidden">>></button>
             </div>          
+
+            
           <!-- Photo Grid -->
           <div id="cam{{cam}}" class="images_row">
            {% set i = 0 %} 
@@ -85,6 +96,16 @@
           </div>
     </div>
     <div id= "myDiv{{cam}}" class="col-sm-12" style="height:250px; width:100%"></div>
+    <div class="header">
+         <button class="btn"  onclick="alert('Under construction, sorry');" title="Back"><<</button>
+         <button class="btn"  onclick="alert('Under construction, sorry');">Now</button>
+         <!--
+         <button class="btn"  onclick="moreparams(1,{{cam}});" title="Back"><<</button>
+         <button class="btn"  onclick="moreparams(1,{{cam}},0);">Now</button>
+         <button id="p_forward{{cam}}" title="Forward" class="btn" onclick="moreparams(-1,{{cam}});" style="visibility:hidden">>></button>
+         -->
+    </div>          
+
  </div>
  {% endfor %}
 </div>
@@ -93,6 +114,30 @@
 <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
 
 <script>
+//document.getElementById("first{{cam}}").onclick = function() {alert(start);showmore(1,{{cam}},0);};
+
+// Declare global variable
+// Get the elements with class="column"
+var elements = document.getElementsByClassName("column");
+var i;
+var start = 0;
+var params = []
+var p_start = 0;
+
+if( params.length === 0 ) $.ajax({ url: "/moreparams?time=0",
+                                  type: "get",      
+                                  success: function(response) {
+                                   // parse array of params filenames
+                                   console.log(response);
+                                   params = JSON.parse(response);
+                                  },
+                                  error: function(xhr) {
+                                    //Do Something to handle error
+                                  }
+                                });
+
+
+
 
 function openTab(evt, tabName) {
     var i, tabcontent, tablinks;
@@ -107,12 +152,6 @@ function openTab(evt, tabName) {
     document.getElementById(tabName).style.display = "block";
     evt.currentTarget.className += " active";
 }
-
-// Get the elements with class="column"
-var elements = document.getElementsByClassName("column");
-
-// Declare a loop variable
-var i;
 
 
 // Four images side by side
@@ -135,34 +174,51 @@ for (var i = 0; i < btns.length; i++) {
 }
 
 
-var start = 0
-function showmore(direction, cam)
+function moreparams(direction, cam, _start)
 {
-  //  var cam = $(this).attr("data-cam"); 
+    if( _start !== undefined ) p_start = _start;
+    console.log("p_start:" + p_start);
+    
+    if (p_start + direction < 0) 
+        direction = -direction;
+        
+    if(params.length > 0 ) { $.ajax({ url: "/moreparams?time="+params[p_start],
+                                  type: "get",      
+                                  success: function(response) {
+                                   // parse array of images filenames
+                                   console.log(response);
+                                   p_start = p_start + direction;
+                                   params = JSON.parse(response);
+                                  },
+                                  error: function(xhr) {
+                                    //Do Something to handle error
+                                  }
+                                });
+    }
+};
 
-    if (start + direction*{{img_paginator}} < 0) direction = -direction
-  
+
+
+function showmore(direction, cam, _start)
+{
+    if( _start !== undefined ) start = _start;
+    console.log("start:" + start);
+    
+    if (start + direction*{{img_paginator}} < 0) 
+        direction = -direction;
+
+    
     $.ajax({
       url: "/moreimgs?start=" + start + "&cam=" + cam + "&direction="+direction,
       type: "get",      
       success: function(response) {
        // parse array of images filenames
-       console.log(response)
-       start = start + direction*{{img_paginator}}
-       filenames = JSON.parse(response)
+       console.log(response);
+       start = start + direction*{{img_paginator}};
+       var filenames = JSON.parse(response);
        a =  '<div>';
        for (i = 0; i < filenames.length; i++) {
-          //_filename = filenames[i].split("_");
-          //last_one = _filename[_filename.length -1 ];
-          //before_last_one = _filename[_filename.length - 2 ];
-          
-          //_date =  new Date(parseFloat(before_last_one +'.'+last_one.substring(0, last_one.length -4))).toISOString();
-/*            a +='<a class="thumb" target="_blank" href="' + filenames[i]+ '">' +
-                  '<img src="'+filenames[i]+ '" style="width:35px;max-height: 70px;">' +
-                  '<span><img src="' + filenames[i]+ '" style="width:250px;"></span>'+
-                '</a>'
- */               
-              if( i%3 == 0 ) a += '</div><div class="column">'
+              if( i%3 === 0 ) a += '</div><div class="column">'
                 
                 a+= '<a class="thumb" target="_blank" href="' + filenames[i]+ '">' +
                         '<img src="' + filenames[i]+ '" style="width:100%;" alt="">' +
@@ -172,6 +228,9 @@ function showmore(direction, cam)
         }
         a += '</div>'
         $('#cam' + cam ).html(a);
+        var _obj = document.getElementById("forward"+cam);
+        _obj.style.visibility = start===0?'hidden':'visible';
+        styleit();
       },
       error: function(xhr) {
         //Do Something to handle error
@@ -198,10 +257,10 @@ function showmore(direction, cam)
               r.onprogress = function () {
                   
                  //console.log(r.responseText);
-                 if(r.responseText != ''){
+                 if(r.responseText !== ''){
                      var traces = JSON.parse(r.responseText);
                      //console.log("traces = " + traces);
-                     if(traces == null || traces.length == 0) return
+                     if(traces == null || traces.length === 0) return
                      
                      for( j = 0 ; j< traces.length; j++){
                         var k = 0
@@ -215,7 +274,7 @@ function showmore(direction, cam)
                           } 
                         */  
                         for( i = 0 ; i< data[cam].length; i++){
-                           if( tr.name == data[cam][i].name ) {
+                           if( tr.name === data[cam][i].name ) {
                              data[cam][i].x.push(tr.x);
                              data[cam][i].y.push(tr.y);
                              data[cam][i].text.push(tr.text + ' cam:' + cam);
@@ -231,7 +290,7 @@ function showmore(direction, cam)
                            }
                         }
                        // check if this a new object not existed before
-                        if( k == data[cam].length ){
+                        if( k === data[cam].length ){
                              _data = {"x": [],"y": [],"text": []};
                              _data.x.push(traces[j].x);
                              _data.y.push(traces[j].y);
