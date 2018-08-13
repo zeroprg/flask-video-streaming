@@ -96,17 +96,29 @@
           </div>
     </div>
     <div id= "myDiv{{cam}}" class="col-sm-12" style="height:250px; width:100%"></div>
-    <div class="header">
-         <button class="btn"  onclick="alert('Under construction, sorry');" title="Back"><<</button>
-         <button class="btn"  onclick="alert('Under construction, sorry');">Now</button>
-         <!--
-         <button class="btn"  onclick="moreparams(1,{{cam}});" title="Back"><<</button>
-         <button class="btn"  onclick="moreparams(1,{{cam}},0);">Now</button>
-         <button id="p_forward{{cam}}" title="Forward" class="btn" onclick="moreparams(-1,{{cam}});" style="visibility:hidden">>></button>
-         -->
-    </div>          
-
+        
+ 
  </div>
+   <div class="row">
+    <div class="col-sm-12">
+       <div class="header">
+         <h4> Historical records: 
+         <select name="Objects log" onchange="moreparams({{cam}}, this.value)">
+              <option value="0"></option>
+              <option value="3600">1h back</option>              
+		      <option value="18000">5h back</option>
+		      <option value="360000">12h back</option>
+		      <option value="720000">24h back</option>
+		      <option value="1440000">48h back (2 days)</option>
+		      <option value="2160000">72h back (3 days)</option>
+		      <option value="4320000">144h (6 days) back</option>
+		      
+    	</select>
+    	</h4>
+    	<div id= "lastDiv{{cam}}" class="col-sm-12" style="height:250px; width:100%"></div>
+      </div>          
+    </div>     
+  </div>     
  {% endfor %}
 </div>
 
@@ -121,22 +133,8 @@
 var elements = document.getElementsByClassName("column");
 var i;
 var start = 0;
-var params = []
+var params = [];
 var p_start = 0;
-
-if( params.length === 0 ) $.ajax({ url: "/moreparams?time=0",
-                                  type: "get",      
-                                  success: function(response) {
-                                   // parse array of params filenames
-                                   console.log(response);
-                                   params = JSON.parse(response);
-                                  },
-                                  error: function(xhr) {
-                                    //Do Something to handle error
-                                  }
-                                });
-
-
 
 
 function openTab(evt, tabName) {
@@ -174,29 +172,6 @@ for (var i = 0; i < btns.length; i++) {
 }
 
 
-function moreparams(direction, cam, _start)
-{
-    if( _start !== undefined ) p_start = _start;
-    console.log("p_start:" + p_start);
-    
-    if (p_start + direction < 0) 
-        direction = -direction;
-        
-    if(params.length > 0 ) { $.ajax({ url: "/moreparams?time="+params[p_start],
-                                  type: "get",      
-                                  success: function(response) {
-                                   // parse array of images filenames
-                                   console.log(response);
-                                   p_start = p_start + direction;
-                                   params = JSON.parse(response);
-                                  },
-                                  error: function(xhr) {
-                                    //Do Something to handle error
-                                  }
-                                });
-    }
-};
-
 
 
 function showmore(direction, cam, _start)
@@ -218,15 +193,15 @@ function showmore(direction, cam, _start)
        var filenames = JSON.parse(response);
        a =  '<div>';
        for (i = 0; i < filenames.length; i++) {
-              if( i%3 === 0 ) a += '</div><div class="column">'
+              if( i%3 === 0 ) a += '</div><div class="column">';
                 
                 a+= '<a class="thumb" target="_blank" href="' + filenames[i]+ '">' +
                         '<img src="' + filenames[i]+ '" style="width:100%;" alt="">' +
-                    '</a>'
+                    '</a>';
             
                 
         }
-        a += '</div>'
+        a += '</div>';
         $('#cam' + cam ).html(a);
         var _obj = document.getElementById("forward"+cam);
         _obj.style.visibility = start===0?'hidden':'visible';
@@ -236,98 +211,161 @@ function showmore(direction, cam, _start)
         //Do Something to handle error
       }
     });
+}
 
-};
-
-          MAX_BUFFER = 10000
-          BEAT = 1
-          PLOT_TYPE = 'bar'
-          
-          window.setInterval(function(){
-              ajaxCallFunction();  //calling every 5 second
-          }, BEAT*1000);
-         
-          function ajaxCallFunction(){
-            //this function uses ajax to interact with the server
-            
-              var r = new XMLHttpRequest();
-             // r.multipart = true;
-              r.open('GET', "{{ url_for('params_feed') }}", true);
-              r.send();
-              r.onprogress = function () {
-                  
-                 //console.log(r.responseText);
-                 if(r.responseText !== ''){
-                     var traces = JSON.parse(r.responseText);
-                     //console.log("traces = " + traces);
-                     if(traces == null || traces.length === 0) return
-                     
-                     for( j = 0 ; j< traces.length; j++){
-                        var k = 0
-                        tr = traces[j]
-                        cam = tr.cam
-                        /*if( data == undefined) {
-                          data = [[]];
-                          tr = traces[j]
-                          data[tr.cam].push(tr);
-                          continue;
-                          } 
-                        */  
-                        for( i = 0 ; i< data[cam].length; i++){
-                           if( tr.name === data[cam][i].name ) {
-                             data[cam][i].x.push(tr.x);
-                             data[cam][i].y.push(tr.y);
-                             data[cam][i].text.push(tr.text + ' cam:' + cam);
-                             data[cam][i].type = PLOT_TYPE
-                             if( data[cam][i].x.length >= MAX_BUFFER ) {
-                                 data[cam][i].x.shift();
-                                 data[cam][i].y.shift();
-                                 data[cam][i].text.shift();
-                             }  
-
-                           } else {
-                               k++
-                           }
-                        }
-                       // check if this a new object not existed before
-                        if( k === data[cam].length ){
-                             _data = {"x": [],"y": [],"text": []};
-                             _data.x.push(traces[j].x);
-                             _data.y.push(traces[j].y);
-                             _data.text.push(traces[j].text + ' cam:' + traces[j].cam);
-                             _data.name = traces[j].name;
-                             _data.type = PLOT_TYPE
-                           data[cam].push(_data)
-                         }    
+  var r = new XMLHttpRequest();
+  var r_h = new XMLHttpRequest();
+  MAX_BUFFER = 10000;
+  BEAT = 1;
+  PLOT_TYPE = 'bar';
+  
+  window.setInterval(function(){
+      ajaxCallFunction();  //calling every 5 second
+  }, BEAT*1000);
+ 
+  
+ var populate_params = function(cam_to_populate) {
+         //if( blocked_cam === undefined ) blocked_cam = -1;
+         //console.log(r.responseText);
+         if(r.responseText !== ''){
+             var traces = JSON.parse(r.responseText);
+             //console.log("traces = " + traces);
+             if(traces == null || traces.length === 0) return;
+             
+             for( j = 0 ; j< traces.length; j++){
+                var k = 0;
+                tr = traces[j];
+                cam = tr.cam;
+                // if we met blocked camera stop processing it
+                //if( cam === blocked_cam) continue;
+ 
+                for( i = 0 ; i< data[cam].length; i++){
+                   if( tr.name === data[cam][i].name ) {
+                     data[cam][i].x.push(tr.x);
+                     data[cam][i].y.push(tr.y);
+                     data[cam][i].text.push(tr.text + ' cam:' + cam);
+                     data[cam][i].type = PLOT_TYPE;
+                     if( data[cam][i].x.length >= MAX_BUFFER ) {
+                         data[cam][i].x.shift();
+                         data[cam][i].y.shift();
+                         data[cam][i].text.shift();
                      }  
-                     Plotly.newPlot('myDiv'+cam, data[cam],layout);
-                 }
-              };
-          }
-    
-          var data = [];
-          {% for cam,video_url in video_urls %}
-             data.push([])
-          {% endfor %}
 
-          var layout = {
-              xaxis: {
-                  autorange: true
-              },
-              yaxis: {
-                  autorange: true
-              },
-              legend: {
-                  y: 0.5,
-                  yref: 'paper',
-                  font: {
-                      family: 'Arial, sans-serif',
-                      size: 20,
-                      color: 'grey',
-                  }
-              },
-              title: 'Founded objects per time (6 sec beet)'
-          };
+                   } else {
+                       k++;
+                   }
+                }
+               // check if this a new object not existed before
+                if( k === data[cam].length ){
+                     _data = {"x": [],"y": [],"text": []};
+                     _data.x.push(traces[j].x);
+                     _data.y.push(traces[j].y);
+                     _data.text.push(traces[j].text + ' cam:' + traces[j].cam);
+                     _data.name = traces[j].name;
+                     _data.type = PLOT_TYPE;
+                   data[cam].push(_data);
+                 }    
+             }  
+             Plotly.newPlot('myDiv'+cam, data[cam],layout);
+         }
+  }
+
+
+ var populate_lastparams = function(cam_to_populate, secs) {
+         //if( blocked_cam === undefined ) blocked_cam = -1;
+         //console.log(r.responseText);
+         if(r_h.responseText !== ''){
+             var traces = JSON.parse(r_h.responseText);
+             if(traces == null || traces.length === 0) return;
+             for( j = 0 ; j< traces.length; j++){
+                var k = 0;
+                tr = traces[j];
+                cam = tr.cam;
+                // if we met blocked camera stop processing it
+                //if( cam !== cam_to_populate) continue;
+ 
+                for( i = 0 ; i< history_data[cam].length; i++){
+                   if( tr.name === history_data[cam][i].name ) {
+                     history_data[cam][i].x.push(tr.x);
+                     history_data[cam][i].y.push(tr.y);
+                     history_data[cam][i].text.push(tr.text + ' cam:' + cam);
+                     history_data[cam][i].type = PLOT_TYPE;
+                     if( history_data[cam][i].x.length >= MAX_BUFFER ) {
+                         history_data[cam][i].x.shift();
+                         history_data[cam][i].y.shift();
+                         history_data[cam][i].text.shift();
+                     }  
+
+                   } else {
+                       k++;
+                   }
+                }
+               // check if this a new object not existed before
+                if( k === history_data[cam].length ){
+                     _data = {"x": [],"y": [],"text": []};
+                     _data.x.push(traces[j].x);
+                     _data.y.push(traces[j].y);
+                     _data.text.push(traces[j].text + ' cam:' + traces[j].cam);
+                     _data.name = traces[j].name;
+                     _data.type = PLOT_TYPE;
+                   history_data[cam].push(_data);
+                 }    
+             }  
+             //last_layout = layout
+             //last_layout.title += (secs/3600) + " hour(s)"
+             Plotly.newPlot('lastDiv'+cam_to_populate, history_data[cam_to_populate],layout);
+         }
+  }
+
+
+ 
+  function ajaxCallFunction(){
+    //this function uses ajax to interact with the server
+
+     // r.multipart = true;
+      r.open('GET', "{{ url_for('params_feed') }}", true);
+      r.send();
+      r.onprogress = function(){ populate_params();};
+  }
+
+  function moreparams(camera , value){
+    //this function uses ajax to interact with the server
+     // r.multipart = true;
+          var timestamp = new Date() / 1000 | 0
+          r_h.open('GET', "{{ url_for('moreparams') }}?time="+ (timestamp - value), true);
+          r_h.send();
+          r_h.onprogress = function(){
+              populate_lastparams(camera, value); 
+              };
+ }  
+   
+  var data =  [];
+  var history_data = []
+  var steps = [];
+  
+  {% for cam,video_url in video_urls %}
+     data.push([]);
+     history_data.push([]);
+  {% endfor %}
+
+  var layout = {
+      xaxis: {
+          autorange: true
+      },
+      yaxis: {
+          autorange: true
+      },
+      legend: {
+          y: 0.5,
+          yref: 'paper',
+          font: {
+              family: 'Arial, sans-serif',
+              size: 20,
+              color: 'grey',
+          }
+      },
+      title: 'Founded objects for last ',
+  };
 
 </script>
 

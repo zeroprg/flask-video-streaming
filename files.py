@@ -1,7 +1,8 @@
 import os
 import glob
 import time
-
+import json
+import re
 
 # Set the directory you want to start from
 def traverse_dir(rootDir=".", wildcard="*" , start = 0 , end = 0, date = None):
@@ -27,6 +28,7 @@ def delete_file_older_then(path, sec):
        except OSError: pass
 
 def find_index(list,date):
+    print("find_index, date:", date)
     return binary_bisection(compare_dates,date,list)
     
 """ Compare if the file modification date older then specified 'date'. The goal is to choose all file
@@ -35,25 +37,48 @@ def compare_dates(file,date):
     # retrieves the stats for the current file as a tuple
     # (mode, ino, dev, nlink, uid, gid, size, atime, mtime, ctime)
     # the tuple element mtime at index 8 is the last-modified-date
-    stats = os.stat(file)
-    # create tuple (year yyyy, month(1-12), day(1-31), hour(0-23), minute(0-59), second(0-59),
-    # weekday(0-6, 0 is monday), Julian day(1-366), daylight flag(-1,0 or 1)) from seconds since epoch
-    # note:  this tuple can be sorted properly by date and time
-    file_lastmod_date = time.localtime(stats[8])
-    #iso = time.strftime('%Y-%m-%dT%H:%M:%SZ', lastmod_date)
+    match = re.search(r'.*(?:\D|^)(\d+)', file)
+    print(match)
+    if not match:  
+        raise Exception("Invalid file name, it must be in format 12345.* where the number is time in seconds from epoch (January 1st, 1970)!: " + file)
+    file_lastmod_date = match.group(1)
     """ Return true if file modified after the date (in seconds from 1970)"""
-    return date <= file_lastmod_date
+    print("file_lastmod_date:",  file_lastmod_date)
+    return float(date) > float(file_lastmod_date)
     
 """ Bisection or Dyhotomy method in generic.  """
 def binary_bisection(function,param2,list):
     frm = 0
+    old_frm = -1
     to = len(list)
+    print(to)
     while frm < to:
-        mid = (frm+to)>>1
+        if frm == old_frm: break
+        mid = (to - frm)>>1
+        old_frm = frm
+        print("list[mid]:",mid, list[mid])
         if function(list[mid], param2):
             """ Use left side"""
-            to = mid
+            frm = mid+1
         else:
             """ Use right side"""
-            frm = mid+1
+            to = mid-1
+        print("frm,to:",frm,to)
     return frm        
+
+if (__name__ == '__main__'):
+    PARAMS_FOLDER = "static/params/"
+    params_files = traverse_dir(PARAMS_FOLDER)
+    print("Test #1: Populate list of JSON files with form folder")
+    print("params_files:" + json.dumps(params_files))
+    if len(params_files)>0: print("Test #1 : !!!!!!!!!!!! Successed !!!!!!!!!!!!!!")
+    print("Test #2: Compare modification of first file in list with provided time")
+    test2Result = compare_dates(params_files[0], 1532059264) #time.time())
+    print(test2Result)
+    if test2Result: print("Test #2 : !!!!!!!!!!!! Successed !!!!!!!!!!!!!!")
+    print("Test #3")
+    index = find_index(params_files, 1534141766)
+    if index>0: print("Test #3 : !!!!!!!!!!!! Successed !!!!!!!!!!!!!!")
+    
+    
+    

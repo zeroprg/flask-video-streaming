@@ -252,7 +252,7 @@ def persist_params(filename):
     logger.info("Persisting ,filename: " + filename)
     x = dumpQueue(paramsQueue)
     f = open(filename,"w+")    
-    logger.info("Persisting ,x: " + x)
+    #logger.info("Persisting ,x: " + x)
     f.write(x)
     f.close()
 
@@ -428,17 +428,22 @@ def index():
 def moreparams():
     """ Read list of json files or return one specific  for specific time """
     time = request.args.get('time')
-    if time == '': time =0
-    # if time ==0 return whole list of files
-    if time == 0: 
-        return Response( gen_array_of_params(), mimetype='text/plain')
-    else:
-        return Response( open( PARAMS_FOLDER + str(int(time)) + ".json", 'r').read(), mimetype='text/plain')
+    if time == '' or time is None: time = 0
+    else: time = int(time)
+    files = gen_array_of_params()
+    indx = find_index(files,time)
+    #indx = 8
+    print("indx:", indx)
+    _arr = ''
+    for indx_ in reversed(range(indx)):
+        _arr +=  open( files[indx_], 'r').read()
+    
+    return Response( _arr.replace('][',','), mimetype='text/plain')
         
 def gen_array_of_params():
     params_filenames =  traverse_dir(PARAMS_FOLDER)
-    x = json.dumps(params_filenames)
-    return x
+    #x = json.dumps(params_filenames)
+    return params_filenames
 
         
 
@@ -553,4 +558,4 @@ def params_feed():
 
 if (__name__ == '__main__'):
     start()
-    app.run(host='0.0.0.0',threaded=True) # debug = True )
+    app.run(host='0.0.0.0',debug = True ) # threaded=True) # 
