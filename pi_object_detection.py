@@ -50,13 +50,13 @@ COLORS = np.random.uniform(0, 255, size=(len(CLASSES), 3))
 IMAGES_FOLDER = "static/img/"
 PARAMS_FOLDER = "static/params/"
 
-DRAW_RECTANGLES = False
-DELETE_FILES_LATER = 12 * 60 * 60 * 60 # sec 
+DRAW_RECTANGLES = True
+DELETE_FILES_LATER = 24 * 60 * 60 # sec 
 ENCODING = "utf-8"
 NUMBER_OF_FILES = 10
 HASH_DELTA = 57
 PARAMS_BUFFER =  10
-IMAGES_BUFFER = 100
+IMAGES_BUFFER = 1000
 RECOGNZED_FRAME = 1
 THREAD_NUMBERS  = 1 #must be less then 4 for PI
 videos = []
