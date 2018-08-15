@@ -44,7 +44,7 @@ CLASSES = ["background", "aeroplane", "bicycle", "bird", "boat",
 LOOKED1 = { "car": [], "cat": [],"dog": [], "person": [], "pottedplant":[], "bottle":[], "chair":[]}
 LOOKED2 = { "car": [], "cat": [],"dog": [], "person": [], "pottedplant":[], "bottle":[], "chair":[]}
 
-subject_of_interes = ["person","car","bus"]
+subject_of_interes = ["person"]
 COLORS = np.random.uniform(0, 255, size=(len(CLASSES), 3))
 
 IMAGES_FOLDER = "static/img/"
