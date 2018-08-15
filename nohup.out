@@ -1,0 +1,200 @@
+test
+[INFO] loading model...
+[INFO] starting process...
+[INFO] starting video stream...
+[INFO] starting video stream with arg: http://192.168.1.72:81/videostream.cgi?loginuse=GwEBAA%3D%3D&loginpas=Nw0AG1ZceWtl&_=15282579520910.657573406191367
+[INFO] Video stream: 0 vs:<VideoCapture 0xa9d7e3e0>
+[INFO] starting video stream with arg: http://192.168.1.80:81/videostream.cgi?loginuse=GwEBAA%3D%3D&loginpas=Nw0AG1ZceWtl&_=15282579520910.657573406191367
+[INFO] Video stream: 1 vs:<VideoCapture 0xa9d7e420>
+p_classifiers for cam:0 started
+p_classifiers for cam:1 started
+ * Serving Flask app "pi_object_detection" (lazy loading)
+ * Environment: production
+   WARNING: Do not use the development server in a production environment.
+   Use a production WSGI server instead.
+ * Debug mode: off
+ * Running on http://0.0.0.0:5000/ (Press CTRL+C to quit)
+[2018-08-15 03:13:02,147] ERROR in app: Exception on / [GET]
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.5/dist-packages/flask/app.py", line 2292, in wsgi_app
+    response = self.full_dispatch_request()
+  File "/usr/local/lib/python3.5/dist-packages/flask/app.py", line 1815, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "/usr/local/lib/python3.5/dist-packages/flask_cors/extension.py", line 161, in wrapped_function
+    return cors_after_request(app.make_response(f(*args, **kwargs)))
+  File "/usr/local/lib/python3.5/dist-packages/flask/app.py", line 1718, in handle_user_exception
+    reraise(exc_type, exc_value, tb)
+  File "/usr/local/lib/python3.5/dist-packages/flask/_compat.py", line 35, in reraise
+    raise value
+  File "/usr/local/lib/python3.5/dist-packages/flask/app.py", line 1813, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "/usr/local/lib/python3.5/dist-packages/flask/app.py", line 1799, in dispatch_request
+    return self.view_functions[rule.endpoint](**req.view_args)
+  File "pi_object_detection.py", line 420, in index
+    delete_file_older_then(IMAGES_FOLDER, DELETE_FILES_LATER)
+  File "/home/morkovka/flask-video-streaming/files.py", line 24, in delete_file_older_then
+    for f in os.listdir(path):
+FileNotFoundError: [Errno 2] No such file or directory: 'static/img/'
+127.0.0.1 - - [15/Aug/2018 03:13:02] "GET / HTTP/1.1" 500 -
+[mjpeg @ 0x12cc100] overread 8
+[mjpeg @ 0x12cc100] overread 8
+[mjpeg @ 0x12cc100] overread 8
+[mjpeg @ 0x12cc100] overread 8
+[mjpeg @ 0x12cc100] overread 8
+[mjpeg @ 0x12cc100] overread 8
+[mjpeg @ 0x12cc100] overread 8
+[mjpeg @ 0x12cc100] overread 8
+[mjpeg @ 0x12cc550] overread 8
+test
+[INFO] loading model...
+[INFO] starting process...
+[INFO] starting video stream...
+[INFO] starting video stream with arg: http://192.168.1.72:81/videostream.cgi?loginuse=GwEBAA%3D%3D&loginpas=Nw0AG1ZceWtl&_=15282579520910.657573406191367
+[INFO] Video stream: 0 vs:<VideoCapture 0xa9d27300>
+[INFO] starting video stream with arg: http://192.168.1.80:81/videostream.cgi?loginuse=GwEBAA%3D%3D&loginpas=Nw0AG1ZceWtl&_=15282579520910.657573406191367
+[INFO] Video stream: 1 vs:<VideoCapture 0xa9d27410>
+p_classifiers for cam:0 started
+p_classifiers for cam:1 started
+ * Serving Flask app "pi_object_detection" (lazy loading)
+ * Environment: production
+   WARNING: Do not use the development server in a production environment.
+   Use a production WSGI server instead.
+ * Debug mode: off
+ * Running on http://0.0.0.0:5000/ (Press CTRL+C to quit)
+127.0.0.1 - - [15/Aug/2018 03:15:01] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [15/Aug/2018 03:15:02] "GET /video_feed?cam=0 HTTP/1.1" 200 -
+127.0.0.1 - - [15/Aug/2018 03:15:02] "GET /video_feed?cam=1 HTTP/1.1" 200 -
+127.0.0.1 - - [15/Aug/2018 03:15:05] "GET /params_feed HTTP/1.1" 200 -
+127.0.0.1 - - [15/Aug/2018 03:15:05] "GET /params_feed HTTP/1.1" 200 -
+127.0.0.1 - - [15/Aug/2018 03:15:06] "GET /params_feed HTTP/1.1" 200 -
+127.0.0.1 - - [15/Aug/2018 03:15:08] "GET /params_feed HTTP/1.1" 200 -
+127.0.0.1 - - [15/Aug/2018 03:15:09] "GET /params_feed HTTP/1.1" 200 -
+127.0.0.1 - - [15/Aug/2018 03:15:09] "GET /params_feed HTTP/1.1" 200 -
+127.0.0.1 - - [15/Aug/2018 03:15:10] "GET /params_feed HTTP/1.1" 200 -
+127.0.0.1 - - [15/Aug/2018 03:15:11] "GET /params_feed HTTP/1.1" 200 -
+127.0.0.1 - - [15/Aug/2018 03:15:13] "GET /params_feed HTTP/1.1" 200 -
+127.0.0.1 - - [15/Aug/2018 03:15:13] "GET /params_feed HTTP/1.1" 200 -
+127.0.0.1 - - [15/Aug/2018 03:15:14] "GET /params_feed HTTP/1.1" 200 -
+127.0.0.1 - - [15/Aug/2018 03:15:16] "GET /params_feed HTTP/1.1" 200 -
+127.0.0.1 - - [15/Aug/2018 03:15:16] "GET /params_feed HTTP/1.1" 200 -
+127.0.0.1 - - [15/Aug/2018 03:15:17] "GET /moreimgs?start=0&cam=0&direction=1 HTTP/1.1" 200 -
+127.0.0.1 - - [15/Aug/2018 03:15:17] "GET /params_feed HTTP/1.1" 200 -
+127.0.0.1 - - [15/Aug/2018 03:15:18] "GET /params_feed HTTP/1.1" 200 -
+127.0.0.1 - - [15/Aug/2018 03:15:19] "GET /params_feed HTTP/1.1" 200 -
+127.0.0.1 - - [15/Aug/2018 03:15:20] "GET /moreimgs?start=0&cam=1&direction=1 HTTP/1.1" 200 -
+127.0.0.1 - - [15/Aug/2018 03:15:20] "GET /params_feed HTTP/1.1" 200 -
+127.0.0.1 - - [15/Aug/2018 03:15:21] "GET /params_feed HTTP/1.1" 200 -
+127.0.0.1 - - [15/Aug/2018 03:15:23] "GET /params_feed HTTP/1.1" 200 -
+127.0.0.1 - - [15/Aug/2018 03:15:24] "GET /params_feed HTTP/1.1" 200 -
+127.0.0.1 - - [15/Aug/2018 03:15:24] "GET /params_feed HTTP/1.1" 200 -
+127.0.0.1 - - [15/Aug/2018 03:15:25] "GET /params_feed HTTP/1.1" 200 -
+127.0.0.1 - - [15/Aug/2018 03:15:27] "GET /params_feed HTTP/1.1" 200 -
+127.0.0.1 - - [15/Aug/2018 03:15:27] "GET /params_feed HTTP/1.1" 200 -
+127.0.0.1 - - [15/Aug/2018 03:15:29] "GET /params_feed HTTP/1.1" 200 -
+127.0.0.1 - - [15/Aug/2018 03:15:29] "GET /params_feed HTTP/1.1" 200 -
+127.0.0.1 - - [15/Aug/2018 03:15:30] "GET /params_feed HTTP/1.1" 200 -
+127.0.0.1 - - [15/Aug/2018 03:15:31] "GET /params_feed HTTP/1.1" 200 -
+127.0.0.1 - - [15/Aug/2018 03:15:32] "GET /params_feed HTTP/1.1" 200 -
+127.0.0.1 - - [15/Aug/2018 03:15:33] "GET /params_feed HTTP/1.1" 200 -
+127.0.0.1 - - [15/Aug/2018 03:15:34] "GET /params_feed HTTP/1.1" 200 -
+127.0.0.1 - - [15/Aug/2018 03:15:35] "GET /params_feed HTTP/1.1" 200 -
+127.0.0.1 - - [15/Aug/2018 03:15:36] "GET /params_feed HTTP/1.1" 200 -
+127.0.0.1 - - [15/Aug/2018 03:15:37] "GET /params_feed HTTP/1.1" 200 -
+127.0.0.1 - - [15/Aug/2018 03:15:38] "GET /params_feed HTTP/1.1" 200 -
+127.0.0.1 - - [15/Aug/2018 03:15:39] "GET /params_feed HTTP/1.1" 200 -
+127.0.0.1 - - [15/Aug/2018 03:15:40] "GET /params_feed HTTP/1.1" 200 -
+127.0.0.1 - - [15/Aug/2018 03:15:42] "GET /params_feed HTTP/1.1" 200 -
+127.0.0.1 - - [15/Aug/2018 03:15:42] "GET /params_feed HTTP/1.1" 200 -
+127.0.0.1 - - [15/Aug/2018 03:15:43] "GET /params_feed HTTP/1.1" 200 -
+127.0.0.1 - - [15/Aug/2018 03:15:45] "GET /params_feed HTTP/1.1" 200 -
+127.0.0.1 - - [15/Aug/2018 03:15:46] "GET /params_feed HTTP/1.1" 200 -
+127.0.0.1 - - [15/Aug/2018 03:15:46] "GET /params_feed HTTP/1.1" 200 -
+127.0.0.1 - - [15/Aug/2018 03:15:47] "GET /params_feed HTTP/1.1" 200 -
+127.0.0.1 - - [15/Aug/2018 03:15:48] "GET /params_feed HTTP/1.1" 200 -
+127.0.0.1 - - [15/Aug/2018 03:15:49] "GET /params_feed HTTP/1.1" 200 -
+127.0.0.1 - - [15/Aug/2018 03:15:51] "GET /params_feed HTTP/1.1" 200 -
+127.0.0.1 - - [15/Aug/2018 03:15:52] "GET /params_feed HTTP/1.1" 200 -
+127.0.0.1 - - [15/Aug/2018 03:15:52] "GET /params_feed HTTP/1.1" 200 -
+127.0.0.1 - - [15/Aug/2018 03:15:53] "GET /params_feed HTTP/1.1" 200 -
+127.0.0.1 - - [15/Aug/2018 03:15:54] "GET /params_feed HTTP/1.1" 200 -
+127.0.0.1 - - [15/Aug/2018 03:15:55] "GET /params_feed HTTP/1.1" 200 -
+127.0.0.1 - - [15/Aug/2018 03:15:57] "GET /params_feed HTTP/1.1" 200 -
+127.0.0.1 - - [15/Aug/2018 03:15:57] "GET /params_feed HTTP/1.1" 200 -
+127.0.0.1 - - [15/Aug/2018 03:15:58] "GET /params_feed HTTP/1.1" 200 -
+127.0.0.1 - - [15/Aug/2018 03:15:59] "GET /params_feed HTTP/1.1" 200 -
+127.0.0.1 - - [15/Aug/2018 03:16:00] "GET /params_feed HTTP/1.1" 200 -
+127.0.0.1 - - [15/Aug/2018 03:16:01] "GET /params_feed HTTP/1.1" 200 -
+127.0.0.1 - - [15/Aug/2018 03:16:02] "GET /params_feed HTTP/1.1" 200 -
+127.0.0.1 - - [15/Aug/2018 03:16:03] "GET /params_feed HTTP/1.1" 200 -
+127.0.0.1 - - [15/Aug/2018 03:16:04] "GET /params_feed HTTP/1.1" 200 -
+127.0.0.1 - - [15/Aug/2018 03:16:06] "GET /params_feed HTTP/1.1" 200 -
+127.0.0.1 - - [15/Aug/2018 03:16:06] "GET /params_feed HTTP/1.1" 200 -
+127.0.0.1 - - [15/Aug/2018 03:16:07] "GET /params_feed HTTP/1.1" 200 -
+127.0.0.1 - - [15/Aug/2018 03:16:08] "GET /params_feed HTTP/1.1" 200 -
+127.0.0.1 - - [15/Aug/2018 03:16:09] "GET /params_feed HTTP/1.1" 200 -
+127.0.0.1 - - [15/Aug/2018 03:16:10] "GET /params_feed HTTP/1.1" 200 -
+127.0.0.1 - - [15/Aug/2018 03:16:12] "GET /params_feed HTTP/1.1" 200 -
+127.0.0.1 - - [15/Aug/2018 03:16:12] "GET /params_feed HTTP/1.1" 200 -
+127.0.0.1 - - [15/Aug/2018 03:16:14] "GET /params_feed HTTP/1.1" 200 -
+127.0.0.1 - - [15/Aug/2018 03:16:14] "GET /params_feed HTTP/1.1" 200 -
+127.0.0.1 - - [15/Aug/2018 03:16:15] "GET /params_feed HTTP/1.1" 200 -
+127.0.0.1 - - [15/Aug/2018 03:16:17] "GET /params_feed HTTP/1.1" 200 -
+127.0.0.1 - - [15/Aug/2018 03:16:17] "GET /params_feed HTTP/1.1" 200 -
+127.0.0.1 - - [15/Aug/2018 03:16:19] "GET /params_feed HTTP/1.1" 200 -
+127.0.0.1 - - [15/Aug/2018 03:16:19] "GET /params_feed HTTP/1.1" 200 -
+[mjpeg @ 0xd804e0] overread 8
+127.0.0.1 - - [15/Aug/2018 03:16:20] "GET /params_feed HTTP/1.1" 200 -
+127.0.0.1 - - [15/Aug/2018 03:16:21] "GET /params_feed HTTP/1.1" 200 -
+[mjpeg @ 0xd804e0] overread 8
+127.0.0.1 - - [15/Aug/2018 03:16:22] "GET /params_feed HTTP/1.1" 200 -
+127.0.0.1 - - [15/Aug/2018 03:16:23] "GET /params_feed HTTP/1.1" 200 -
+127.0.0.1 - - [15/Aug/2018 03:16:25] "GET /params_feed HTTP/1.1" 200 -
+127.0.0.1 - - [15/Aug/2018 03:16:26] "GET /params_feed HTTP/1.1" 200 -
+127.0.0.1 - - [15/Aug/2018 03:16:26] "GET /params_feed HTTP/1.1" 200 -
+127.0.0.1 - - [15/Aug/2018 03:16:27] "GET /params_feed HTTP/1.1" 200 -
+127.0.0.1 - - [15/Aug/2018 03:16:28] "GET /params_feed HTTP/1.1" 200 -
+127.0.0.1 - - [15/Aug/2018 03:16:30] "GET /params_feed HTTP/1.1" 200 -
+127.0.0.1 - - [15/Aug/2018 03:16:30] "GET /params_feed HTTP/1.1" 200 -
+[mjpeg @ 0xd804e0] overread 8
+127.0.0.1 - - [15/Aug/2018 03:16:31] "GET /params_feed HTTP/1.1" 200 -
+127.0.0.1 - - [15/Aug/2018 03:16:33] "GET /params_feed HTTP/1.1" 200 -
+127.0.0.1 - - [15/Aug/2018 03:16:33] "GET /params_feed HTTP/1.1" 200 -
+[mjpeg @ 0xd804e0] error count: 67
+[mjpeg @ 0xd804e0] error y=32 x=2
+127.0.0.1 - - [15/Aug/2018 03:16:34] "GET /params_feed HTTP/1.1" 200 -
+127.0.0.1 - - [15/Aug/2018 03:16:35] "GET /params_feed HTTP/1.1" 200 -
+127.0.0.1 - - [15/Aug/2018 03:16:36] "GET /params_feed HTTP/1.1" 200 -
+127.0.0.1 - - [15/Aug/2018 03:16:38] "GET /params_feed HTTP/1.1" 200 -
+127.0.0.1 - - [15/Aug/2018 03:16:38] "GET /params_feed HTTP/1.1" 200 -
+[mjpeg @ 0xd804e0] overread 8
+127.0.0.1 - - [15/Aug/2018 03:16:39] "GET /params_feed HTTP/1.1" 200 -
+127.0.0.1 - - [15/Aug/2018 03:16:40] "GET /params_feed HTTP/1.1" 200 -
+127.0.0.1 - - [15/Aug/2018 03:16:42] "GET /params_feed HTTP/1.1" 200 -
+127.0.0.1 - - [15/Aug/2018 03:16:42] "GET /params_feed HTTP/1.1" 200 -
+[mjpeg @ 0xd804e0] overread 8
+127.0.0.1 - - [15/Aug/2018 03:16:44] "GET /params_feed HTTP/1.1" 200 -
+127.0.0.1 - - [15/Aug/2018 03:16:44] "GET /params_feed HTTP/1.1" 200 -
+127.0.0.1 - - [15/Aug/2018 03:16:46] "GET /params_feed HTTP/1.1" 200 -
+127.0.0.1 - - [15/Aug/2018 03:16:47] "GET /params_feed HTTP/1.1" 200 -
+127.0.0.1 - - [15/Aug/2018 03:16:48] "GET /params_feed HTTP/1.1" 200 -
+[mjpeg @ 0xd804e0] overread 8
+127.0.0.1 - - [15/Aug/2018 03:16:48] "GET /params_feed HTTP/1.1" 200 -
+127.0.0.1 - - [15/Aug/2018 03:16:50] "GET /params_feed HTTP/1.1" 200 -
+127.0.0.1 - - [15/Aug/2018 03:16:50] "GET /params_feed HTTP/1.1" 200 -
+[mjpeg @ 0xd804e0] overread 8
+127.0.0.1 - - [15/Aug/2018 03:16:51] "GET /params_feed HTTP/1.1" 200 -
+127.0.0.1 - - [15/Aug/2018 03:16:52] "GET /params_feed HTTP/1.1" 200 -
+127.0.0.1 - - [15/Aug/2018 03:16:53] "GET /params_feed HTTP/1.1" 200 -
+127.0.0.1 - - [15/Aug/2018 03:16:54] "GET /params_feed HTTP/1.1" 200 -
+[mjpeg @ 0xd804e0] overread 8
+127.0.0.1 - - [15/Aug/2018 03:16:55] "GET /params_feed HTTP/1.1" 200 -
+127.0.0.1 - - [15/Aug/2018 03:16:56] "GET /params_feed HTTP/1.1" 200 -
+127.0.0.1 - - [15/Aug/2018 03:16:57] "GET /params_feed HTTP/1.1" 200 -
+[mjpeg @ 0xd804e0] overread 8
+127.0.0.1 - - [15/Aug/2018 03:16:58] "GET /params_feed HTTP/1.1" 200 -
+127.0.0.1 - - [15/Aug/2018 03:16:59] "GET /params_feed HTTP/1.1" 200 -
+127.0.0.1 - - [15/Aug/2018 03:17:00] "GET /params_feed HTTP/1.1" 200 -
+127.0.0.1 - - [15/Aug/2018 03:17:01] "GET /params_feed HTTP/1.1" 200 -
+127.0.0.1 - - [15/Aug/2018 03:17:02] "GET /params_feed HTTP/1.1" 200 -
+[mjpeg @ 0xd84d00] overread 8
+127.0.0.1 - - [15/Aug/2018 03:17:04] "GET /params_feed HTTP/1.1" 200 -

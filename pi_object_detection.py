@@ -50,7 +50,7 @@ COLORS = np.random.uniform(0, 255, size=(len(CLASSES), 3))
 IMAGES_FOLDER = "static/img/"
 PARAMS_FOLDER = "static/params/"
 
-DRAW_RECTANGLES = True
+DRAW_RECTANGLES = False
 DELETE_FILES_LATER = 24 * 60 * 60 # sec 
 ENCODING = "utf-8"
 NUMBER_OF_FILES = 10
