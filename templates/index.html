@@ -105,8 +105,12 @@
          <h4> Historical records: 
          <select name="Objects log" onchange="moreparams({{cam}}, this.value)">
               <option value="0"></option>
-              <option value="3600">1h back</option>              
-	<!--	      <option value="18000">5h back</option>
+              <option value="3600">1h back</option>
+              <option value="7200">2h back</option>
+              <option value="10800">3h back</option>
+              <option value="14400">4h back</option>
+		      <option value="18000">5h back</option>
+		      <!--
 		      <option value="360000">12h back</option>
 		      <option value="720000">24h back</option>
 		      <option value="1440000">48h back (2 days)</option> 
@@ -217,8 +221,8 @@ function showmore(direction, cam, _start)
   var r_h = new XMLHttpRequest();
   MAX_BUFFER = 10000;
   BEAT = 1;
-  PLOT_TYPE = 'bar';
-  
+  PLOT_TYPE1 = 'bar';
+  PLOT_TYPE2 = 'scatter';
   window.setInterval(function(){
       ajaxCallFunction();  //calling every 5 second
   }, BEAT*1000);
@@ -244,7 +248,7 @@ function showmore(direction, cam, _start)
                      data[cam][i].x.push(tr.x);
                      data[cam][i].y.push(tr.y);
                      data[cam][i].text.push(tr.text + ' cam:' + cam);
-                     data[cam][i].type = PLOT_TYPE;
+                     data[cam][i].type = PLOT_TYPE1;
                      if( data[cam][i].x.length >= MAX_BUFFER ) {
                          data[cam][i].x.shift();
                          data[cam][i].y.shift();
@@ -262,7 +266,7 @@ function showmore(direction, cam, _start)
                      _data.y.push(traces[j].y);
                      _data.text.push(traces[j].text + ' cam:' + traces[j].cam);
                      _data.name = traces[j].name;
-                     _data.type = PLOT_TYPE;
+                     _data.type = PLOT_TYPE1;
                    data[cam].push(_data);
                  }    
              }  
@@ -289,7 +293,7 @@ function showmore(direction, cam, _start)
                      history_data[cam][i].x.push(tr.x);
                      history_data[cam][i].y.push(tr.y);
                      history_data[cam][i].text.push(tr.text + ' cam:' + cam);
-                     history_data[cam][i].type = PLOT_TYPE;
+                     history_data[cam][i].type = PLOT_TYPE2;
                      if( history_data[cam][i].x.length >= MAX_BUFFER ) {
                          history_data[cam][i].x.shift();
                          history_data[cam][i].y.shift();
@@ -307,7 +311,7 @@ function showmore(direction, cam, _start)
                      _data.y.push(traces[j].y);
                      _data.text.push(traces[j].text + ' cam:' + traces[j].cam);
                      _data.name = traces[j].name;
-                     _data.type = PLOT_TYPE;
+                     _data.type = PLOT_TYPE2;
                    history_data[cam].push(_data);
                  }    
              }  

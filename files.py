@@ -5,19 +5,19 @@ import json
 import re
 
 # Set the directory you want to start from
-def traverse_dir(rootDir=".", wildcard="*" , start = 0 , end = 0, date = None):
+def traverse_dir(rootDir=".", reverse = True, wildcard="*" , start = 0 , end = 0, date = None):
     ret = []
     for  file in glob.iglob(rootDir + wildcard,recursive= False):
          ret.append(file)
     if end == 0 or start > end:
         if date == None:
-            return sorted(ret, key=os.path.getmtime, reverse=True)[start:]
+            return sorted(ret, key=os.path.getmtime, reverse=reverse)[start:]
         else:
-            ret = sorted(ret, key=os.path.getmtime, reverse=True)
+            ret = sorted(ret, key=os.path.getmtime, reverse=reverse)
             right_indx = binary_bisection(compare_dates, date, ret)
             return ret[start:right_indx]  
     else:
-        return sorted(ret, key=os.path.getmtime, reverse=True)[start:end]
+        return sorted(ret, key=os.path.getmtime, reverse=reverse)[start:end]
 
 
 def delete_file_older_then(path, sec):
@@ -44,40 +44,43 @@ def compare_dates(file,date):
     file_lastmod_date = match.group(1)
     """ Return true if file modified after the date (in seconds from 1970)"""
     print("file_lastmod_date:",  file_lastmod_date)
-    return float(date) > float(file_lastmod_date)
+    return float(file_lastmod_date) < float(date)
     
 """ Bisection or Dyhotomy method in generic.  """
-def binary_bisection(function,param2,list):
+def binary_bisection(function,date,list):
     frm = 0
-    old_frm = -1
+    old_mid = -1
     to = len(list)
     print(to)
     while frm < to:
-        if frm == old_frm: break
-        mid = (to - frm)>>1
-        old_frm = frm
+        mid = (to - frm)>>1 
+        if mid == old_mid: break
+        old_mid = mid
         print("list[mid]:",mid, list[mid])
-        if function(list[mid], param2):
+        #Compare if the file modification date older then specified 'date'.
+        # list[mid] < date
+        if  function(list[mid], date):
             """ Use left side"""
-            frm = mid+1
+            frm = mid + 1
+            
         else:
             """ Use right side"""
-            to = mid-1
+            to = mid - 1
         print("frm,to:",frm,to)
     return frm        
 
 if (__name__ == '__main__'):
-    PARAMS_FOLDER = "static/params/"
-    params_files = traverse_dir(PARAMS_FOLDER)
+    PARAMS_FOLDER = "static/params/" 
+    params_files = traverse_dir(PARAMS_FOLDER, False)
     print("Test #1: Populate list of JSON files with form folder")
     print("params_files:" + json.dumps(params_files))
     if len(params_files)>0: print("Test #1 : !!!!!!!!!!!! Successed !!!!!!!!!!!!!!")
     print("Test #2: Compare modification of first file in list with provided time")
-    test2Result = compare_dates(params_files[0], 1532059264) #time.time())
+    test2Result = compare_dates(params_files[0], 1534367187) #time.time())
     print(test2Result)
     if test2Result: print("Test #2 : !!!!!!!!!!!! Successed !!!!!!!!!!!!!!")
     print("Test #3")
-    index = find_index(params_files, 1534141766)
+    index = find_index(params_files, 1534371957)
     if index>0: print("Test #3 : !!!!!!!!!!!! Successed !!!!!!!!!!!!!!")
     
     

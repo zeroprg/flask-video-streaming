@@ -56,7 +56,7 @@ ENCODING = "utf-8"
 NUMBER_OF_FILES = 10
 HASH_DELTA = 57
 PARAMS_BUFFER =  10
-IMAGES_BUFFER = 1000
+IMAGES_BUFFER = 200
 RECOGNZED_FRAME = 1
 THREAD_NUMBERS  = 1 #must be less then 4 for PI
 videos = []
@@ -419,8 +419,8 @@ def index():
     images_filenames=[]
     delete_file_older_then(IMAGES_FOLDER, DELETE_FILES_LATER)
     delete_file_older_then(PARAMS_FOLDER, DELETE_FILES_LATER)
-    images_filenames = traverse_dir( IMAGES_FOLDER, str(0)+"_*", start, start + IMG_PAGINATOR)
-    images_filenames.extend( traverse_dir(IMAGES_FOLDER, str(1)+"_*", start, start + IMG_PAGINATOR ))
+    images_filenames = traverse_dir( IMAGES_FOLDER, True, str(0)+"_*", start, start + IMG_PAGINATOR)
+    images_filenames.extend( traverse_dir(IMAGES_FOLDER, True, str(1)+"_*", start, start + IMG_PAGINATOR ))
     
     return render_template('index.html', **locals())
 
@@ -431,17 +431,17 @@ def moreparams():
     if time == '' or time is None: time = 0
     else: time = int(time)
     files = gen_array_of_params()
-    indx = find_index(files,time)
-    #indx = 8
-    print("indx:", indx)
+    from_indx = find_index(files,time)
+    to_indx = len(files)
+    print("from_indx:", from_indx)
     _arr = ''
-    for indx_ in reversed(range(indx)):
+    for indx_ in range(from_indx, to_indx-1):
         _arr +=  open( files[indx_], 'r').read()
     
     return Response( _arr.replace('][',','), mimetype='text/plain')
         
 def gen_array_of_params():
-    params_filenames =  traverse_dir(PARAMS_FOLDER)
+    params_filenames =  traverse_dir(PARAMS_FOLDER, False)
     #x = json.dumps(params_filenames)
     return params_filenames
 
@@ -461,7 +461,7 @@ def gen_array_of_imgs(cam,start,direction):
         b = start
         a = start+direction*IMG_PAGINATOR
 
-    images_filenames =  traverse_dir(IMAGES_FOLDER, str(cam)+"_*", a,b)
+    images_filenames =  traverse_dir(IMAGES_FOLDER, True, str(cam)+"_*", a,b)
     x = json.dumps(images_filenames)
     return x
 
