@@ -199,7 +199,7 @@ class Screen_statistic(object):
             trace = Trace()
             trace.name = key
             trace.cam = cam
-            tm = strftime("%H:%M:%S", localtime())
+            tm = int(time.time()) #strftime("%H:%M:%S", localtime())
             trace.filenames = filenames.get(key,[])
             trace.x = tm
             trace.y = len(hashes[key])
