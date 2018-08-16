@@ -145,10 +145,10 @@ function show_date(date){
    return 
     date.getHours() + ":" +
     date.getMinutes() + ":" +
-    date.getSeconds() +
+    date.getSeconds() + " " +
     (date.getMonth() + 1) + "/" +
     date.getDate() + "/" +
-    date.getFullYear() + " " +
+    date.getFullYear();
 }
 
 function openTab(evt, tabName) {
