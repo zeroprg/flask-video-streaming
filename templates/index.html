@@ -139,7 +139,15 @@ var i;
 var start = 0;
 var params = [];
 var p_start = 0;
-
+var d =new Date(0)
+function show_date(date){
+   return date.getMonth() + 1) + "/" +
+    date.getDate() + "/" +
+    date.getFullYear() + " " +
+    date.getHours() + ":" +
+    date.getMinutes() + ":" +
+    date.getSeconds()
+}
 
 function openTab(evt, tabName) {
     var i, tabcontent, tablinks;
@@ -246,7 +254,8 @@ function showmore(direction, cam, _start)
  
                 for( i = 0 ; i< data[cam].length; i++){
                    if( tr.name === data[cam][i].name ) {
-                     data[cam][i].x.push(tr.x);
+                     date = show_date(d.setUTCSeconds(tr.x))  
+                     data[cam][i].x.push(date);
                      data[cam][i].y.push(tr.y);
                      data[cam][i].text.push(tr.text + ' cam:' + cam);
                      data[cam][i].type = PLOT_TYPE1;
@@ -263,7 +272,7 @@ function showmore(direction, cam, _start)
                // check if this a new object not existed before
                 if( k === data[cam].length ){
                      _data = {"x": [],"y": [],"text": []};
-                      date = traces[j].x
+                      date = show_date(d.setUTCSeconds(traces[j].x))
                      _data.x.push(date);
                      _data.y.push(traces[j].y);
                      _data.text.push(traces[j].text + ' cam:' + traces[j].cam);
@@ -293,16 +302,12 @@ function showmore(direction, cam, _start)
  
                 for( i = 0 ; i< history_data[cam].length; i++){
                    if( tr.name === history_data[cam][i].name ) {
-                     history_data[cam][i].x.push(tr.x);
+                     date = show_date(d.setUTCSeconds(tr.x))
+                     history_data[cam][i].x.push(date);
                      history_data[cam][i].y.push(tr.y);
                      history_data[cam][i].text.push(tr.text + ' cam:' + cam);
                      history_data[cam][i].type = PLOT_TYPE2;
                      history_data[cam][i].mode = MODE2;
-                     if( history_data[cam][i].x.length >= MAX_BUFFER ) {
-                         history_data[cam][i].x.shift();
-                         history_data[cam][i].y.shift();
-                         history_data[cam][i].text.shift();
-                     }  
 
                    } else {
                        k++;
@@ -311,7 +316,7 @@ function showmore(direction, cam, _start)
                // check if this a new object not existed before
                 if( k === history_data[cam].length ){
                      _data = {"x": [],"y": [],"text": []};
-                     date = traces[j].x;
+                     date = show_date(d.setUTCSeconds(traces[j].x))
                      _data.x.push(date);
                      _data.y.push(traces[j].y);
                      _data.text.push(traces[j].text + ' cam:' + traces[j].cam);
@@ -320,14 +325,14 @@ function showmore(direction, cam, _start)
                      _data.mode = MODE2;
                      
                      last_indx = history_data[cam].length - 1;
-                     if( last_indx >= 0 && date < history_data[cam][last_indx].x ) {
-                         i = last_indx;
-                         while (  i>= 0 &&  date < history_data[cam][i].x) i--;
-                         history_data[cam].splice( i+1, 0, _data);
+                     //if( last_indx >= 0 && date < history_data[cam][last_indx].x ) {
+                       //  i = last_indx;
+                       //  while (  i>= 0 &&  date < history_data[cam][i].x) i--;
+                       //  history_data[cam].splice( i+1, 0, _data);
                          
-                     } else {                          
+                     //} else {                          
                         history_data[cam].push(_data);
-                     }
+                     //}
 
                     
                    
