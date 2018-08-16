@@ -139,14 +139,16 @@ var i;
 var start = 0;
 var params = [];
 var p_start = 0;
-var d =new Date(0)
+
 function show_date(date){
-   return date.getMonth() + 1) + "/" +
-    date.getDate() + "/" +
-    date.getFullYear() + " " +
+   date = new Date(date*1000)
+   return 
     date.getHours() + ":" +
     date.getMinutes() + ":" +
-    date.getSeconds()
+    date.getSeconds() +
+    (date.getMonth() + 1) + "/" +
+    date.getDate() + "/" +
+    date.getFullYear() + " " +
 }
 
 function openTab(evt, tabName) {
@@ -254,7 +256,7 @@ function showmore(direction, cam, _start)
  
                 for( i = 0 ; i< data[cam].length; i++){
                    if( tr.name === data[cam][i].name ) {
-                     date = show_date(d.setUTCSeconds(tr.x))  
+                     date = show_date(tr.x)  
                      data[cam][i].x.push(date);
                      data[cam][i].y.push(tr.y);
                      data[cam][i].text.push(tr.text + ' cam:' + cam);
@@ -272,7 +274,7 @@ function showmore(direction, cam, _start)
                // check if this a new object not existed before
                 if( k === data[cam].length ){
                      _data = {"x": [],"y": [],"text": []};
-                      date = show_date(d.setUTCSeconds(traces[j].x))
+                      date = show_date(traces[j].x)
                      _data.x.push(date);
                      _data.y.push(traces[j].y);
                      _data.text.push(traces[j].text + ' cam:' + traces[j].cam);
@@ -299,10 +301,10 @@ function showmore(direction, cam, _start)
                 cam = tr.cam;
                 // if we met blocked camera stop processing it
                 //if( cam !== cam_to_populate) continue;
- 
+ /*
                 for( i = 0 ; i< history_data[cam].length; i++){
                    if( tr.name === history_data[cam][i].name ) {
-                     date = show_date(d.setUTCSeconds(tr.x))
+                     date = show_date(tr.x)
                      history_data[cam][i].x.push(date);
                      history_data[cam][i].y.push(tr.y);
                      history_data[cam][i].text.push(tr.text + ' cam:' + cam);
@@ -313,10 +315,12 @@ function showmore(direction, cam, _start)
                        k++;
                    }
                 }
+             */   
                // check if this a new object not existed before
-                if( k === history_data[cam].length ){
+               // if( k === history_data[cam].length ){
                      _data = {"x": [],"y": [],"text": []};
-                     date = show_date(d.setUTCSeconds(traces[j].x))
+                     _date.sec = traces[j].x
+                     date = show_date(traces[j].x)
                      _data.x.push(date);
                      _data.y.push(traces[j].y);
                      _data.text.push(traces[j].text + ' cam:' + traces[j].cam);
@@ -325,18 +329,16 @@ function showmore(direction, cam, _start)
                      _data.mode = MODE2;
                      
                      last_indx = history_data[cam].length - 1;
-                     //if( last_indx >= 0 && date < history_data[cam][last_indx].x ) {
-                       //  i = last_indx;
-                       //  while (  i>= 0 &&  date < history_data[cam][i].x) i--;
-                       //  history_data[cam].splice( i+1, 0, _data);
+                     if( last_indx >= 0 && _date.sec < history_data[cam][last_indx].sec ) {
+                         i = last_indx;
+                         while (  i>= 0 &&  date < history_data[cam][i].x) i--;
+                         history_data[cam].splice( i+1, 0, _data);
                          
-                     //} else {                          
+                     } else {                          
                         history_data[cam].push(_data);
-                     //}
+                     }
 
-                    
-                   
-                 }    
+                 //}    
              }  
              //last_layout = layout
              //last_layout.title += (secs/3600) + " hour(s)"
