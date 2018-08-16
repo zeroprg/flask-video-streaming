@@ -223,6 +223,7 @@ function showmore(direction, cam, _start)
   BEAT = 1;
   PLOT_TYPE1 = 'bar';
   PLOT_TYPE2 = 'scatter';
+  MODE2 = 'lines';
   window.setInterval(function(){
       ajaxCallFunction();  //calling every 5 second
   }, BEAT*1000);
@@ -262,12 +263,14 @@ function showmore(direction, cam, _start)
                // check if this a new object not existed before
                 if( k === data[cam].length ){
                      _data = {"x": [],"y": [],"text": []};
-                     _data.x.push(traces[j].x);
+                      date = traces[j].x
+                     _data.x.push(date);
                      _data.y.push(traces[j].y);
                      _data.text.push(traces[j].text + ' cam:' + traces[j].cam);
                      _data.name = traces[j].name;
                      _data.type = PLOT_TYPE1;
-                   data[cam].push(_data);
+                     data[cam].push(_data);    
+                     
                  }    
              }  
              Plotly.newPlot('myDiv'+cam, data[cam],layout);
@@ -294,6 +297,7 @@ function showmore(direction, cam, _start)
                      history_data[cam][i].y.push(tr.y);
                      history_data[cam][i].text.push(tr.text + ' cam:' + cam);
                      history_data[cam][i].type = PLOT_TYPE2;
+                     history_data[cam][i].mode = MODE2;
                      if( history_data[cam][i].x.length >= MAX_BUFFER ) {
                          history_data[cam][i].x.shift();
                          history_data[cam][i].y.shift();
@@ -307,12 +311,28 @@ function showmore(direction, cam, _start)
                // check if this a new object not existed before
                 if( k === history_data[cam].length ){
                      _data = {"x": [],"y": [],"text": []};
-                     _data.x.push(traces[j].x);
+                     date = traces[j].x;
+                     _data.x.push(date);
                      _data.y.push(traces[j].y);
                      _data.text.push(traces[j].text + ' cam:' + traces[j].cam);
                      _data.name = traces[j].name;
                      _data.type = PLOT_TYPE2;
-                   history_data[cam].push(_data);
+                     _data.mode = MODE2;
+                     
+                     last_indx = history_data[cam].length - 1;
+                     if(last_indx > 0 && date < history_data[cam][last_indx].x ) {
+                         for ( i = last_indx ; i>= 0 ; i-- ){
+                             if( date > data[cam][i].x ) {
+                                 history_data[cam].splice( i, 0, _data);
+                                 break;
+                             }
+                         }
+                     } else {                          
+                        history_data[cam].push(_data);
+                     }
+
+                    
+                   
                  }    
              }  
              //last_layout = layout
