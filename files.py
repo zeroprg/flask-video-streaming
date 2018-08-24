@@ -61,7 +61,7 @@ def binary_bisection(function,date,list):
         # list[mid] < date
         if  function(list[mid], date):
             """ Use left side"""
-            frm = mid + 1
+            frm = mid
             
         else:
             """ Use right side"""
@@ -80,7 +80,7 @@ if (__name__ == '__main__'):
     print(test2Result)
     if test2Result: print("Test #2 : !!!!!!!!!!!! Successed !!!!!!!!!!!!!!")
     print("Test #3")
-    index = find_index(params_files, 1534371957)
+    index = find_index(params_files, 1534464194)
     if index>0: print("Test #3 : !!!!!!!!!!!! Successed !!!!!!!!!!!!!!")
     
     
