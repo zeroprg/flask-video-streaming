@@ -8,21 +8,45 @@
   <link rel="stylesheet" href="static/css/main.css">
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
   <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script> 
+
+  
 </head>
 <body>
 
 <div class="container">
   <h1>The New Eyes of Surveillance: Artificial Intelligence and Humanizing Technology Cameras </h1>
   <p>This example demonstrates AI image recognizing  web server works with any IP Cameras feed.More details on <a href="http://aicameras.ca">http://aicameras.ca</a></p>         
-  <p>This is Demo version Notifying  and new stream processing not available (contact: <a href="mailto:sales@aicameras.ca;zeroprg@yahoo.com">sales@aicameras.ca;zeroprg@yahoo.com</a>)</p>
-  <p>Time for all cameras feeds in GMT (Greenwich Mean Time)</p>
+  <p>This is Demo version Notifying and new stream processing are available  by special request (contact: <a href="mailto:sales@aicameras.ca;zeroprg@yahoo.com">sales@aicameras.ca;zeroprg@yahoo.com</a>)</p>
+
   {% for cam,video_url in video_urls %}
   <div class="row">
     <div class="col-sm-6">
       <h5>camera URL: {{video_url}}:</h5>
-      <img style="-webkit-user-select: none; width:100%" src="{{video_url}}">
+       To draw safety zones click this button: <button id ="drwZone{{cam}}" onclick = "refresh({{cam}})">Show zones</button>
+      <br> <br>
+      <img id="stream{{cam}}"  style="-webkit-user-select: none; display:block; width:100%; height:auto;" src="{{video_url}}">
+      <div id="canvas_div{{cam}}" style="float:left; margin-left:20px; display:none;">
+            <canvas id="jPolygon{{cam}}" width="500" height="400" style="cursor:crosshair" data-imgsrc="{{video_url}}" onmousedown="point_it(event)" oncontextmenu="return false;">
+                Your browser does not support the HTML5 canvas tag.
+            </canvas>
+            <br><br><br>
+            <div>
+                <button onclick="undo()">Undo</button>
+                <button onclick="clear_canvas()">Clear</button>
+                <button onclick="point_it(event)">Close Polygon</button>
+                <p>Press <strong>Left Click</strong> to draw a point.</p>
+                <p><strong>CTRL+Click</strong> or <strong>Right Click</strong> to close the polygon.</p>
+            </div>
+            <div>
+                <p><strong>Coordinates:</strong></p>
+                <textarea id="coordinates" disabled="disabled" style="width:400px; height:100px;"></textarea>
+                <br>
+                <button align="center">Save</button>
+            </div>
+        </div>
     </div>
-    <div class="col-sm-6">      
+    <br>
+    <div id ="right_div" style="float:right; display:block;" class="col-sm-6">      
          <div class="tab">
             <button class="tablinks" onclick="/*eslint-disable no-unused-vars, no-undef-expression, no-param-reassign*/
             openTab(event, 'Eventsnotifyer{{cam}}')">Events notifyer</button>
@@ -55,7 +79,7 @@
                 <option value="voice">voice</option>
               </select> 
               :
-              <input type="text" placeholder="" min="0" max="100" />
+              <input type="text" placeholder="" min="0"  max="100" />
           </div>
 
           <div id="Objectsfilter{{cam}}" class="tabcontent" style="display: block;">
@@ -110,23 +134,28 @@
               <option value="10800">3h back</option>
               <option value="14400">4h back</option>
 		      <option value="18000">5h back</option>
-		      <!--
+		     
 		      <option value="360000">12h back</option>
 		      <option value="720000">24h back</option>
-		      <option value="1440000">48h back (2 days)</option> 
+		     <!--  <option value="1440000">48h back (2 days)</option> 
 		      <option value="2160000">72h back (3 days)</option>
 		      <option value="4320000">144h (6 days) back</option> -->
 		      
     	</select>
     	</h4>
-    	<div id= "lastDiv{{cam}}" class="col-sm-12" style="height:250px; width:100%"></div>
+    	<span class="win-pos"></span> <!-- please use it in master page to get the position. -->
+        <div class="popup-win"></div> <!-- This is for popup area, please use your content inside this. -->
+
+    	
+    	<div id= "lastDiv{{cam}}" class="col-sm-12" style="height:250px; width:100%">
+    	</div>
       </div>          
     </div>     
   </div>     
  {% endfor %}
 </div>
 
-
+<script  src="static/js/jPolygon.js"></script>
 <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
 
 <script>
@@ -300,52 +329,79 @@ function showmore(direction, cam, _start)
                 cam = tr.cam;
                 // if we met blocked camera stop processing it
                 //if( cam !== cam_to_populate) continue;
- /*
+                last = 0
                 for( i = 0 ; i< history_data[cam].length; i++){
                    if( tr.name === history_data[cam][i].name ) {
-                     date = show_date(tr.x)
+                     sec = tr.x
+                     if( sec < last)  break;
+                     last = sec
+                     date = show_date(sec)
                      history_data[cam][i].x.push(date);
-                     history_data[cam][i].y.push(tr.y);
+                     history_data[cam][i].y.push(tr.y);                     
                      history_data[cam][i].text.push(tr.text + ' cam:' + cam);
                      history_data[cam][i].type = PLOT_TYPE2;
                      history_data[cam][i].mode = MODE2;
-
                    } else {
                        k++;
                    }
                 }
-             */   
+              
                // check if this a new object not existed before
-               // if( k === history_data[cam].length ){
-                     _data = {"x": [],"y": [],"text": []};
-                     _date.sec = traces[j].x
-                     date = show_date(traces[j].x)
+                 if( k === history_data[cam].length ){
+                     _data = {"x": [],"y": [],"text": [],"filenames":[]};
+                     sec = traces[j].x
+                    
+                     if( sec < last )  break;
+                     last = sec
+                     date = show_date(sec)
                      _data.x.push(date);
                      _data.y.push(traces[j].y);
-                     _data.text.push(traces[j].text + ' cam:' + traces[j].cam);
+                     _data.text.push(traces[j].text);
                      _data.name = traces[j].name;
                      _data.type = PLOT_TYPE2;
                      _data.mode = MODE2;
+                     _data.filenames = traces[j].filenames[_data.name]
+                     history_data[cam].push(_data);
                      
-                     last_indx = history_data[cam].length - 1;
-                     if( last_indx >= 0 && _date.sec < history_data[cam][last_indx].sec ) {
-                         i = last_indx;
-                         while (  i>= 0 &&  date < history_data[cam][i].x) i--;
-                         history_data[cam].splice( i+1, 0, _data);
-                         
-                     } else {                          
-                        history_data[cam].push(_data);
-                     }
+                 }    
+             }         //last_layout = layout
+             
+         layout.title = "Click on graph to see capched images";
+         Plotly.newPlot('lastDiv'+cam_to_populate, history_data[cam_to_populate],layout);
+         
+         document.getElementById('lastDiv'+cam_to_populate).on('plotly_click', function(data){
+            var pts = '';
+            var filenames =''
+            for(var i=0; i < data.points.length; i++){
+                pts = 'x = '+data.points[i].x +'\ny = '+ data.points[i].y + '\n\n';
+                filenames = data.filenames;
+            }
+           alert('Closest point clicked:\n\n'+pts);
+           populate_images(filenames);
+           var pos = $(".win-pos").offset(); //to get position. ***Please use it in html body to get the right position.
+           var popupwdth = $(".popup-win").width()/2; //to caculate the popup window size.
+//           alert("Top position: " + pos.top + " Left position: " + pos.left + " Popup width: " + popupwdth + "Files: " + filenames); // remove it after implement the code.
+           $('.popup-win').css({top: pos.top, left: pos.left, position:'absolute', margin:-popupwdth, display:'block'});
+        });
+     }  
 
-                 //}    
-             }  
-             //last_layout = layout
-             //last_layout.title += (secs/3600) + " hour(s)"
-             Plotly.newPlot('lastDiv'+cam_to_populate, history_data[cam_to_populate],layout);
-         }
   }
 
 
+ function populate_images(filenames){
+   a =  '<div>';
+   for (i = 0; i < filenames.length; i++) {
+          if( i%3 === 0 ) a += '</div><div class="column">';
+            
+            a+= '<a class="thumb" target="_blank" href="' + filenames[i]+ '">' +
+                    '<img src="' + filenames[i]+ '" style="width:100%;" alt="">' +
+                '</a>';
+        
+            
+    }
+    a += '</div>';
+    $('.popup-win').html(a);
+ }
  
   function ajaxCallFunction(){
     //this function uses ajax to interact with the server

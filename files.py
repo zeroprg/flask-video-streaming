@@ -28,8 +28,13 @@ def delete_file_older_then(path, sec):
        except OSError: pass
 
 def find_index(list,date):
-    print("find_index, date:", date)
-    return binary_bisection(compare_dates,date,list)
+    #print("find_index, date:", date)
+    i = 0
+    for el in list:
+        if compare_dates(el,date): return i
+        i+=1  
+    return len(list)-1    
+    #return binary_bisection(compare_dates,date,list)
     
 """ Compare if the file modification date older then specified 'date'. The goal is to choose all file
     which younger then the specified 'date' """
@@ -43,7 +48,7 @@ def compare_dates(file,date):
         raise Exception("Invalid file name, it must be in format 12345.* where the number is time in seconds from epoch (January 1st, 1970)!: " + file)
     file_lastmod_date = match.group(1)
     """ Return true if file modified after the date (in seconds from 1970)"""
-    print("file_lastmod_date:",  file_lastmod_date)
+    #print("file_lastmod_date:",  file_lastmod_date)
     return float(file_lastmod_date) < float(date)
     
 """ Bisection or Dyhotomy method in generic.  """

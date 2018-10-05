@@ -1,4 +1,5 @@
 flask-video-streaming
 =====================
+This is initial pilot project for OpenSource project aka iSpy. All ideas are welcome. Repository will be open for commit by request to 
+zeroprg@yahoo.com
 
-Supporting code for my article [video streaming with Flask](http://blog.miguelgrinberg.com/post/video-streaming-with-flask) and its follow-up [Flask Video Streaming Revisited](http://blog.miguelgrinberg.com/post/flask-video-streaming-revisited).

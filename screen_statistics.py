@@ -203,8 +203,11 @@ class Screen_statistic(object):
             trace.filenames = filenames.get(key,[])
             trace.x = tm
             trace.y = len(hashes[key])
-            trace.text = key
-           
+            #print(hashes[key])
+            #print("---------------------------------hashes--------------------------------------")
+            #print(filenames[key])
+            #print("------------------------------filenames[" + key + "]--------------------------------")
+            trace.text =  filenames[key]
             ret.append(trace.__dict__)
             logging.debug( trace.__dict__ )
         return ret

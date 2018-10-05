@@ -1,19 +1,19 @@
 video_file0=http://38.101.209.29:8082/mjpg/video.mjpg?COUNTER
-video_file1=http://138.26.107.148/mjpg/video.mjpg?COUNTER
+#video_file1=http://138.26.107.148/mjpg/video.mjpg?COUNTER
 
 
 #video_file0=http://38.101.209.29:8082/mjpg/video.mjpg?COUNTER
 
-video_file3=http://104.157.73.60/cgi-bin/faststream.jpg?stream=half&amp;fps=15&amp;rand=COUNTER
+#video_file3=http://104.157.73.60/cgi-bin/faststream.jpg?stream=half&amp;fps=15&amp;rand=COUNTER
 
 #video_file1=http://112.161.180.19:8080/cam_1.cgi
 #video_file1=http://138.26.107.148/mjpg/video.mjpg?COUNTER
 #video_file1=http://92.154.61.153:8080/oneshotimage1?1529845789
-video_file2=http://37.142.116.227/cgi-bin/camera?resolution=640&amp;amp;quality=1&amp;amp;Language=0&amp;amp;1529847411
+   #video_file2=http://37.142.116.227/cgi-bin/camera?resolution=640&amp;amp;quality=1&amp;amp;Language=0&amp;amp;1529847411
 #video_file1=http://192.168.1.80:81/videostream.cgi?loginuse=GwEBAA%3D%3D&loginpas=Nw0AG1ZceWtl&_=15282579520910.657573406191367
 #video_file0=http://192.168.1.72:81/videostream.cgi?loginuse=GwEBAA%3D%3D&loginpas=Nw0AG1ZceWtl&_=15282579520910.657573406191367
 prototxt=MobileNetSSD_deploy.prototxt.txt
 model=MobileNetSSD_deploy.caffemodel
-confidence=0.35
+confidence=0.45
 
 
