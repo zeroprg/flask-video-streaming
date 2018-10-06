@@ -1,28 +1,37 @@
 
-var canvas_div;
-var right_div;
-var perimeter = new Array();
-var complete = false;
-var canvas;
-var ctx;
+
+var Polygon = function( complete, canvas, ctx){
+ this.complete = complete;
+ this.canvas = canvas;
+ this.perimeter = new Array();
+ this.ctx = ctx;
+}
+
+
+var dict = {};
+
+//var perimeter = new Array();
+//var complete = false;
+//var canvas;
+//var ctx;
+
 
    
  function refresh(cam) {
-     
-     canvas_div =  document.getElementById("canvas_div"+cam);
-     right_div =  document.getElementById("right_div"+cam);
-     canvas = document.getElementById("jPolygon"+cam);
+     var canvas_div =  document.getElementById("canvas_div"+cam);
+     var right_div =  document.getElementById("right_div"+cam);
+     var canvas = document.getElementById("jPolygon"+cam);
      var drwZone = document.getElementById("drwZone"+cam);
-     if( !ctx) {
-        ctx = canvas.getContext('2d');
-        
+     if( ! dict[cam] ) {
+       var ctx = canvas.getContext('2d');
+       dict[cam] = new Polygon(false, canvas, ctx);
      }
      var img = document.getElementById('stream'+cam);
-    // Tried to copy image dimensions
-    // var width =  img.getAttribute("width");
-    // var height =  img.getAttribute("height");
-    // canvas.setAttribute("width", width);
-    // canvas.setAttribute("height", height);
+    // copy image dimensions
+     var width =  img.width;
+     var height =  img.height;
+     dict[cam].canvas.width = width;
+     dict[cam].canvas.height = height;
      
      if(  img.style.display == 'block' ) {
      	img.style.display = 'none';
@@ -31,11 +40,11 @@ var ctx;
         drwZone.innerHTML ="Show video";
         var imageObj = new Image();
         imageObj.onload = function() {
-            ctx.drawImage(imageObj, 0, 0, canvas.width, canvas.height);  
-            if(perimeter.length > 0 ) draw(true);    
+            dict[cam].ctx.drawImage(imageObj, 0, 0, canvas.width, canvas.height);  
+            if(dict[cam].perimeter.length > 0 ) draw(true,cam);    
         };
         imageObj.src = canvas.getAttribute('data-imgsrc');
-        ctx.drawImage(imageObj, 0, 0);
+        dict[cam].ctx.drawImage(imageObj, 0, 0);
         
      } else {
      	img.style.display = 'block';
@@ -45,15 +54,15 @@ var ctx;
      }
  };   
 
- function restart(with_draw) {
+ function restart(with_draw,cam) {
     var img = new Image();
-    img.src = canvas.getAttribute('data-imgsrc');
+    img.src = dict[cam].canvas.getAttribute('data-imgsrc');
 
     img.onload = function(){
-        ctx = canvas.getContext("2d");
-        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        dict[cam].ctx = dict[cam].canvas.getContext("2d");
+        dict[cam].ctx.drawImage(img, 0, 0, dict[cam].canvas.width, dict[cam].canvas.height);
         if(with_draw == true){
-            draw(false);
+            draw(false,cam);
         }
     }
 };
@@ -78,80 +87,83 @@ function line_intersects(p0, p1, p2, p3) {
     return false; // No collision
 }
 
-function point(x, y){
-    ctx.fillStyle="white";
-    ctx.strokeStyle = "white";
-    ctx.fillRect(x-2,y-2,4,4);
-    ctx.moveTo(x,y);
+function point(x, y,cam){
+    dict[cam].ctx.fillStyle="white";
+    dict[cam].ctx.strokeStyle = "white";
+    dict[cam].ctx.fillRect(x-2,y-2,4,4);
+    dict[cam].ctx.moveTo(x,y);
 }
 
-function undo(){
-    ctx = undefined;
-    perimeter.pop();
-    complete = false;
-    restart(true);
+function undo(cam){
+    dict[cam].ctx = undefined;
+    dict[cam].perimeter.pop();
+    dict[cam].complete = false;
+    restart(true,cam);
 }
 
-function clear_canvas(){
-    ctx = undefined;
-    perimeter = new Array();
-    complete = false;
-    document.getElementById('coordinates').value = '';
-    restart();
+function clear_canvas(cam){
+    dict[cam].ctx = undefined;
+    dict[cam].perimeter = new Array();
+    dict[cam].complete = false;
+    document.getElementById('coordinates' + cam).value = '';
+    restart(false,cam);
 }
 
-function draw(end){
-    ctx.lineWidth = 1;
-    ctx.strokeStyle = "white";
-    ctx.lineCap = "square";
-    ctx.beginPath();
+function draw(end, cam){
+    dict[cam].ctx.lineWidth = 1;
+    dict[cam].ctx.strokeStyle = "white";
+    dict[cam].ctx.lineCap = "square";
+    dict[cam].ctx.beginPath();
 
-    for(var i=0; i<perimeter.length; i++){
+    for(var i=0; i<dict[cam].perimeter.length; i++){
         if(i==0){
-            ctx.moveTo(perimeter[i]['x'],perimeter[i]['y']);
-            end || point(perimeter[i]['x'],perimeter[i]['y']);
+            dict[cam].ctx.moveTo(dict[cam].perimeter[i]['x'],dict[cam].perimeter[i]['y']);
+            end || point(dict[cam].perimeter[i]['x'],dict[cam].perimeter[i]['y'], cam);
         } else {
-            ctx.lineTo(perimeter[i]['x'],perimeter[i]['y']);
-            end || point(perimeter[i]['x'],perimeter[i]['y']);
+            dict[cam].ctx.lineTo(dict[cam].perimeter[i]['x'],dict[cam].perimeter[i]['y']);
+            end || point(dict[cam].perimeter[i]['x'],dict[cam].perimeter[i]['y'],cam);
         }
     }
     if(end){
-        ctx.lineTo(perimeter[0]['x'],perimeter[0]['y']);
-        ctx.closePath();
-        ctx.fillStyle = 'rgba(255, 0, 0, 0.5)';
-        ctx.fill();
-        ctx.strokeStyle = 'blue';
-        complete = true;
+        dict[cam].ctx.lineTo(dict[cam].perimeter[0]['x'],dict[cam].perimeter[0]['y']);
+        dict[cam].ctx.closePath();
+        dict[cam].ctx.fillStyle = 'rgba(255, 0, 0, 0.5)';
+        dict[cam].ctx.fill();
+        dict[cam].ctx.strokeStyle = 'blue';
+        dict[cam].complete = true;
     }
-    ctx.stroke();
+    dict[cam].ctx.stroke();
 
     // print coordinates
-    if(perimeter.length == 0){
-        document.getElementById('coordinates').value = '';
+    if(dict[cam].perimeter.length == 0){
+        document.getElementById('coordinates'+cam).value = '';
     } else {
-        document.getElementById('coordinates').value = JSON.stringify(perimeter);
+        document.getElementById('coordinates'+cam).value = JSON.stringify(dict[cam].perimeter);
     }
 }
 
-function check_intersect(x,y){
-    if(perimeter.length < 4){
+
+
+
+function check_intersect(x,y,cam){
+    if(dict[cam].perimeter.length < 4){
         return false;
     }
     var p0 = new Array();
     var p1 = new Array();
     var p2 = new Array();
     var p3 = new Array();
-
-    p2['x'] = perimeter[perimeter.length-1]['x'];
-    p2['y'] = perimeter[perimeter.length-1]['y'];
+    var l = dict[cam].perimeter.length-1;
+    p2['x'] = dict[cam].perimeter[l]['x'];
+    p2['y'] = dict[cam].perimeter[l]['y'];
     p3['x'] = x;
     p3['y'] = y;
 
-    for(var i=0; i<perimeter.length-1; i++){
-        p0['x'] = perimeter[i]['x'];
-        p0['y'] = perimeter[i]['y'];
-        p1['x'] = perimeter[i+1]['x'];
-        p1['y'] = perimeter[i+1]['y'];
+    for(var i=0; i<l; i++){
+        p0['x'] = dict[cam].perimeter[i]['x'];
+        p0['y'] = dict[cam].perimeter[i]['y'];
+        p1['x'] = dict[cam].perimeter[i+1]['x'];
+        p1['y'] = dict[cam].perimeter[i+1]['y'];
         if(p1['x'] == p2['x'] && p1['y'] == p2['y']){ continue; }
         if(p0['x'] == p3['x'] && p0['y'] == p3['y']){ continue; }
         if(line_intersects(p0,p1,p2,p3)==true){
@@ -161,8 +173,10 @@ function check_intersect(x,y){
     return false;
 }
 
-function point_it(event) {
-    if(complete){
+
+
+function point_it(event,cam) {
+    if(dict[cam].complete){
         alert('Polygon already created');
         return false;
     }
@@ -171,34 +185,35 @@ function point_it(event) {
    if(event.ctrlKey || event.which === 3 || event.button === 2 ||  
               event.target.innerText == "Close Polygon" ) {
  
-        if(perimeter.length==2){
+        if(dict[cam].perimeter.length==2){
             alert('You need at least three points for a polygon');
             return false;
         }
-        x = perimeter[0]['x'];
-        y = perimeter[0]['y'];
-        if(check_intersect(x,y)){
+        x = dict[cam].perimeter[0]['x'];
+        y = dict[cam].perimeter[0]['y'];
+        if(check_intersect(x,y,cam)){
             alert('The line you are drowing intersect another line');
             return false;
         }
-        draw(true);
+        draw(true,cam);
         //alert('Polygon closed');
 	event.preventDefault();
         return false;
     } else {
-        rect = canvas.getBoundingClientRect();
+        rect = dict[cam].canvas.getBoundingClientRect();
         x = event.clientX - rect.left;
         y = event.clientY - rect.top;
-        if (perimeter.length>0 && x == perimeter[perimeter.length-1]['x'] && y == perimeter[perimeter.length-1]['y']){
+        var l = dict[cam].perimeter.length;
+        if (l>0 && x == dict[cam].perimeter[l-1]['x'] && y == dict[cam].perimeter[l-1]['y']){
             // same point - double click
             return false;
         }
-        if(check_intersect(x,y)){
+        if(check_intersect(x,y,cam)){
             alert('The line you are drowing intersect another line');
             return false;
         }
-        perimeter.push({'x':x,'y':y});
-        draw(false);
+        dict[cam].perimeter.push({'x':x,'y':y});
+        draw(false,cam);
         return false;
     }
 }

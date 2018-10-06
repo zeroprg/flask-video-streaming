@@ -21,25 +21,25 @@
   {% for cam,video_url in video_urls %}
   <div class="row">
     <div class="col-sm-6">
-      <h5>camera URL: {{video_url}}:</h5>
+      <b> camera URL: {{video_url}}:</b>
        To draw safety zones click this button: <button id ="drwZone{{cam}}" onclick = "refresh({{cam}})">Show zones</button>
       <br> <br>
       <img id="stream{{cam}}"  style="-webkit-user-select: none; display:block; width:100%; height:auto;" src="{{video_url}}">
       <div id="canvas_div{{cam}}" style="float:left; margin-left:20px; display:none;">
-            <canvas id="jPolygon{{cam}}" width="500" height="400" style="cursor:crosshair" data-imgsrc="{{video_url}}" onmousedown="point_it(event)" oncontextmenu="return false;">
+            <canvas id="jPolygon{{cam}}" width="500" height="400" style="cursor:crosshair" data-imgsrc="{{video_url}}" onmousedown="point_it(event,{{cam}})" oncontextmenu="return false;">
                 Your browser does not support the HTML5 canvas tag.
             </canvas>
             <br><br><br>
             <div>
-                <button onclick="undo()">Undo</button>
-                <button onclick="clear_canvas()">Clear</button>
-                <button onclick="point_it(event)">Close Polygon</button>
+                <button onclick="undo({{cam}})">Undo</button>
+                <button onclick="clear_canvas({{cam}})">Clear</button>
+                <button onclick="point_it(event,{{cam}})">Close Polygon</button>
                 <p>Press <strong>Left Click</strong> to draw a point.</p>
                 <p><strong>CTRL+Click</strong> or <strong>Right Click</strong> to close the polygon.</p>
             </div>
             <div>
                 <p><strong>Coordinates:</strong></p>
-                <textarea id="coordinates" disabled="disabled" style="width:400px; height:100px;"></textarea>
+                <textarea id="coordinates{{cam}}" disabled="disabled" style="width:400px; height:100px;"></textarea>
                 <br>
                 <button align="center">Save</button>
             </div>
@@ -117,17 +117,21 @@
               {% endif %}
            {% endfor %}
             </div> 
-          </div>
+         </div>
     </div>
-    <div id= "myDiv{{cam}}" class="col-sm-12" style="height:250px; width:100%"></div>
-        
- 
  </div>
-   <div class="row">
+ 
+ <div class="row">
     <div class="col-sm-12">
-       <div class="header">
-         <h4> Historical records: 
-         <select name="Objects log" onchange="moreparams({{cam}}, this.value)">
+        <div id= "myDiv{{cam}}" class="col-sm-12" style="height:250px; width:100%"></div>
+    </div>    
+ </div>     
+ 
+ <div class="row">
+   <div class="col-sm-12">
+      <div class="header">
+         <button onclick="moreparams({{cam}}, this.value)"> Show Historical records </button>
+         <!--<select name="Objects log" onchange="moreparams({{cam}}, this.value)">
               <option value="0"></option>
               <option value="3600">1h back</option>
               <option value="7200">2h back</option>
@@ -137,12 +141,13 @@
 		     
 		      <option value="360000">12h back</option>
 		      <option value="720000">24h back</option>
-		     <!--  <option value="1440000">48h back (2 days)</option> 
+		      <option value="1440000">48h back (2 days)</option> 
 		      <option value="2160000">72h back (3 days)</option>
-		      <option value="4320000">144h (6 days) back</option> -->
+		      <option value="4320000">144h (6 days) back</option> 
 		      
     	</select>
     	</h4>
+    -->	
     	<span class="win-pos"></span> <!-- please use it in master page to get the position. -->
         <div class="popup-win"></div> <!-- This is for popup area, please use your content inside this. -->
 
