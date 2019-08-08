@@ -8,6 +8,7 @@ from multiprocessing import Queue
 from files import *
 
 import os
+import io
 import imagehash
 import numpy as np
 import argparse
@@ -27,6 +28,10 @@ import base64
 
 from flask import Flask, render_template, Response, request,redirect,jsonify
 from flask_cors  import cross_origin, CORS
+# import the necessary packages
+from picamera.array import PiRGBArray
+from picamera import PiCamera
+import picamera
 
 logger = logging.getLogger('logger')
 logger.setLevel(logging.INFO)
@@ -41,16 +46,16 @@ CLASSES = ["background", "aeroplane", "bicycle", "bird", "boat",
 	"bottle", "bus", "car", "cat", "chair", "cow", "diningtable",
 	"dog", "horse", "motorbike", "person", "pottedplant", "sheep",
 	"sofa", "train", "tvmonitor"]
-LOOKED1 = { "car": [], "cat": [],"dog": [], "person": [], "pottedplant":[], "bottle":[], "chair":[]}
-LOOKED2 = { "car": [], "cat": [],"dog": [], "person": [], "pottedplant":[], "bottle":[], "chair":[]}
+LOOKED1 = { "car": [], "cat": [],"dog": [],"person":  []}
+LOOKED2 = { "car": [], "cat": [],"dog": [], "person": []}
 
-subject_of_interes = ["person"]
+subject_of_interes = ["person","cat","dog"]
 COLORS = np.random.uniform(0, 255, size=(len(CLASSES), 3))
 
 IMAGES_FOLDER = "static/img/"
 PARAMS_FOLDER = "static/params/"
 
-DRAW_RECTANGLES = False
+DRAW_RECTANGLES = True
 DELETE_FILES_LATER = 24 * 60 * 60 # sec 
 ENCODING = "utf-8"
 NUMBER_OF_FILES = 10
@@ -58,9 +63,10 @@ HASH_DELTA = 57
 PARAMS_BUFFER =  10
 IMAGES_BUFFER = 200
 RECOGNZED_FRAME = 1
-THREAD_NUMBERS  = 1 #must be less then 4 for PI
+THREAD_NUMBERS  = 2 #must be less then 4 for PI
 videos = []
-
+piCameraResolution=(1920,1080)
+piCameraRate=24
 
 IMG_PAGINATOR = 50
 
@@ -87,6 +93,16 @@ def classify_frame( net, inputQueue, outputQueue):
                 # write the detections to the output queue
                 outputQueue.put(detections)
 
+def get_picamera():
+    print("get_pi_camera():")
+    img = np.empty((480,640, 3), dtype=np.uint8)
+    start = time.time()    
+    camera.capture(img, "bgr")
+    print("Trigger time:"+str(time.time()-start))
+#    cv2.imwrite("array_capture.png",img)
+    return img
+
+
 
 
 def get_frame(vss,video_urls):
@@ -99,20 +115,26 @@ def get_frame(vss,video_urls):
     _thr = RECOGNZED_FRAME
     hashes = []
     filenames = []
-
+    vs = None
     for cam in range(len(vss)):
+        if 'picam' == video_urls[cam][1]:
+            vs = VideoStream(usePiCamera=True,resolution=piCameraResolution,framerate=piCameraRate).start()
+            time.sleep(1.0)
         hashes.append(LOOKED1)
         filenames.append(LOOKED2)
     while  True:
       logger.debug(str(j)+ " len(vss): "+ str(len(vss)) )
       for cam in range(len(vss)):
-	        # grab the frame from the threaded video stream, resize it, and
-            # grab its imensions
-            flag,frame = vss[cam].read()
-            
-            if not flag:
-                vss[cam] = cv2.VideoCapture(video_urls[cam][1])
-                continue
+            print('cam:' +video_urls[cam][1])
+            if 'picam' == video_urls[cam][1]:
+                frame = vs.read()
+            else:
+# grab the frame from the threaded video stream, resize it, and
+# grab its imensions
+                flag,frame = vss[cam].read()
+                if not flag:
+                   vss[cam] = cv2.VideoCapture(video_urls[cam][1])
+                   continue
             #frame = imutils.resize(frame, width=640)
             inputQueue[cam].put(frame) 
             (fH, fW) = frame.shape[:2]
@@ -120,7 +142,6 @@ def get_frame(vss,video_urls):
             detections = outputQueue[cam].get()
             #logger.debug(detections)
             if detections is not None:
-
                     # loop over the detections
                     for i in np.arange(0, detections.shape[2]):
                             # extract the confidence (i.e., probability) associated
@@ -208,7 +229,12 @@ def get_frame(vss,video_urls):
                     k %= NUMBER_OF_FILES
             if paramsQueue.qsize() > IMAGES_BUFFER:
                 persist_params(PARAMS_FOLDER + str(int(time.time())) + '.json')
-
+            # if perfomance issue on Raspberry Pi comment it
+            if not args["not_show_in_window"]:
+                cv2.imshow("Camera" + str(cam), frame)
+                key=cv2.waitKey(1) & 0xFF
+    
+        
       j+=1
       if j >= PARAMS_BUFFER:
          j = 0
@@ -287,6 +313,15 @@ vss = []
 fps = None
 p_get_frame = None
 
+ 
+# initialize the camera and grab a reference to the raw camera capture
+#camera = PiCamera()
+#camera.resolution = (640,480)
+#camera.framerate = 32
+#rawCapture = PiRGBArray(camera, size =(640,480))
+#time.sleep(0.5)
+#picamera_gen = iter(camera.capture_continuous(rawCapture, format="bgr", use_video_port=True))
+
 def configure(args):
     # construct the argument parse and parse the arguments
 # I named config file as  file config.txt and stored it 
@@ -305,6 +340,8 @@ def configure(args):
     scrn_stats = Screen_statistic(paramsQueue)
 
     ap = argparse.ArgumentParser()
+    ap.add_argument("-nw","--not_show_in_window",required=False,
+            help="video could be shown in window.", action="store_true", default=False)
     ap.add_argument("-v","--video_file", required=False,
             help="video file , could be access to remote location." )
     ap.add_argument("-p", "--prototxt", required=False,
@@ -320,10 +357,10 @@ def configure(args):
 
     args.update(more_args)
 
+    SHOW_VIDEO = not args["not_show_in_window"]
+    print("SHOW_VIDEO="+str(SHOW_VIDEO))
+
     logger.debug(args)
-
-
-
 
 
 def start():
@@ -347,7 +384,7 @@ def start():
     p_get_frame.start()
     
     cam = 0
-    for vs in vss:        
+    for vs in vss:
         for i in range(THREAD_NUMBERS):
             p_classifier = Process(target=classify_frame, args=(net,inputQueue[cam],
                     outputQueue[cam],))
@@ -366,12 +403,15 @@ def initialize_video_streams(url=None):
     if url is not None:
         arg = url
         i = len(videos)
+#  initialise picam or IPCam
     else:
         arg = args.get('video_file'+ str(i),None)
     while arg is not None:
         if not (i,arg) in videos:
-            logger.info("[INFO] starting video stream with arg: " + arg)
-            vs = cv2.VideoCapture(arg)
+            if arg  == 'picam':
+                vs = None
+            else: 
+                 vs = cv2.VideoCapture(arg)
             logger.info("[INFO] Video stream: " + str(i) + " vs:" + str(vs) )
             vss.append(vs)
             videos.append((str(i),arg))
@@ -381,8 +421,9 @@ def initialize_video_streams(url=None):
             i+=1
             arg = args.get('video_file'+ str(i),None)
 
-    time.sleep(3.0)
+    time.sleep(1.0)
     fps = FPS().start()
+    
 
 
 ###################### Flask API #########################
