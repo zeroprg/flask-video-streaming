@@ -34,7 +34,7 @@ videos = []
 
 IMG_PAGINATOR = 50
 
-def classify_frame( net, inputQueue, outputQueue):
+def classify_frame( net, inputQueue, outputQueue, hashes, cam):
         # keep looping
         while True:
                 # check to see if there is a frame in our input queue

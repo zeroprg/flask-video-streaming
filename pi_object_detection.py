@@ -3,6 +3,7 @@
 # import the necessary packages
 from imutils.video import VideoStream
 from imutils.video import FPS
+import multiprocessing as mp
 from multiprocessing import Process
 from multiprocessing import Queue
 from files import *
@@ -60,17 +61,20 @@ DELETE_FILES_LATER = 24 * 60 * 60 # sec
 ENCODING = "utf-8"
 NUMBER_OF_FILES = 10
 HASH_DELTA = 57
-PARAMS_BUFFER =  10
-IMAGES_BUFFER = 200
+PARAMS_BUFFER =  100
+IMAGES_BUFFER = 100
 RECOGNZED_FRAME = 1
-THREAD_NUMBERS  = 2 #must be less then 4 for PI
+THREAD_NUMBERS  = 1 #must be less then 4 for PI
 videos = []
-piCameraResolution=(1920,1080)
+hashes = []
+filenames = []
+piCameraResolution=(1296,972)
 piCameraRate=24
 
 IMG_PAGINATOR = 50
 
-def classify_frame( net, inputQueue, outputQueue):
+def classify_frame( net, inputQueue,rectanglesQueue,hashes, cam):
+        conf_threshold = float(args["confidence"])
         # keep looping
         while True:
                 # check to see if there is a frame in our input queue
@@ -78,169 +82,158 @@ def classify_frame( net, inputQueue, outputQueue):
                 # grab the frame from the input queue, resize it, and
                 # construct a blob from it
                 #logger.debug('inputQueue.qsize()',inputQueue.qsize())
-                #logger.debug('outputQueue.qsize()',outputQueue.qsize())
+                #print(inputQueue)
+                #print(rectanglesQueue)
                 frame = inputQueue.get()
-                frame = cv2.resize(frame, (300, 300))
+                print('cam:' + str(cam))
+                _frame = cv2.resize(frame, (300, 300))
                 cols = frame.shape[1]
                 rows = frame.shape[0]
-                blob = cv2.dnn.blobFromImage(frame, 0.007843,
+                blob = cv2.dnn.blobFromImage(_frame, 0.007843,
                         (300, 300), (127.5,127.5,127.5), False)
                 # set the blob as input to our deep learning object
                 # detector and obtain the detections
                 net.setInput(blob)
                 detections = net.forward()
+                # loop over the detections
+                (fH, fW) = frame.shape[:2]
+                #logger.debug(detections)
+                if detections is not None:                    
+                        # loop over the detections
+                        for i in np.arange(0, detections.shape[2]):
+                                # extract the confidence (i.e., probability) associated
+                                # with the prediction
+                                confidence = detections[0, 0, i, 2]
+                                # filter out weak detections by ensuring the `confidence`
+                                # is greater than the minimum confidence
+                                if confidence < conf_threshold: continue
 
-                # write the detections to the output queue
-                outputQueue.put(detections)
+                                # otherwise, extract the index of the class label from
+                                # the `detections`, then compute the (x, y)-coordinates
+                                # of the bounding box for the object
+                                idx = int(detections[0, 0, i, 1])
+                                key = CLASSES[idx]
+                                print("key: " + key)
+                                if not key in LOOKED1: continue
+                                dims = np.array([fW, fH, fW, fH])
+                                box = detections[0, 0, i, 3:7] * dims
+                                (startX, startY, endX, endY) = box.astype("int")
 
-def get_picamera():
-    print("get_pi_camera():")
-    img = np.empty((480,640, 3), dtype=np.uint8)
-    start = time.time()    
-    camera.capture(img, "bgr")
-    print("Trigger time:"+str(time.time()-start))
-#    cv2.imwrite("array_capture.png",img)
-    return img
+                                # draw the prediction on the frame
+                                if idx > len(CLASSES)-1:continue
+                                key = CLASSES[idx]
+                                #if not key in IMAGES: continue
+                                crop_img_data = frame[startY:endY, startX:endX]
+                                #label = "Unknown"
+                                hash=0
+                                try:
+                                    crop_img = Image.fromarray(crop_img_data)
+                                    #crop_img = cv2.cvtColor( crop_img, cv2.COLOR_RGB2GRAY )
+                                    #crop_img = ImageEnhance.Contrast(crop_img)
+                                    hash = dhash.dhash_int(crop_img)
+                                except: None
+                                    #continue
+                                
+                                print("cam:", cam, "key:",key,"hash:",hash)
+                                if not key in LOOKED1: continue
+                                if (hashes[cam]).get(key, None)== None:
+                                    hashes[cam][key] = [hash]
+                                    filename = str(cam)+'_' + key +'_'+ str(time.time()).replace(".","_")+ '.jpg'
+                                    filenames[cam][key] = [filename]
+                                    continue
+                                #_hashes = []
+                                diffr = 0
+                                for _hash in hashes[cam][key]:
+                                    delta = dhash.get_num_bits_different(_hash, hash)
+                                    #logger.debug("delta: ", delta)
+                                    if delta < HASH_DELTA: break
+                                    else: diffr +=1
+                                # process further only  if image is really different from other ones   
+                                if len(hashes[cam][key]) == diffr and hash !=0:
+                                    hashes[cam][key].append(hash)
+                                    if key in subject_of_interes:
+                                        #use it if you 100% sure you need save this image on disk
+                                        #filename = str(cam)+'_' + key +'_'+ str(time.time()).replace(".","_")+ '.jpg'
+                                        filename = str(cam)+'_' + key +'_'+ str(hash)+ '.jpg'
+                                        filenames[cam][key].append(filename)
+                                        cv2.imwrite(IMAGES_FOLDER + filename,crop_img_data)
+                                        imgb = crop_img_data.tobytes()
+                                        
+                                        encoded =  (base64.b64encode(imgb)).decode(ENCODING)
+                                        #catchedObjQueue.put( str(cam) + ";" + key + ";" +encoded)
+                                        logger.debug("cam:", cam, "key:", key, "filenames:", filenames[cam][key])
+                                        
+                                print("cam:", cam, "key:", key, "hashes:", hashes[cam][key])
+                                
+                                if DRAW_RECTANGLES: 
+                                    label = "{}: {:.2f}%".format(key,confidence * 100)
+                                    #cv2.rectangle(frame, (startX-25, startY-25), (endX+25, endY+25), (0,255,0), 2)
+                                    #y = startY - 25 if startY - 25 > 25 else startY + 25
+                                    #cv2.putText(frame, label, (startX, y), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,255,0), 2)
+                                    rectanglesQueue.put((label, (startX-25, startY-25), (endX+25, endY+25)))
+                                    # add frames with rectangles
+#               print('Before writing frame to imagesQueue ')
+                
 
 
 
 
-def get_frame(vss,video_urls):
+
+def get_frame(vss,video_urls,inputQueue, rectanglesQueue, hashes):
     # loop over the frames from the video stream
-    conf_threshold = float(args["confidence"])
+    
     detections = None
     cols,rows = 0,0
     j = PARAMS_BUFFER+1
     k = 0
     _thr = RECOGNZED_FRAME
-    hashes = []
     filenames = []
-    vs = None
-    for cam in range(len(vss)):
-        if 'picam' == video_urls[cam][1]:
-            vs = VideoStream(usePiCamera=True,resolution=piCameraResolution,framerate=piCameraRate).start()
-            time.sleep(1.0)
-        hashes.append(LOOKED1)
-        filenames.append(LOOKED2)
+    print('len(vss):' + str(len(vss)))    
     while  True:
-      logger.debug(str(j)+ " len(vss): "+ str(len(vss)) )
-      for cam in range(len(vss)):
-            print('cam:' +video_urls[cam][1])
-            if 'picam' == video_urls[cam][1]:
-                frame = vs.read()
-            else:
-# grab the frame from the threaded video stream, resize it, and
-# grab its imensions
-                flag,frame = vss[cam].read()
-                if not flag:
-                   vss[cam] = cv2.VideoCapture(video_urls[cam][1])
-                   continue
-            #frame = imutils.resize(frame, width=640)
-            inputQueue[cam].put(frame) 
-            (fH, fW) = frame.shape[:2]
-            # if the output queue *is not* empty, grab the detections
-            detections = outputQueue[cam].get()
-            #logger.debug(detections)
-            if detections is not None:
-                    # loop over the detections
-                    for i in np.arange(0, detections.shape[2]):
-                            # extract the confidence (i.e., probability) associated
-                            # with the prediction
-                            confidence = detections[0, 0, i, 2]
+     for cam in range(0,len(vss)):  
+        print('cam:' +video_urls[cam][1])
+        if 'picam' == video_urls[cam][1]:
+            frame = vss[cam].read()
+        else:
+    # grab the frame from the threaded video stream, resize it, and
+    # grab its dimensions
+            flag,frame = vss[cam].read()
+            if not flag:
+               vss[cam] = cv2.VideoCapture(video_urls[cam][1])
+               continue
+        inputQueue[cam].put(frame)
+        #print("inputQueue.empty(): " + str(inputQueue[cam].empty()))
+        print("inputQueue.qsize():" + str(inputQueue[cam].qsize()))
 
-                            # filter out weak detections by ensuring the `confidence`
-                            # is greater than the minimum confidence
-                            if confidence < conf_threshold: continue
 
-                            # otherwise, extract the index of the class label from
-                            # the `detections`, then compute the (x, y)-coordinates
-                            # of the bounding box for the object
-                            idx = int(detections[0, 0, i, 1])
-                            dims = np.array([fW, fH, fW, fH])
-                            box = detections[0, 0, i, 3:7] * dims
-                            (startX, startY, endX, endY) = box.astype("int")
-
-                            # draw the prediction on the frame
-                            if idx > len(CLASSES)-1:continue
-                            key = CLASSES[idx]
-                            #if not key in IMAGES: continue
-                            crop_img_data = frame[startY:endY, startX:endX]
-                            #label = "Unknown"
-                            hash=0
-                            try:
-                                crop_img = Image.fromarray(crop_img_data)
-                                #crop_img = cv2.cvtColor( crop_img, cv2.COLOR_RGB2GRAY )
-                                #crop_img = ImageEnhance.Contrast(crop_img)
-                                hash = dhash.dhash_int(crop_img)
-                            except: None
-                                #continue
-                                
-                            key = CLASSES[idx]
-                            
-                            logger.debug("cam:", cam, "key:",key,"hash:",hash)
-                            if not key in LOOKED1: continue
-                            if (hashes[cam]).get(key, None)== None:
-                                hashes[cam][key] = [hash]
-                                filename = str(cam)+'_' + key +'_'+ str(time.time()).replace(".","_")+ '.jpg'
-                                filenames[cam][key] = [filename]
-                                continue
-                            #_hashes = []
-                            diffr = 0
-                            for _hash in hashes[cam][key]:
-                                delta = dhash.get_num_bits_different(_hash, hash)
-                                #logger.debug("delta: ", delta)
-                                if delta < HASH_DELTA: break
-                                else: diffr +=1
-                            # process further only  if image is really different from other ones   
-                            if len(hashes[cam][key]) == diffr and hash !=0:
-                                hashes[cam][key].append(hash)
-                                if key in subject_of_interes:
-                                    #use it if you 100% sure you need save this image on disk
-                                    #filename = str(cam)+'_' + key +'_'+ str(time.time()).replace(".","_")+ '.jpg'
-                                    filename = str(cam)+'_' + key +'_'+ str(hash)+ '.jpg'
-                                    filenames[cam][key].append(filename)
-                                    cv2.imwrite(IMAGES_FOLDER + filename,crop_img_data)
-                                    imgb = crop_img_data.tobytes()
-                                    
-                                    encoded =  (base64.b64encode(imgb)).decode(ENCODING)
-                                    #catchedObjQueue.put( str(cam) + ";" + key + ";" +encoded)
-                                    logger.debug("cam:", cam, "key:", key, "filenames:", filenames[cam][key])
-                                    
-                            logger.debug("cam:", cam, "key:", key, "hashes:", hashes[cam][key])
-                           
-                            
-                            if DRAW_RECTANGLES: 
-                                label = "{}: {:.2f}%".format(key,confidence * 100)
-                                cv2.rectangle(frame, (startX-25, startY-25), (endX+25, endY+25), (0,255,0), 2)
-                                y = startY - 25 if startY - 25 > 25 else startY + 25
-                                cv2.putText(frame, label, (startX, y), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,255,0), 2)
-                                                       
-            
+                
+        # Do some statistic work here                                           
+        if not hashes[cam]:
             params = scrn_stats.refresh(hashes[cam],filenames[cam], cam)
-            logger.debug(params)
-            #if paramsQueue.qsize()> PARAMS_BUFFER: continue
-            paramsQueue.put( params )
-            logger.debug('paramsQueue.qsize()',paramsQueue.qsize())
-            if DRAW_RECTANGLES:
-                imagesQueue[cam].put(frame)
-                if imagesQueue[cam].qsize() > IMAGES_BUFFER:
-                    k+=1
-                    fetchImagesFromQueueToVideo(IMAGES_FOLDER+str(cam)+'_'+str(k), imagesQueue[cam],(640,480))
-                    k %= NUMBER_OF_FILES
-            if paramsQueue.qsize() > IMAGES_BUFFER:
-                persist_params(PARAMS_FOLDER + str(int(time.time())) + '.json')
-            # if perfomance issue on Raspberry Pi comment it
-            if not args["not_show_in_window"]:
-                cv2.imshow("Camera" + str(cam), frame)
-                key=cv2.waitKey(1) & 0xFF
-    
+            if len(params)>0:
+                params(params)
+                #if paramsQueue.qsize()> PARAMS_BUFFER: continue
+                paramsQueue.put( params )
+                logger.debug('paramsQueue.qsize()',paramsQueue.qsize())
         
-      j+=1
-      if j >= PARAMS_BUFFER:
-         j = 0
-         for cam in range(len(vss)):
-            hashes[cam] = {}
-            filenames[cam] = {}
+        if DRAW_RECTANGLES and not rectanglesQueue[cam].empty():
+            (label,dot1,dot2) = rectanglesQueue[cam].get()
+            cv2.rectangle(frame, dot1, dot2, (0,255,0), 1)
+            cv2.putText(frame, label, (dot1[0], dot1[1]), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,255,0), 2)
+            #print("imagesQueue.empty(): " + str(imagesQueue[cam].empty()))                
+            if imagesQueue[cam].qsize() > IMAGES_BUFFER:
+                k+=1
+                fetchImagesFromQueueToVideo(IMAGES_FOLDER+str(cam)+'_'+str(k), imagesQueue[cam],(640,480))
+                k %= NUMBER_OF_FILES
+        if paramsQueue.qsize() > IMAGES_BUFFER:
+            persist_params(PARAMS_FOLDER + str(int(time.time())) + '.json')
+            
+        imagesQueue[cam].put(frame)                
+
+        # if perfomance issue on Raspberry Pi comment it
+        if not args["not_show_in_window"]:
+            cv2.imshow("Camera" + str(cam), frame)
+            key=cv2.waitKey(1) & 0xFF
       
 
     if (__name__ == '__main__'):
@@ -301,8 +294,8 @@ args = {}
 # initialize the input queue (frames), output queue (detections),
 # and the list of actual detections returned by the child process
 inputQueue =  []
+rectanglesQueue = []
 imagesQueue = []
-outputQueue = []
 paramsQueue = Queue(maxsize=IMAGES_BUFFER+5)
 
 #catchedObjQueue = Queue()
@@ -313,14 +306,6 @@ vss = []
 fps = None
 p_get_frame = None
 
- 
-# initialize the camera and grab a reference to the raw camera capture
-#camera = PiCamera()
-#camera.resolution = (640,480)
-#camera.framerate = 32
-#rawCapture = PiRGBArray(camera, size =(640,480))
-#time.sleep(0.5)
-#picamera_gen = iter(camera.capture_continuous(rawCapture, format="bgr", use_video_port=True))
 
 def configure(args):
     # construct the argument parse and parse the arguments
@@ -378,18 +363,28 @@ def start():
        
     initialize_video_streams()
             
-    # show the output frame when need to test is working or not
-    p_get_frame = Process(target=get_frame, args=(vss,videos))
+
+    p_get_frame = Process(target=get_frame, args=(vss,videos,inputQueue,rectanglesQueue,hashes))
     p_get_frame.daemon = True
-    p_get_frame.start()
+    p_get_frame.start()    
+    #p_get_frame.join()
     
+    for i in range(0,len(videos)-1):
+        # Share common parameters between threads
+        while(inputQueue[i].empty()): None
+        
+        print('inputQueue[i].qsize():' + str(i) + ": " + str(inputQueue[i].qsize()))
+
+
     cam = 0
     for vs in vss:
         for i in range(THREAD_NUMBERS):
-            p_classifier = Process(target=classify_frame, args=(net,inputQueue[cam],
-                    outputQueue[cam],))
+            # Share common parameters between threads
+            p_classifier = Process(target=classify_frame, args=(net,inputQueue[cam],rectanglesQueue[cam],hashes,cam))
             p_classifier.daemon = False
             p_classifier.start()
+            #p_classifier.join()
+            
         
         logger.info("p_classifiers for cam:" +str(cam)+ " started")
         cam += 1
@@ -409,7 +404,7 @@ def initialize_video_streams(url=None):
     while arg is not None:
         if not (i,arg) in videos:
             if arg  == 'picam':
-                vs = None
+                vs = VideoStream(usePiCamera=True,resolution=piCameraResolution,framerate=piCameraRate).start()
             else: 
                  vs = cv2.VideoCapture(arg)
             logger.info("[INFO] Video stream: " + str(i) + " vs:" + str(vs) )
@@ -417,11 +412,15 @@ def initialize_video_streams(url=None):
             videos.append((str(i),arg))
             imagesQueue.append(Queue())
             inputQueue.append(Queue())
-            outputQueue.append(Queue())
+            rectanglesQueue.append(Queue())
             i+=1
             arg = args.get('video_file'+ str(i),None)
+    for cam in range(len(vss)):
+        hashes.append(LOOKED1)
+        filenames.append(LOOKED2)
 
-    time.sleep(1.0)
+    # Start process
+    time.sleep(2.0)
     fps = FPS().start()
     
 
