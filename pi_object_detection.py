@@ -59,8 +59,8 @@ DELETE_FILES_LATER = 24 * 60 * 60 # sec
 ENCODING = "utf-8"
 NUMBER_OF_FILES = 10
 HASH_DELTA = 72
-PARAMS_BUFFER = 65
-IMAGES_BUFFER = 65
+PARAMS_BUFFER = 125
+IMAGES_BUFFER = 125
 RECOGNZED_FRAME = 1
 THREAD_NUMBERS  = 1 #must be less then 4 for PI
 videos = []
@@ -79,7 +79,7 @@ def is_hash_the_same(hash,hashes):
     return len(hashes) != diffr or hash!=0
 
 
-def clean_params(cam, hashes, filenames):
+def clean_params(cam, hashes, inputQueue, filenames):
   #  delta = (time.time() - starttime) % 60.0
   #  logger.debug(delta)
   #  if delta > 9.0 :
@@ -88,7 +88,7 @@ def clean_params(cam, hashes, filenames):
     filenames  = {}
     logger.debug(hashes)
 
-def do_statistic(cam,hashes, filenames):
+def do_statistic(cam,hashes, rectanglesQueue, inputQueue, filenames):
   # Do some statistic work here
     logger.debug('get_frame: hashes[' + str(cam) +']')
     logger.debug(hashes)
@@ -102,7 +102,7 @@ def do_statistic(cam,hashes, filenames):
         logger.debug('get_frame: params' )
         logger.debug(params)
         paramsQueue.put( params )
-        logger.info('paramsQueue.qsize():' + str(paramsQueue.qsize()) + ' imagesQueue[' + str(cam)+'].qsize():' + str(imagesQueue[cam].qsize()) + ' rectanglesQueue[' + str(cam)+'].qsize():' + str(rectanglesQueue[cam].qsize()) )
+        logger.info('inputQueue.qsize():' + str(inputQueue.qsize()) + ' paramsQueue.qsize():' + str(paramsQueue.qsize()) + ' imagesQueue[' + str(cam)+'].qsize():' + str(imagesQueue[cam].qsize()) + ' rectanglesQueue[' + str(cam)+'].qsize():' + str(rectanglesQueue.qsize()) )
     if paramsQueue.qsize() > PARAMS_BUFFER:
         persist_params(PARAMS_FOLDER + str(int(time.time())) + '.json')
 
@@ -113,6 +113,7 @@ def classify_frame( net, inputQueue,rectanglesQueue,cam):
         filenames = {}
         #starttime=time.time()
         # keep looping
+        frame = None
         while True:
                 #clean_params(cam,starttime)
                 # check to see if there is a frame in our input queue
@@ -122,8 +123,9 @@ def classify_frame( net, inputQueue,rectanglesQueue,cam):
                 #logger.debug('inputQueue.qsize()',inputQueue.qsize())
                 #print(inputQueue)
                 #print(rectanglesQueue)
-                if inputQueue.empty(): continue
-                frame = inputQueue.get()
+                try:
+                   frame = inputQueue.get(block=False)
+                except: continue   
                 logger.debug('cam:' + str(cam))
                 _frame = cv2.resize(frame, (300, 300))
                 cols = frame.shape[1]
@@ -196,14 +198,15 @@ def classify_frame( net, inputQueue,rectanglesQueue,cam):
                                     #logger.debug('------------------- Rectangle placed in buffer ------------------------')
                                     rectanglesQueue.put((label, (startX-25, startY-25), (endX+25, endY+25)))
                                     logger.debug((label, (startX-25, startY-25), (endX+25, endY+25)))
-                                    do_statistic(cam, hashes, filenames)
+                                    do_statistic(cam, hashes, rectanglesQueue, inputQueue, filenames)
 
                                 # process further only  if image is really different from other ones
                                 if key in subject_of_interes:
                                     #use it if you 100% sure you need save this image on disk
                                     filename = str(cam)+'_' + key +'_'+ str(hash)+ '.jpg'
                                     filenames[key].append(filename)
-                                    cv2.putText(crop_img_data,str(datetime.datetime.now().strftime('%H:%M %d/%m/%y')),(1,25),cv2.FONT_HERSHEY_SIMPLEX,1,(0,255,0),1)
+                                    fontScale = min(endY-startY, endX-startX)/280
+                                    cv2.putText(crop_img_data,str(datetime.datetime.now().strftime('%H:%M %d/%m/%y')),(1,15),cv2.FONT_HERSHEY_SIMPLEX,fontScale,(0,255,0),1)
                                     cv2.imwrite(IMAGES_FOLDER + filename,crop_img_data)
                                     logger.info("Persisting ,filename: " + IMAGES_FOLDER + filename)
 
@@ -211,7 +214,8 @@ def classify_frame( net, inputQueue,rectanglesQueue,cam):
                                     #catchedObjQueue.put( str(cam) + ";" + key + ";" +encoded)
                                     logger.debug("classify_frame: cam:" + str(cam) + "key:" + key+ ", filenames: ")
                                     logger.debug(filenames[key])
-                                    continue
+                                    #continue
+                                   
 
 
 
@@ -237,12 +241,14 @@ def get_frame(vss,video_urls,inputQueue, imagesQueue, rectanglesQueue, cam):
                vss = cv2.VideoCapture(video_urls[1])
                continue
 
-        inputQueue.put(frame)
 
-        if inputQueue.qsize()>IMAGES_BUFFER:
-           while not inputQueue.empty(): inputQueue.get()
-        if imagesQueue.qsize()>IMAGES_BUFFER:
-           while not imagesQueue.empty(): imagesQueue.get()
+ #       if imagesQueue.qsize()>IMAGES_BUFFER-5:
+ #          while not imagesQueue.empty(): imagesQueue.get(block=False)  
+ #       if inputQueue.qsize()>IMAGES_BUFFER-5:
+ #          while not inputQueue.empty(): inputQueue.get(block=False)  
+
+
+        inputQueue.put(frame)
 
 
         if DRAW_RECTANGLES and not rectanglesQueue.empty():
@@ -251,7 +257,18 @@ def get_frame(vss,video_urls,inputQueue, imagesQueue, rectanglesQueue, cam):
                 (label,dot1,dot2) = rectanglesQueue.get()
                 cv2.rectangle(frame, dot1, dot2, (0,255,0), 1)
                 cv2.putText(frame, label, (dot1[0], dot1[1]), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,0,128), 1)
-
+   #             if imagesQueue.qsize() > 0:                    
+   #                 copy = []
+   #                 while True:
+   #                     try:
+   #                           frame =  imagesQueue.get(block=False)
+   #                     except: break    
+   #                     cv2.rectangle(frame, dot1, dot2, (0,255,0), 1)
+   #                     cv2.putText(frame, label, (dot1[0], dot1[1]), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,0,128), 1)
+   #                     copy.append(frame)
+   #                 for elem in copy:
+   #                         imagesQueue.put(elem)
+                    
             #print("imagesQueue.empty(): " + str(imagesQueue[cam].empty()))
             #if imagesQueue[cam].qsize() > IMAGES_BUFFER:
             #    fetchImagesFromQueueToVideo(IMAGES_FOLDER+str(cam), imagesQueue[cam])
@@ -399,19 +416,19 @@ def start():
         p_get_frame.daemon = True
         p_get_frame.start()
        #p_get_frame.join()
-    time.sleep(3.0)
+    
     #for i in range(0,len(videos)-1):
         # Share common parameters between threads
         #while(inputQueue[i].empty()): None
         
  #       print('inputQueue[i].qsize():' + str(i) + ": " + str(inputQueue[i].qsize()))
 
-
+    time.sleep(2.0)
     for cam in range(len(vss)):
         for i in range(THREAD_NUMBERS):
             # Share common parameters between threads
             p_classifier = Process(target=classify_frame, args=(net,inputQueue[cam],rectanglesQueue[cam],cam))
-            p_classifier.daemon = False
+            p_classifier.daemon = True
             p_classifier.start()
             #p_classifier.join()
             
