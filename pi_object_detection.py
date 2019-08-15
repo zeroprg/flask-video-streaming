@@ -59,8 +59,8 @@ DELETE_FILES_LATER = 24 * 60 * 60 # sec
 ENCODING = "utf-8"
 NUMBER_OF_FILES = 10
 HASH_DELTA = 72
-PARAMS_BUFFER = 125
-IMAGES_BUFFER = 125
+PARAMS_BUFFER = 25
+IMAGES_BUFFER = 25
 RECOGNZED_FRAME = 1
 THREAD_NUMBERS  = 1 #must be less then 4 for PI
 videos = []
@@ -198,7 +198,7 @@ def classify_frame( net, inputQueue,rectanglesQueue,cam):
                                     #logger.debug('------------------- Rectangle placed in buffer ------------------------')
                                     rectanglesQueue.put((label, (startX-25, startY-25), (endX+25, endY+25)))
                                     logger.debug((label, (startX-25, startY-25), (endX+25, endY+25)))
-                                    do_statistic(cam, hashes, rectanglesQueue, inputQueue, filenames)
+                                    #do_statistic(cam, hashes, rectanglesQueue, inputQueue, filenames)
 
                                 # process further only  if image is really different from other ones
                                 if key in subject_of_interes:
@@ -218,6 +218,14 @@ def classify_frame( net, inputQueue,rectanglesQueue,cam):
                                    
 
 
+
+def draw_metadata_onscreen(frame, rectanglesQueue):
+           logger.debug('!!!!!!!!!!!!!!!! Display rectangles!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
+           try:
+                (label,dot1,dot2) = rectanglesQueue.get(block=False)
+                cv2.rectangle(frame, dot1, dot2, (0,255,0), 1)
+                cv2.putText(frame, label, (dot1[0], dot1[1]), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,0,128), 1)
+           except: pass     
 
 
 
@@ -241,22 +249,16 @@ def get_frame(vss,video_urls,inputQueue, imagesQueue, rectanglesQueue, cam):
                vss = cv2.VideoCapture(video_urls[1])
                continue
 
-
- #       if imagesQueue.qsize()>IMAGES_BUFFER-5:
- #          while not imagesQueue.empty(): imagesQueue.get(block=False)  
- #       if inputQueue.qsize()>IMAGES_BUFFER-5:
- #          while not inputQueue.empty(): inputQueue.get(block=False)  
-
-
         inputQueue.put(frame)
 
+        if imagesQueue.qsize()>IMAGES_BUFFER-1:
+           while not imagesQueue.empty(): imagesQueue.get()  
+        if inputQueue.qsize()>IMAGES_BUFFER-1:
+           while not inputQueue.empty(): inputQueue.get()  
 
-        if DRAW_RECTANGLES and not rectanglesQueue.empty():
-           # logger.debug('!!!!!!!!!!!!!!!!Received rectangles!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
-           while not rectanglesQueue.empty():
-                (label,dot1,dot2) = rectanglesQueue.get()
-                cv2.rectangle(frame, dot1, dot2, (0,255,0), 1)
-                cv2.putText(frame, label, (dot1[0], dot1[1]), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,0,128), 1)
+
+        draw_metadata_onscreen(frame,rectanglesQueue)
+
    #             if imagesQueue.qsize() > 0:                    
    #                 copy = []
    #                 while True:
@@ -459,7 +461,7 @@ def initialize_video_streams(url=None):
             videos.append((str(i),arg))
             imagesQueue.append(Queue(maxsize=IMAGES_BUFFER+5))
             inputQueue.append(Queue(maxsize=PARAMS_BUFFER+5))
-            rectanglesQueue.append(Queue())
+            rectanglesQueue.append(Queue(maxsize=PARAMS_BUFFER+5))
             i+=1
             arg = args.get('video_file'+ str(i),None)
 
@@ -566,10 +568,11 @@ def detect(cam):
     while True:
          #logger.debug('imagesQueue:', imagesQueue.empty())
          while(not imagesQueue[cam].empty()):
-             iterable = imagesQueue[cam].get()
-             iterable = cv2.imencode('.jpg', iterable)[1].tobytes()
-             yield b'--frame\r\nContent-Type: image/jpeg\r\n\r\n' + iterable + b'\r\n'
-
+             try:
+                frame = imagesQueue[cam].get(block=False)
+                iterable = cv2.imencode('.jpg', frame)[1].tobytes()
+                yield b'--frame\r\nContent-Type: image/jpeg\r\n\r\n' + iterable + b'\r\n'
+             except: continue
 
 
 def gen_params():
