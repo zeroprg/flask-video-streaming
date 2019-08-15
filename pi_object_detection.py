@@ -259,23 +259,6 @@ def get_frame(vss,video_urls,inputQueue, imagesQueue, rectanglesQueue, cam):
 
         draw_metadata_onscreen(frame,rectanglesQueue)
 
-   #             if imagesQueue.qsize() > 0:                    
-   #                 copy = []
-   #                 while True:
-   #                     try:
-   #                           frame =  imagesQueue.get(block=False)
-   #                     except: break    
-   #                     cv2.rectangle(frame, dot1, dot2, (0,255,0), 1)
-   #                     cv2.putText(frame, label, (dot1[0], dot1[1]), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,0,128), 1)
-   #                     copy.append(frame)
-   #                 for elem in copy:
-   #                         imagesQueue.put(elem)
-                    
-            #print("imagesQueue.empty(): " + str(imagesQueue[cam].empty()))
-            #if imagesQueue[cam].qsize() > IMAGES_BUFFER:
-            #    fetchImagesFromQueueToVideo(IMAGES_FOLDER+str(cam), imagesQueue[cam])
-
-
         # if perfomance issue on Raspberry Pi comment it
         if not args["not_show_in_window"]:
             cv2.imshow("Camera" + str(cam), frame)
