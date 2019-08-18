@@ -1,0 +1,63 @@
+'''
+Class which populated quantity of hashcodes by time scale :  [1 minute, 5 minutes, ..., 60 minutes  ]
+to get how many unique hashcode were populated call self.get(i) where i index of time scale
+self.get(0): return how many hash codes populated for last minutes
+self.get(1): return how many hash codes populated for last 5 minutes
+...
+self.get(n): return how many hash codes populated for last 60 minutes
+
+self.add(hash): To add hash code to the queue
+override or change self.equals(hash1, hash2) method
+
+'''
+from queue import Queue
+import threading
+import time
+
+class objCountByTimer:
+    ''' This class count different objects ( by hashcode) by using timer  '''
+    def __init__(self, timescope=60, time_scale=[1,5,30,60]):
+        self.queqe = Queue()
+        self.timescope = timescope
+        self.interval = 0
+        self.time_scale = time_scale
+        self.sliced_result = []
+        for i in range(len(time_scale)): self.sliced_result.append(0)
+        t1 = threading.Timer(60.0, self.scheduler)
+
+    def slice(self, elem, index):
+        for t,_i in self.time_scale:
+            if t > elem[0]:
+                #slice all element before
+                self.sliced_result[_i] = index + 1 
+                return
+
+    def scheduler(self):
+        ''' This scheduler called by timer every 1 minute '''
+        self.interval += 1
+        self.interval %= self.timescope
+        
+        for elem,index in list(self.queue):
+            elem[0] += 1 # increase minutes
+            #slice 
+            self.slice(elem, index)
+            # when we reach last minute - timescope
+            if elem[0] > self.timescope: 
+                #remove the last element from the queue  which is out of time scope
+                self.queue.get()
+                break
+            
+    #implements equals
+    def equals(self,hash1, hash2):
+        return hash1==hash2
+        
+    def add(self,hashcode):
+        ''' Add a new object to queue , only if there is no "equal" objects ''' 
+        for elem in list(self.queue):
+            if not self.equals(hashcode, elem):
+                self.queqe.put([0,hashcode])
+                break
+
+    def get(self,i):
+        self.sliced_result[i]
+
