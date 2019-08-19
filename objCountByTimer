@@ -10,54 +10,85 @@ self.add(hash): To add hash code to the queue
 override or change self.equals(hash1, hash2) method
 
 '''
-from queue import Queue
+from collections import deque
 import threading
 import time
+import unittest
 
-class objCountByTimer:
+class ObjCountByTimer:
     ''' This class count different objects ( by hashcode) by using timer  '''
     def __init__(self, timescope=60, time_scale=[1,5,30,60]):
-        self.queqe = Queue()
+        self.store = deque()
         self.timescope = timescope
         self.interval = 0
         self.time_scale = time_scale
         self.sliced_result = []
         for i in range(len(time_scale)): self.sliced_result.append(0)
-        t1 = threading.Timer(60.0, self.scheduler)
+        t1 = threading.Timer(1.0, self.scheduler)
+        t1.start()
 
     def slice(self, elem, index):
-        for t,_i in self.time_scale:
-            if t > elem[0]:
+        print("self.time_scale: {}".format(self.time_scale) )
+        for _i in range(len(self.time_scale)):
+            print("t:{} ,elem:{}".format(self.time_scale[_i],elem))
+            if self.time_scale[_i] > elem[0]:
                 #slice all element before
-                self.sliced_result[_i] = index + 1 
+                self.sliced_result[_i] = index + 1
+                print("self.sliced_result[{}] {}".format(_i,self.sliced_result[_i]))
                 return
 
     def scheduler(self):
         ''' This scheduler called by timer every 1 minute '''
+        print("Scheduler called queue: {}".format(list(self.store)))
         self.interval += 1
         self.interval %= self.timescope
-        
-        for elem,index in list(self.queue):
-            elem[0] += 1 # increase minutes
-            #slice 
-            self.slice(elem, index)
+        ls = list(self.store)
+        print("ls[0]: {}".format(ls[0]) )
+        print("ls[0]: {} len(ls): {} ".format(ls[0], len(ls)) )
+        for index in range(len(ls)):
+            print("elem:{}".format(ls[index]))
+            ls[index][0] += 1 # increase minutes
+            #slice
+            self.slice(ls[index], index)
             # when we reach last minute - timescope
-            if elem[0] > self.timescope: 
+            if ls[index][0] > self.timescope:
                 #remove the last element from the queue  which is out of time scope
-                self.queue.get()
+                self.store.get()
                 break
-            
+
     #implements equals
     def equals(self,hash1, hash2):
         return hash1==hash2
-        
+
     def add(self,hashcode):
-        ''' Add a new object to queue , only if there is no "equal" objects ''' 
-        for elem in list(self.queue):
-            if not self.equals(hashcode, elem):
-                self.queqe.put([0,hashcode])
+        ''' Add a new object to queue , only if there is no "equal" objects '''
+        n=0
+        for elem in list(self.store):
+            if self.equals(hashcode, elem):
                 break
+            n+=1
+        print('self.store.qsize({}), n={}'.format(len(self.store), n))
+        if len(self.store) == n:
+            self.store.append([0,hashcode])
 
     def get(self,i):
         self.sliced_result[i]
 
+
+
+
+class TestObjCountByTimer(unittest.TestCase):
+
+    def test_description(self):
+
+        obj = ObjCountByTimer(10, [1,2,5,10])
+        obj.add("Privet Lunatikam!!!")
+        obj.add("Privet!!!")
+        obj.add("Pri!!!")
+        print(obj.get(0))
+
+        time.sleep(80)
+        print('obj.get(0):{} '.format(obj.get(0)))
+
+test = TestObjCountByTimer()
+test.test_description()
