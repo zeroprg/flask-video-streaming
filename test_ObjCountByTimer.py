@@ -11,7 +11,7 @@ class TestObjCountByTimer(unittest.TestCase):
         obj.add("Privet!!!")
         obj.add("Pri!!!")
         time.sleep(80)
-        self.assertNotNull(obj.get(1))
+        self.assertEqual(obj.get(1), 3)
         print('obj.get(0):{} '.format(obj.get(1)))
 
 test = TestObjCountByTimer()
