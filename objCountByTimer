@@ -1,10 +1,10 @@
 '''
-Class which populated quantity of hashcodes by time scale :  [1 minute, 5 minutes, ..., 60 minutes  ]
+Class which populated quantity of hashcodes by time scale :  [1 sec, 5 sec, ..., 60 sec  ]
 to get how many unique hashcode were populated call self.get(i) where i index of time scale
-self.get(0): return how many hash codes populated for last minutes
-self.get(1): return how many hash codes populated for last 5 minutes
+self.get(0): return how many hash codes populated for last sec
+self.get(1): return how many hash codes populated for last 5 sec
 ...
-self.get(n): return how many hash codes populated for last 60 minutes
+self.get(n): return how many hash codes populated for last 60 sec
 
 self.add(hash): To add hash code to the queue
 override or change self.equals(hash1, hash2) method
