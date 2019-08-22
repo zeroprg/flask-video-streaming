@@ -50,6 +50,7 @@ LOOKED1 = { "car": [], "cat": [],"dog": [],"person":  []}
 LOOKED2 = { "car": [], "cat": [],"dog": [], "person": []}
 
 subject_of_interes = ["person","cat","dog"]
+hashes = {}
 COLORS = np.random.uniform(0, 255, size=(len(CLASSES), 3))
 
 IMAGES_FOLDER = "static/img/"
@@ -59,7 +60,7 @@ DRAW_RECTANGLES = True
 DELETE_FILES_LATER = 24 * 60 * 60 # sec 
 ENCODING = "utf-8"
 NUMBER_OF_FILES = 10
-HASH_DELTA = 45# 72
+HASH_DELTA = 55# 72
 PARAMS_BUFFER = 25
 IMAGES_BUFFER = 25
 RECOGNZED_FRAME = 1
@@ -68,6 +69,8 @@ videos = []
 piCameraResolution = (640,480) #(1296,972)
 piCameraRate=24
 IMG_PAGINATOR = 50
+
+
 
 class ImageHashCodesCountByTimer(ObjCountByTimer):
     def equals(self,hash1, hash2):
@@ -114,9 +117,8 @@ def do_statistic(cam,hashes, rectanglesQueue, inputQueue, filenames):
 
 def classify_frame( net, inputQueue,rectanglesQueue,cam):
         conf_threshold = float(args["confidence"])
-        hashes = {}
         filenames = {}
-
+        hashes = {}
         #starttime=time.time()
         # keep looping
         frame = None
@@ -185,10 +187,11 @@ def classify_frame( net, inputQueue,rectanglesQueue,cam):
                                 logger.debug(hashes)
                                 if not key in LOOKED1: continue
                                 diffr = 1
+                                label2 = None
                                 if (hashes).get(key, None)== None:
                                     # count objects for last sec, last 5 sec and last minute
                                     print('ImageHashCodesCountByTimer init by hash: {}'.format(hash))
-                                    hashes[key] = ImageHashCodesCountByTimer(1,60, (5,10,60))
+                                    hashes[key] = ImageHashCodesCountByTimer(1,120, (30,60,120))
                                     hashes[key].add(hash)
                                     filename = str(cam)+'_' + key +'_'+ str(hash)+ '.jpg'
                                     filenames[key] = [filename]
@@ -196,18 +199,15 @@ def classify_frame( net, inputQueue,rectanglesQueue,cam):
                                      #if not is_hash_the_same(hash,hashes[key]): hashes[key].add(hash)
                                      print('hash: {}'.format(hash))
                                      hashes[key].add(hash)
+                                     label2 = key+"(s):" + str(hashes[key].counted[0]) # check for last 30 sec
 
 
 
                                 if DRAW_RECTANGLES: 
-                                    label = "{}: {:.2f}%".format(key,confidence * 100)
-                                    #cv2.rectangle(frame, (startX-25, startY-25), (endX+25, endY+25), (0,255,0), 2)
-                                    #y = startY - 25 if startY - 25 > 25 else startY + 25
-                                    #cv2.putText(frame, label, (startX, y), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,255,0), 2)
-                                    # add frames with rectangles
+                                    label1 = "{}: {:.2f}%".format(key,confidence * 100)
                                     #logger.debug('------------------- Rectangle placed in buffer ------------------------')
-                                    rectanglesQueue.put((label, (startX-25, startY-25), (endX+25, endY+25)))
-                                    logger.debug((label, (startX-25, startY-25), (endX+25, endY+25)))
+                                    rectanglesQueue.put((label1, (startX-25, startY-25), (endX+25, endY+25),label2))
+                                    logger.debug((label1, (startX-25, startY-25), (endX+25, endY+25)))
                                     #do_statistic(cam, hashes, rectanglesQueue, inputQueue, filenames)
 
                                 # process further only  if image is really different from other ones
@@ -229,19 +229,10 @@ def classify_frame( net, inputQueue,rectanglesQueue,cam):
 
 
 
-def draw_metadata_onscreen(frame, rectanglesQueue):
-           logger.debug('!!!!!!!!!!!!!!!! Display rectangles!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
-           try:
-                (label,dot1,dot2) = rectanglesQueue.get(block=False)
-                cv2.rectangle(frame, dot1, dot2, (0,255,0), 1)
-                cv2.putText(frame, label, (dot1[0], dot1[1]), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,0,128), 1)
-           except: pass     
-
-
 
 def get_frame(vss,video_urls,inputQueue, imagesQueue, rectanglesQueue, cam):
     # loop over the frames from the video stream
-
+    label2 = None
     detections = None
     cols,rows = 0,0
     while  True:
@@ -267,7 +258,17 @@ def get_frame(vss,video_urls,inputQueue, imagesQueue, rectanglesQueue, cam):
            while not inputQueue.empty(): inputQueue.get()  
 
 
-        draw_metadata_onscreen(frame,rectanglesQueue)
+#        draw metadata on screen
+        logger.debug('!!!!!!!!!!!!!!!! Display rectangles!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
+        while not rectanglesQueue.empty():
+           try:
+                (label1,dot1,dot2,label2) = rectanglesQueue.get(block=False)
+                cv2.rectangle(frame, dot1, dot2, (0,255,0), 1)
+                cv2.putText(frame, label1, (dot1[0], dot1[1]), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,255,0), 1)
+           except: continue     
+        if label2 !=None:   
+            cv2.putText(frame, label2, (10, 23), cv2.FONT_HERSHEY_SIMPLEX, 1, (0,255,0), 2)
+
 
         # if perfomance issue on Raspberry Pi comment it
         if not args["not_show_in_window"]:

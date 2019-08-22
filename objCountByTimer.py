@@ -40,7 +40,7 @@ class ObjCountByTimer:
 
     def scheduler(self):
         ''' This scheduler called by timer every self.timescope/10 sec '''
-        print("Scheduler called queue: {}".format(list(self.store)))
+        #print("Scheduler called queue: {}".format(list(self.store)))
         ls = list(self.store)
         #print("ls[0]: {}".format(ls[0]) )
         #print("ls[0]: {} len(ls): {} ".format(ls[0], len(ls)) )
