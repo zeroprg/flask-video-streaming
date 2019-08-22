@@ -40,7 +40,7 @@ class ObjCountByTimer:
 
     def scheduler(self):
         ''' This scheduler called by timer every self.timescope/10 sec '''
-        #print("Scheduler called queue: {}".format(list(self.store)))
+        print("Scheduler called queue: {}".format(list(self.store)))
         ls = list(self.store)
         #print("ls[0]: {}".format(ls[0]) )
         #print("ls[0]: {} len(ls): {} ".format(ls[0], len(ls)) )
@@ -53,6 +53,7 @@ class ObjCountByTimer:
             if ls[index][0] > self.timescope: 
                 #remove the last element from the queue  which is out of time scope
                 self.store.pop()
+                for k in range(len(self.counted)): self.counted[k] -= 1
                 break
         self.t2 = threading.Timer(self.timestep, self.scheduler)
         self.t2.start()
@@ -60,15 +61,18 @@ class ObjCountByTimer:
         self.t1.cancel()    
         self.t2.cancel()
         
-    #implements equals
+    #implements equals override it in child class
     def equals(self,hash1, hash2):
         return hash1==hash2
+        
+        
+        
         
     def add(self,hashcode):
         ''' Add a new object to queue , only if there is no "equal" objects ''' 
         n=0
         for elem in list(self.store):
-            if self.equals(hashcode, elem):
+            if self.equals(hashcode, elem[1]):
                 break
             n+=1
         #print('self.store.qsize({}), n={}'.format(len(self.store), n))    

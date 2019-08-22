@@ -23,6 +23,7 @@ import datetime
 import cv2
 import json
 from screen_statistics import Screen_statistic
+from objCountByTimer import ObjCountByTimer
 import base64
 
 from flask import Flask, render_template, Response, request,redirect,jsonify
@@ -58,7 +59,7 @@ DRAW_RECTANGLES = True
 DELETE_FILES_LATER = 24 * 60 * 60 # sec 
 ENCODING = "utf-8"
 NUMBER_OF_FILES = 10
-HASH_DELTA = 72
+HASH_DELTA = 45# 72
 PARAMS_BUFFER = 25
 IMAGES_BUFFER = 25
 RECOGNZED_FRAME = 1
@@ -68,6 +69,10 @@ piCameraResolution = (640,480) #(1296,972)
 piCameraRate=24
 IMG_PAGINATOR = 50
 
+class ImageHashCodesCountByTimer(ObjCountByTimer):
+    def equals(self,hash1, hash2):
+        delta = dhash.get_num_bits_different(hash1, hash2)
+        return delta < HASH_DELTA
 
 def is_hash_the_same(hash,hashes):
     diffr = 0
@@ -111,6 +116,7 @@ def classify_frame( net, inputQueue,rectanglesQueue,cam):
         conf_threshold = float(args["confidence"])
         hashes = {}
         filenames = {}
+
         #starttime=time.time()
         # keep looping
         frame = None
@@ -173,19 +179,23 @@ def classify_frame( net, inputQueue,rectanglesQueue,cam):
                                     #crop_img = cv2.cvtColor( crop_img, cv2.COLOR_RGB2GRAY )
                                     #crop_img = ImageEnhance.Contrast(crop_img)
                                     hash = dhash.dhash_int(crop_img)
-                                except: None
-                                    #continue
+                                except: continue # pass
 
                                 logger.debug("cam:" + str(cam)+ ", key:" + str(key) + " ,hash:" + str(hash))
                                 logger.debug(hashes)
                                 if not key in LOOKED1: continue
                                 diffr = 1
                                 if (hashes).get(key, None)== None:
-                                    hashes[key] = [hash]
+                                    # count objects for last sec, last 5 sec and last minute
+                                    print('ImageHashCodesCountByTimer init by hash: {}'.format(hash))
+                                    hashes[key] = ImageHashCodesCountByTimer(1,60, (5,10,60))
+                                    hashes[key].add(hash)
                                     filename = str(cam)+'_' + key +'_'+ str(hash)+ '.jpg'
                                     filenames[key] = [filename]
                                 else:
-                                     if not is_hash_the_same(hash,hashes[key]): hashes[key].append(hash)
+                                     #if not is_hash_the_same(hash,hashes[key]): hashes[key].add(hash)
+                                     print('hash: {}'.format(hash))
+                                     hashes[key].add(hash)
 
 
 
