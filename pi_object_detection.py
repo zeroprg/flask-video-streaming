@@ -22,7 +22,7 @@ from time import gmtime, strftime
 import datetime
 import cv2
 import json
-from screen_statistics import Screen_statistic
+#from screen_statistics import Screen_statistic
 from objCountByTimer import ObjCountByTimer
 import base64
 
@@ -57,18 +57,53 @@ IMAGES_FOLDER = "static/img/"
 PARAMS_FOLDER = "static/params/"
 
 DRAW_RECTANGLES = True
-DELETE_FILES_LATER = 24 * 60 * 60 # sec 
+DELETE_FILES_LATER =  60 * 60 # sec 
 ENCODING = "utf-8"
 NUMBER_OF_FILES = 10
-HASH_DELTA = 55# 72
+HASH_DELTA = 59
 PARAMS_BUFFER = 25
 IMAGES_BUFFER = 25
 RECOGNZED_FRAME = 1
 THREAD_NUMBERS  = 1 #must be less then 4 for PI
 videos = []
-piCameraResolution = (640,480) #(1296,972)
+piCameraResolution = (1080,720)#(640,480) (1296,972)
 piCameraRate=24
 IMG_PAGINATOR = 50
+
+
+
+
+
+class Trace(dict):
+    def __init__(self):
+        dict.__init__(self)
+        self.cam = 0
+        self.x = 0
+        self.y = 0
+        self.name = ''
+        self.text = ''
+        self.filenames = []  
+    def toJSON(self):
+            return json.dumps(self, default=lambda o: o.__dict__,
+                sort_keys=True, indent=4)
+
+def getParametersJSON(hashes, filenames, cam):
+    ret =[]
+    for key in hashes:
+        #logging.debug(images[key])
+        trace = Trace()
+        trace.name = key
+        trace.cam = cam
+        tm = int(time.time()) #strftime("%H:%M:%S", localtime())
+        trace.filenames = filenames.get(key,[])
+        trace.x = tm
+        trace.y = hashes[key].counted[0]# check for last 10 sec
+        #print("------------------------------filenames[" + key + "]--------------------------------")
+        #print(filenames[key])
+        trace.text =  filenames[key]
+        ret.append(trace.__dict__)
+        logging.debug( trace.__dict__ )
+    return ret
 
 
 
@@ -77,40 +112,18 @@ class ImageHashCodesCountByTimer(ObjCountByTimer):
         delta = dhash.get_num_bits_different(hash1, hash2)
         return delta < HASH_DELTA
 
-def is_hash_the_same(hash,hashes):
-    diffr = 0
-    for _hash in hashes:
-       delta = dhash.get_num_bits_different(_hash, hash)
-       logger.debug("delta: " + str(delta))
-       if delta < HASH_DELTA: break
-       else: diffr +=1
-    return len(hashes) != diffr or hash!=0
 
 
-def clean_params(cam, hashes, inputQueue, filenames):
-  #  delta = (time.time() - starttime) % 60.0
-  #  logger.debug(delta)
-  #  if delta > 9.0 :
-    logger.debug("!!!!!!!!!!!!!!!!! Params initialized !!!!!!!!!!!!!!!")
-    hashes = {"car":[], "person":[], "cat":[], "dog":[]}
-    filenames  = {}
-    logger.debug(hashes)
-
-def do_statistic(cam,hashes, rectanglesQueue, inputQueue, filenames):
+def do_statistic(cam,hashes,filenames):
   # Do some statistic work here
-    logger.debug('get_frame: hashes[' + str(cam) +']')
-    logger.debug(hashes)
-    logger.debug('get_frame: filenames[' + str(cam) +']')
-    logger.debug(filenames)
-
-    params = scrn_stats.refresh(hashes,filenames, cam)
+    logger.debug('filenames[' + str(cam) +']')
+    logger.debug(filenames)    
+    params = getParametersJSON(hashes,filenames, cam)
     if len(params)>0:
-        #params(params)
-        #if paramsQueue.qsize()> PARAMS_BUFFER: continue
         logger.debug('get_frame: params' )
         logger.debug(params)
         paramsQueue.put( params )
-        logger.info('inputQueue.qsize():' + str(inputQueue.qsize()) + ' paramsQueue.qsize():' + str(paramsQueue.qsize()) + ' imagesQueue[' + str(cam)+'].qsize():' + str(imagesQueue[cam].qsize()) + ' rectanglesQueue[' + str(cam)+'].qsize():' + str(rectanglesQueue.qsize()) )
+        logger.info(' paramsQueue.qsize():{}'.format(paramsQueue.qsize()))
     if paramsQueue.qsize() > PARAMS_BUFFER:
         persist_params(PARAMS_FOLDER + str(int(time.time())) + '.json')
 
@@ -191,15 +204,17 @@ def classify_frame( net, inputQueue,rectanglesQueue,cam):
                                 if (hashes).get(key, None)== None:
                                     # count objects for last sec, last 5 sec and last minute
                                     print('ImageHashCodesCountByTimer init by hash: {}'.format(hash))
-                                    hashes[key] = ImageHashCodesCountByTimer(1,120, (30,60,120))
+                                    hashes[key] = ImageHashCodesCountByTimer(1,300, (10,60,300))
                                     hashes[key].add(hash)
                                     filename = str(cam)+'_' + key +'_'+ str(hash)+ '.jpg'
                                     filenames[key] = [filename]
                                 else:
-                                     #if not is_hash_the_same(hash,hashes[key]): hashes[key].add(hash)
-                                     print('hash: {}'.format(hash))
+                                     #if not is_hash_the_same(hash,hashes[key]): hashes[key].add(hash)                                     
                                      hashes[key].add(hash)
-                                     label2 = key+"(s):" + str(hashes[key].counted[0]) # check for last 30 sec
+                                     label2 =''
+                                     for key in hashes:
+                                        label2 += key+'(s):' + str(hashes[key].counted[0]) + ' '
+                                      # check for last 5 sec
 
 
 
@@ -208,7 +223,7 @@ def classify_frame( net, inputQueue,rectanglesQueue,cam):
                                     #logger.debug('------------------- Rectangle placed in buffer ------------------------')
                                     rectanglesQueue.put((label1, (startX-25, startY-25), (endX+25, endY+25),label2))
                                     logger.debug((label1, (startX-25, startY-25), (endX+25, endY+25)))
-                                    #do_statistic(cam, hashes, rectanglesQueue, inputQueue, filenames)
+                                    do_statistic(cam, hashes,filenames)
 
                                 # process further only  if image is really different from other ones
                                 if key in subject_of_interes:
@@ -266,8 +281,8 @@ def get_frame(vss,video_urls,inputQueue, imagesQueue, rectanglesQueue, cam):
                 cv2.rectangle(frame, dot1, dot2, (0,255,0), 1)
                 cv2.putText(frame, label1, (dot1[0], dot1[1]), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,255,0), 1)
            except: continue     
-        if label2 !=None:   
-            cv2.putText(frame, label2, (10, 23), cv2.FONT_HERSHEY_SIMPLEX, 1, (0,255,0), 2)
+        if label2 !=None:               
+            cv2.putText(frame, label2, (10,23), cv2.FONT_HERSHEY_SIMPLEX, 1, (0,255,0), 2)
 
 
         # if perfomance issue on Raspberry Pi comment it
@@ -362,8 +377,8 @@ def configure(args):
                 # strip() removes white space from the ends of strings
                 args[name.strip()] = value.strip()
 
-    global scrn_stats
-    scrn_stats = Screen_statistic(paramsQueue)
+    #global scrn_stats
+    #scrn_stats = Screen_statistic(paramsQueue)
 
     ap = argparse.ArgumentParser()
     ap.add_argument("-nw","--not_show_in_window",required=False,

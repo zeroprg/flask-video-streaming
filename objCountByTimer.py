@@ -52,8 +52,8 @@ class ObjCountByTimer:
             # when we reach last second of timescope
             if ls[index][0] > self.timescope: 
                 #remove the last element from the queue  which is out of time scope
-                self.store.pop()
-                for k in range(len(self.counted)): self.counted[k] -= 1
+                del self.store[index]
+                self.counted[len(self.counted)-1] -= 1
                 break
         self.t2 = threading.Timer(self.timestep, self.scheduler)
         self.t2.start()
