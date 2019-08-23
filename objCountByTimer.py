@@ -32,11 +32,13 @@ class ObjCountByTimer:
         #print("self.time_scale: {}".format(self.time_scale) )
         for _i in range(len(self.time_scale)):
             #print("t:{} ,elem:{}".format(self.time_scale[_i],elem))
-            if self.time_scale[_i] > elem[0]:
+            if self.time_scale[_i] >= elem[0]:
                 #shift all elements on 1 sec to right
-                self.counted[_i] = index + 1 
-                #print("self.sliced_result[{}] {}".format(_i,self.counted[_i]))
+                self.counted[_i] = index + 1                
                 return
+            else:
+                self.counted[_i] = 0
+                
 
     def scheduler(self):
         ''' This scheduler called by timer every self.timescope/10 sec '''
@@ -44,6 +46,7 @@ class ObjCountByTimer:
         ls = list(self.store)
         #print("ls[0]: {}".format(ls[0]) )
         #print("ls[0]: {} len(ls): {} ".format(ls[0], len(ls)) )
+        #print("self.counted {}".format(self.counted))
         for index in range(len(ls)):
             #print("elem:{}".format(ls[index]))
             ls[index][0] += self.timestep # increase in seconds
@@ -53,7 +56,6 @@ class ObjCountByTimer:
             if ls[index][0] > self.timescope: 
                 #remove the last element from the queue  which is out of time scope
                 del self.store[index]
-                self.counted[len(self.counted)-1] -= 1
                 break
         self.t2 = threading.Timer(self.timestep, self.scheduler)
         self.t2.start()

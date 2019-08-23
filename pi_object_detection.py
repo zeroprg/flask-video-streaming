@@ -46,10 +46,10 @@ CLASSES = ["background", "aeroplane", "bicycle", "bird", "boat",
 	"bottle", "bus", "car", "cat", "chair", "cow", "diningtable",
 	"dog", "horse", "motorbike", "person", "pottedplant", "sheep",
 	"sofa", "train", "tvmonitor"]
-LOOKED1 = { "car": [], "cat": [],"dog": [],"person":  []}
-LOOKED2 = { "car": [], "cat": [],"dog": [], "person": []}
+LOOKED1 = { "car": [], "person":  []}
+LOOKED2 = { "car": [], "person": []}
 
-subject_of_interes = ["person","cat","dog"]
+subject_of_interes = ["person"]
 hashes = {}
 COLORS = np.random.uniform(0, 255, size=(len(CLASSES), 3))
 
@@ -57,10 +57,10 @@ IMAGES_FOLDER = "static/img/"
 PARAMS_FOLDER = "static/params/"
 
 DRAW_RECTANGLES = True
-DELETE_FILES_LATER =  60 * 60 # sec 
+DELETE_FILES_LATER =  10 *60 * 60 # sec  (10 hours)
 ENCODING = "utf-8"
 NUMBER_OF_FILES = 10
-HASH_DELTA = 59
+HASH_DELTA = 63
 PARAMS_BUFFER = 25
 IMAGES_BUFFER = 25
 RECOGNZED_FRAME = 1
@@ -97,7 +97,7 @@ def getParametersJSON(hashes, filenames, cam):
         tm = int(time.time()) #strftime("%H:%M:%S", localtime())
         trace.filenames = filenames.get(key,[])
         trace.x = tm
-        trace.y = hashes[key].counted[0]# check for last 10 sec
+        trace.y = hashes[key].counted[1]# check for last 10 sec
         #print("------------------------------filenames[" + key + "]--------------------------------")
         #print(filenames[key])
         trace.text =  filenames[key]
@@ -204,7 +204,7 @@ def classify_frame( net, inputQueue,rectanglesQueue,cam):
                                 if (hashes).get(key, None)== None:
                                     # count objects for last sec, last 5 sec and last minute
                                     print('ImageHashCodesCountByTimer init by hash: {}'.format(hash))
-                                    hashes[key] = ImageHashCodesCountByTimer(1,300, (10,60,300))
+                                    hashes[key] = ImageHashCodesCountByTimer(1,300, (5,60,300))
                                     hashes[key].add(hash)
                                     filename = str(cam)+'_' + key +'_'+ str(hash)+ '.jpg'
                                     filenames[key] = [filename]
@@ -212,9 +212,9 @@ def classify_frame( net, inputQueue,rectanglesQueue,cam):
                                      #if not is_hash_the_same(hash,hashes[key]): hashes[key].add(hash)                                     
                                      hashes[key].add(hash)
                                      label2 =''
-                                     for key in hashes:
-                                        label2 += key+'(s):' + str(hashes[key].counted[0]) + ' '
-                                      # check for last 5 sec
+                                     for key in hashes:                                         
+                                        label2 += key+'(s):' + str(hashes[key].counted[0]) + ',' + str(hashes[key].counted[1]) + ',' + str(hashes[key].counted[2])
+                                      
 
 
 
@@ -282,7 +282,7 @@ def get_frame(vss,video_urls,inputQueue, imagesQueue, rectanglesQueue, cam):
                 cv2.putText(frame, label1, (dot1[0], dot1[1]), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,255,0), 1)
            except: continue     
         if label2 !=None:               
-            cv2.putText(frame, label2, (10,23), cv2.FONT_HERSHEY_SIMPLEX, 1, (0,255,0), 2)
+            cv2.putText(frame, label2, (10,23), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (0,255,0), 2)
 
 
         # if perfomance issue on Raspberry Pi comment it
