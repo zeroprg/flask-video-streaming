@@ -6,6 +6,7 @@
 #video_file2=http://92.154.61.153:8080/oneshotimage1?1529845789
 #video_file2=http://37.142.116.227/cgi-bin/camera?resolution=640&amp;amp;quality=1&amp;amp;Language=0&amp;amp;1529847411
 
+
 video_file0=picam
 video_file1=http://192.168.1.100:81/videostream.cgi?loginuse=GwEBAA%3D%3D&loginpas=Nw0AG1ZceWtl&_=15282579520910.657573406191367
 video_file2=http://192.168.1.101:81/videostream.cgi?loginuse=GwEBAA%3D%3D&loginpas=Nw0AG1ZceWtl&_=15282579520910.657573406191367

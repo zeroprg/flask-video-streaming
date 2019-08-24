@@ -146,11 +146,11 @@ def classify_frame( net, inputQueue,rectanglesQueue,cam):
                    frame = inputQueue.get(block=False)
                 except: continue   
                 logger.debug('cam:' + str(cam))
-                _frame = cv2.resize(frame, (300, 300))
+                _frame = cv2.resize(frame, (227, 227))
                 cols = frame.shape[1]
                 rows = frame.shape[0]
                 blob = cv2.dnn.blobFromImage(_frame, 0.007843,
-                        (300, 300), (127.5,127.5,127.5), False)
+                        (227, 227), (127.5,127.5,127.5), True)
                 # set the blob as input to our deep learning object
                 # detector and obtain the detections
                 net.setInput(blob)
@@ -235,15 +235,26 @@ def classify_frame( net, inputQueue,rectanglesQueue,cam):
                                 do_statistic(cam, hashes)
                                 
                                    
+#  draw metadata on screen
+def draw_metadata_onscreen(frame, rectanglesQueue,label2):
+    logger.debug('!!!!!!!!!!!!!!!! Display rectangles!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
 
-
+    while not rectanglesQueue.empty():
+        try:
+            (label1,dot1,dot2,label2) = rectanglesQueue.get(block=False)
+            cv2.rectangle(frame, dot1, dot2, (0,255,0), 1)
+            cv2.putText(frame, label1, (dot1[0], dot1[1]), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,255,0), 1)
+        except: continue
+    return label2
+    
+ 
 
 
 def get_frame(vss,video_urls,inputQueue, imagesQueue, rectanglesQueue, cam):
-    # loop over the frames from the video stream
-    label2 = None
+    # loop over the frames from the video stream    
     detections = None
     cols,rows = 0,0
+    label2 = 'No data'
     while  True:
         logger.debug('cam:' +video_urls[1])
         if 'picam' == video_urls[1]:
@@ -267,16 +278,9 @@ def get_frame(vss,video_urls,inputQueue, imagesQueue, rectanglesQueue, cam):
            while not inputQueue.empty(): inputQueue.get()  
 
 
-#        draw metadata on screen
-        logger.debug('!!!!!!!!!!!!!!!! Display rectangles!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
-        while not rectanglesQueue.empty():
-           try:
-                (label1,dot1,dot2,label2) = rectanglesQueue.get(block=False)
-                cv2.rectangle(frame, dot1, dot2, (0,255,0), 1)
-                cv2.putText(frame, label1, (dot1[0], dot1[1]), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,255,0), 1)
-           except: continue     
-        if label2 !=None:               
-            cv2.putText(frame, label2, (10,23), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (0,255,0), 2)
+
+        label2 = draw_metadata_onscreen(frame, rectanglesQueue, label2)
+        cv2.putText(frame, label2, (10,23), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (0,255,0), 2)
 
 
         # if perfomance issue on Raspberry Pi comment it
@@ -567,17 +571,20 @@ def gen(camera):
                b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
 
 
+
+
 def detect(cam):
     """Video streaming generator function."""
     while True:
          #logger.debug('imagesQueue:', imagesQueue.empty())
-         while(not imagesQueue[cam].empty()):
-             try:
-                frame = imagesQueue[cam].get(block=False)
-                iterable = cv2.imencode('.jpg', frame)[1].tobytes()
-                yield b'--frame\r\nContent-Type: image/jpeg\r\n\r\n' + iterable + b'\r\n'
-             except: continue
-
+         
+         #while(not imagesQueue[cam].empty()):
+         try:
+            frame = imagesQueue[cam].get(block=False)
+            #draw_metadata_onscreen(frame,rectanglesQueue[cam])
+            iterable = cv2.imencode('.jpg', frame)[1].tobytes()
+            yield b'--frame\r\nContent-Type: image/jpeg\r\n\r\n' + iterable + b'\r\n'
+         except: pass # continue
 
 def gen_params():
     ret = []
