@@ -121,33 +121,33 @@
     </div>
  </div>
  
- <div class="row">
+ <!--div class="row">
     <div class="col-sm-12">
         <div id= "myDiv{{cam}}" class="col-sm-12" style="height:250px; width:100%"></div>
     </div>    
- </div>     
+ </div-->     
  
  <div class="row">
    <div class="col-sm-12">
       <div class="header">
          <button onclick="moreparams({{cam}}, this.value)"> Show Historical records </button>
-         <!--<select name="Objects log" onchange="moreparams({{cam}}, this.value)">
+         <select name="Objects log" onchange="moreparams({{cam}}, this.value)">
               <option value="0"></option>
               <option value="3600">1h back</option>
               <option value="7200">2h back</option>
               <option value="10800">3h back</option>
               <option value="14400">4h back</option>
-		      <option value="18000">5h back</option>
-		     
+		          <option value="18000">5h back</option>
+		     <!--
 		      <option value="360000">12h back</option>
 		      <option value="720000">24h back</option>
 		      <option value="1440000">48h back (2 days)</option> 
 		      <option value="2160000">72h back (3 days)</option>
 		      <option value="4320000">144h (6 days) back</option> 
-		      
-    	</select>
+		        -->	 
+    	  </select>
     	</h4>
-    -->	
+ 
     	<span class="win-pos"></span> <!-- please use it in master page to get the position. -->
         <div class="popup-win"></div> <!-- This is for popup area, please use your content inside this. -->
 
@@ -277,12 +277,13 @@ function showmore(direction, cam, _start)
          //console.log(r.responseText);
          if(r.responseText !== ''){
              var traces = JSON.parse(r.responseText);
-             //console.log("traces = " + traces);
+             console.log("traces = " + traces);
              if(traces == null || traces.length === 0) return;
              
              for( j = 0 ; j< traces.length; j++){
                 var k = 0;
                 tr = traces[j];
+                console.log("tr= " + tr);
                 cam = tr.cam;
                 // if we met blocked camera stop processing it
                 //if( cam === blocked_cam) continue;
@@ -412,9 +413,9 @@ function showmore(direction, cam, _start)
     //this function uses ajax to interact with the server
 
      // r.multipart = true;
-      r.open('GET', "{{ url_for('params_feed') }}", true);
-      r.send();
-      r.onprogress = function(){ populate_params();};
+     //r.open('GET', "{{ url_for('params_feed') }}", true);
+     //r.send();
+     //r.onprogress = function(){ populate_params();};
   }
 
   function moreparams(camera , value){

@@ -34,7 +34,7 @@ class ObjCountByTimer:
             #print("t:{} ,elem:{}".format(self.time_scale[_i],elem))
             if self.time_scale[_i] >= elem[0]:
                 #shift all elements on 1 sec to right
-                self.counted[_i] = index + 1                
+                self.counted[_i] = index + 1
                 return
             else:
                 self.counted[_i] = 0
@@ -67,8 +67,17 @@ class ObjCountByTimer:
     def equals(self,hash1, hash2):
         return hash1==hash2
         
-        
-        
+    def getCountedObjects(self):
+        old=0
+        res = ''
+        for value in self.counted:
+          res += str(old+value) + ','    
+          old = value
+        return res  
+    
+    def toString(self,prefix,postfix):
+        ls = list(self.store)
+        return [ prefix + str(val[1]) + postfix for val in ls] 
         
     def add(self,hashcode):
         ''' Add a new object to queue , only if there is no "equal" objects ''' 

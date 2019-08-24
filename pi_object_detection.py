@@ -57,16 +57,16 @@ IMAGES_FOLDER = "static/img/"
 PARAMS_FOLDER = "static/params/"
 
 DRAW_RECTANGLES = True
-DELETE_FILES_LATER =  10 *60 * 60 # sec  (10 hours)
+DELETE_FILES_LATER = 4*60*60 # sec  (1 hours)
 ENCODING = "utf-8"
 NUMBER_OF_FILES = 10
 HASH_DELTA = 63
-PARAMS_BUFFER = 25
+PARAMS_BUFFER = 70
 IMAGES_BUFFER = 25
 RECOGNZED_FRAME = 1
 THREAD_NUMBERS  = 1 #must be less then 4 for PI
 videos = []
-piCameraResolution = (1080,720)#(640,480) (1296,972)
+piCameraResolution = (640,480)# (1080,720) (1296,972)
 piCameraRate=24
 IMG_PAGINATOR = 50
 
@@ -87,7 +87,7 @@ class Trace(dict):
             return json.dumps(self, default=lambda o: o.__dict__,
                 sort_keys=True, indent=4)
 
-def getParametersJSON(hashes, filenames, cam):
+def getParametersJSON(hashes, cam):
     ret =[]
     for key in hashes:
         #logging.debug(images[key])
@@ -95,12 +95,11 @@ def getParametersJSON(hashes, filenames, cam):
         trace.name = key
         trace.cam = cam
         tm = int(time.time()) #strftime("%H:%M:%S", localtime())
-        trace.filenames = filenames.get(key,[])
+        trace.filenames = hashes[key].toString(str(cam)+'_'+key+'_', '.jpg')
         trace.x = tm
-        trace.y = hashes[key].counted[1]# check for last 10 sec
-        #print("------------------------------filenames[" + key + "]--------------------------------")
-        #print(filenames[key])
-        trace.text =  filenames[key]
+        last = len(hashes[key].counted) -1 
+        trace.y = hashes[key].counted[last] # check for last 60 sec
+        trace.text =  str(trace.y )+ ' ' + key + '(s) was founded'
         ret.append(trace.__dict__)
         logging.debug( trace.__dict__ )
     return ret
@@ -114,23 +113,21 @@ class ImageHashCodesCountByTimer(ObjCountByTimer):
 
 
 
-def do_statistic(cam,hashes,filenames):
-  # Do some statistic work here
-    logger.debug('filenames[' + str(cam) +']')
-    logger.debug(filenames)    
-    params = getParametersJSON(hashes,filenames, cam)
+def do_statistic(cam,hashes):
+  # Do some statistic work here  
+    params = getParametersJSON(hashes, cam)
     if len(params)>0:
         logger.debug('get_frame: params' )
         logger.debug(params)
         paramsQueue.put( params )
         logger.info(' paramsQueue.qsize():{}'.format(paramsQueue.qsize()))
     if paramsQueue.qsize() > PARAMS_BUFFER:
+        print("do_statistic: persist_params")
         persist_params(PARAMS_FOLDER + str(int(time.time())) + '.json')
 
 
 def classify_frame( net, inputQueue,rectanglesQueue,cam):
-        conf_threshold = float(args["confidence"])
-        filenames = {}
+        conf_threshold = float(args["confidence"])        
         hashes = {}
         #starttime=time.time()
         # keep looping
@@ -204,18 +201,17 @@ def classify_frame( net, inputQueue,rectanglesQueue,cam):
                                 if (hashes).get(key, None)== None:
                                     # count objects for last sec, last 5 sec and last minute
                                     print('ImageHashCodesCountByTimer init by hash: {}'.format(hash))
-                                    hashes[key] = ImageHashCodesCountByTimer(1,300, (5,60,300))
+                                    hashes[key] = ImageHashCodesCountByTimer(1,90, (10,60,90))
                                     hashes[key].add(hash)
                                     filename = str(cam)+'_' + key +'_'+ str(hash)+ '.jpg'
-                                    filenames[key] = [filename]
+                                    
                                 else:
                                      #if not is_hash_the_same(hash,hashes[key]): hashes[key].add(hash)                                     
                                      hashes[key].add(hash)
                                      label2 =''
-                                     for key in hashes:                                         
-                                        label2 += key+'(s):' + str(hashes[key].counted[0]) + ',' + str(hashes[key].counted[1]) + ',' + str(hashes[key].counted[2])
-                                      
-
+                                     for key in hashes:
+                                        label2 += key+'(s):' + (hashes[key]).getCountedObjects()                                         
+                                        #label2 += key+'(s):' + str(hashes[key].counted[0]) + ',' + str(hashes[key].counted[1]) + ',' + str(hashes[key].counted[2]) + ' '
 
 
                                 if DRAW_RECTANGLES: 
@@ -223,23 +219,18 @@ def classify_frame( net, inputQueue,rectanglesQueue,cam):
                                     #logger.debug('------------------- Rectangle placed in buffer ------------------------')
                                     rectanglesQueue.put((label1, (startX-25, startY-25), (endX+25, endY+25),label2))
                                     logger.debug((label1, (startX-25, startY-25), (endX+25, endY+25)))
-                                    do_statistic(cam, hashes,filenames)
+                                    do_statistic(cam, hashes)
 
                                 # process further only  if image is really different from other ones
                                 if key in subject_of_interes:
                                     #use it if you 100% sure you need save this image on disk
                                     filename = str(cam)+'_' + key +'_'+ str(hash)+ '.jpg'
-                                    filenames[key].append(filename)
                                     fontScale = min(endY-startY, endX-startX)/280
                                     cv2.putText(crop_img_data,str(datetime.datetime.now().strftime('%H:%M %d/%m/%y')),(1,15),cv2.FONT_HERSHEY_SIMPLEX,fontScale,(0,255,0),1)
                                     cv2.imwrite(IMAGES_FOLDER + filename,crop_img_data)
                                     logger.info("Persisting ,filename: " + IMAGES_FOLDER + filename)
 
                                     #encoded =  (base64.b64encode(imgb)).decode(ENCODING)
-                                    #catchedObjQueue.put( str(cam) + ";" + key + ";" +encoded)
-                                    logger.debug("classify_frame: cam:" + str(cam) + "key:" + key+ ", filenames: ")
-                                    logger.debug(filenames[key])
-                                    #continue
                                    
 
 
@@ -317,6 +308,7 @@ def fetchImagesFromQueueToVideo(filename, imagesQueue):
     
 def dumpQueue(paramsQueue):
     params_array = []
+    print("dumpQueue (paramsQueue): {}".format(paramsQueue) )
     while not paramsQueue.empty():
         a = paramsQueue.get()
         params_array +=a
@@ -527,13 +519,13 @@ def moreparams():
     if time == '' or time is None: time = 0
     else: time = int(time)
     files = gen_array_of_params()
+    print(files)
     from_indx = find_index(files,time)
     to_indx = len(files)
-    print("from_indx:", from_indx)
+    print("from_indx:{}, to_indx: {}".format( from_indx, to_indx))
     _arr = ''
-    for indx_ in range(from_indx, to_indx-1):
-        _arr +=  open( files[indx_], 'r').read()
-    
+    for file in files:
+        _arr +=  open( file, 'r').read()
     return Response( _arr.replace('][',','), mimetype='text/plain')
         
 def gen_array_of_params():
@@ -585,11 +577,10 @@ def detect(cam):
 
 
 def gen_params():
+    ret = []
     """Parameters streaming generator function."""
     if paramsQueue.qsize() > PARAMS_BUFFER:
         ret = persist_params(PARAMS_FOLDER + str(int(time.time())) + '.json')
-    else:
-        ret = dumpQueue(paramsQueue)    
     logger.debug(ret)
     return ret
 #def gen_images():

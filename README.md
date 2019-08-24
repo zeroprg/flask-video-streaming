@@ -35,4 +35,8 @@ model=MobileNetSSD_deploy.caffemodel
 confidence=0.7
 ```
 
+To run python unit test run:
 
+```
+python3 -m unittest test_ObjCountByTimer.py 
+```
