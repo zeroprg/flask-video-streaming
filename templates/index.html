@@ -328,6 +328,7 @@ function showmore(direction, cam, _start)
          //console.log(r.responseText);
          if(r_h.responseText !== ''){
              var traces = JSON.parse(r_h.responseText);
+             history_data[cam_to_populate] = []
              if(traces == null || traces.length === 0) return;
              for( j = 0 ; j< traces.length; j++){
                 var k = 0;

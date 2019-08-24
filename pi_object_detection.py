@@ -57,11 +57,11 @@ IMAGES_FOLDER = "static/img/"
 PARAMS_FOLDER = "static/params/"
 
 DRAW_RECTANGLES = True
-DELETE_FILES_LATER = 4*60*60 # sec  (1 hours)
+DELETE_FILES_LATER = 8*60*60 # sec  (8hours)
 ENCODING = "utf-8"
 NUMBER_OF_FILES = 10
-HASH_DELTA = 63
-PARAMS_BUFFER = 70
+HASH_DELTA = 59
+PARAMS_BUFFER = 120
 IMAGES_BUFFER = 25
 RECOGNZED_FRAME = 1
 THREAD_NUMBERS  = 1 #must be less then 4 for PI
@@ -97,8 +97,8 @@ def getParametersJSON(hashes, cam):
         tm = int(time.time()) #strftime("%H:%M:%S", localtime())
         trace.filenames = hashes[key].toString(str(cam)+'_'+key+'_', '.jpg')
         trace.x = tm
-        last = len(hashes[key].counted) -1 
-        trace.y = hashes[key].counted[last] # check for last 60 sec
+        #last = len(hashes[key].counted) -1 
+        trace.y = max(hashes[key].counted)# check for last 60 sec
         trace.text =  str(trace.y )+ ' ' + key + '(s) was founded'
         ret.append(trace.__dict__)
         logging.debug( trace.__dict__ )
@@ -141,6 +141,7 @@ def classify_frame( net, inputQueue,rectanglesQueue,cam):
                 #logger.debug('inputQueue.qsize()',inputQueue.qsize())
                 #print(inputQueue)
                 #print(rectanglesQueue)
+                
                 try:
                    frame = inputQueue.get(block=False)
                 except: continue   
@@ -183,7 +184,8 @@ def classify_frame( net, inputQueue,rectanglesQueue,cam):
                                 if idx > len(CLASSES)-1:continue
                                 key = CLASSES[idx]
                                 #if not key in IMAGES: continue
-                                crop_img_data = frame[startY:endY, startX:endX]
+                                #use 20 pixels from the top for labeling
+                                crop_img_data = frame[startY-20:endY, startX:endX]
                                 #label = "Unknown"
                                 hash=0
                                 try:
@@ -201,7 +203,7 @@ def classify_frame( net, inputQueue,rectanglesQueue,cam):
                                 if (hashes).get(key, None)== None:
                                     # count objects for last sec, last 5 sec and last minute
                                     print('ImageHashCodesCountByTimer init by hash: {}'.format(hash))
-                                    hashes[key] = ImageHashCodesCountByTimer(1,90, (10,60,90))
+                                    hashes[key] = ImageHashCodesCountByTimer(1,90, (10,30,90))
                                     hashes[key].add(hash)
                                     filename = str(cam)+'_' + key +'_'+ str(hash)+ '.jpg'
                                     
@@ -219,7 +221,7 @@ def classify_frame( net, inputQueue,rectanglesQueue,cam):
                                     #logger.debug('------------------- Rectangle placed in buffer ------------------------')
                                     rectanglesQueue.put((label1, (startX-25, startY-25), (endX+25, endY+25),label2))
                                     logger.debug((label1, (startX-25, startY-25), (endX+25, endY+25)))
-                                    do_statistic(cam, hashes)
+                                    
 
                                 # process further only  if image is really different from other ones
                                 if key in subject_of_interes:
@@ -229,8 +231,9 @@ def classify_frame( net, inputQueue,rectanglesQueue,cam):
                                     cv2.putText(crop_img_data,str(datetime.datetime.now().strftime('%H:%M %d/%m/%y')),(1,15),cv2.FONT_HERSHEY_SIMPLEX,fontScale,(0,255,0),1)
                                     cv2.imwrite(IMAGES_FOLDER + filename,crop_img_data)
                                     logger.info("Persisting ,filename: " + IMAGES_FOLDER + filename)
-
-                                    #encoded =  (base64.b64encode(imgb)).decode(ENCODING)
+                                    
+                                do_statistic(cam, hashes)
+                                
                                    
 
 

@@ -13,6 +13,6 @@ video_file3=http://38.101.209.29:8082/mjpg/video.mjpg?COUNTER
 
 prototxt=MobileNetSSD_deploy.prototxt.txt
 model=MobileNetSSD_deploy.caffemodel
-confidence=0.29
+confidence=0.35
 
 
