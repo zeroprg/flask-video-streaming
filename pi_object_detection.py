@@ -7,6 +7,8 @@ from multiprocessing import Queue
 from files import *
 
 import os
+from urllib.request import urlopen
+import threading
 import io
 import imagehash
 import numpy as np
@@ -57,7 +59,7 @@ IMAGES_FOLDER = "static/img/"
 PARAMS_FOLDER = "static/params/"
 
 DRAW_RECTANGLES = True
-DELETE_FILES_LATER = 8*60*60 # sec  (8hours)
+DELETE_FILES_LATER = 6*60*60 # sec  (8hours)
 ENCODING = "utf-8"
 NUMBER_OF_FILES = 10
 HASH_DELTA = 59
@@ -66,12 +68,30 @@ IMAGES_BUFFER = 25
 RECOGNZED_FRAME = 1
 THREAD_NUMBERS  = 1 #must be less then 4 for PI
 videos = []
+camleft = []
+camright =[]
 piCameraResolution = (640,480)# (1080,720) (1296,972)
 piCameraRate=24
 IMG_PAGINATOR = 50
 
 
-
+class CameraMove:
+    def __init__(self, move_left,move_right, timestep=10):
+        if move_left==None or move_right == None: return 
+        self.timestep = timestep
+        self.move_left =  move_left   #'http://www.google.com' # move_left 
+        self.move_right = move_right #'http://www.google.com' #move_right
+        self.t1 = threading.Timer(timestep, self.cameraLoop)
+        self.t1.start()
+        
+    def cameraLoop(self):
+        print(self.move_left)
+        os.system(self.move_left) #urlopen(self.move_left)
+        time.sleep(30.0)
+        os.system(self.move_right) #urlopen(self.move_right)
+        self.t1 = threading.Timer(self.timestep, self.cameraLoop) 
+        time.sleep(30.0)      
+        self.t1.start()
 
 
 class Trace(dict):
@@ -158,6 +178,7 @@ def classify_frame( net, inputQueue,rectanglesQueue,cam):
                 # loop over the detections
                 (fH, fW) = frame.shape[:2]
                 #logger.debug(detections)
+                label2 = 'No data'
                 if detections is not None:
                         # loop over the detections
                         for i in np.arange(0, detections.shape[2]):
@@ -199,11 +220,11 @@ def classify_frame( net, inputQueue,rectanglesQueue,cam):
                                 logger.debug(hashes)
                                 if not key in LOOKED1: continue
                                 diffr = 1
-                                label2 = None
+                                
                                 if (hashes).get(key, None)== None:
                                     # count objects for last sec, last 5 sec and last minute
                                     print('ImageHashCodesCountByTimer init by hash: {}'.format(hash))
-                                    hashes[key] = ImageHashCodesCountByTimer(1,90, (10,30,90))
+                                    hashes[key] = ImageHashCodesCountByTimer(1,30, (10,20,30))
                                     hashes[key].add(hash)
                                     filename = str(cam)+'_' + key +'_'+ str(hash)+ '.jpg'
                                     
@@ -279,8 +300,6 @@ def get_frame(vss,video_urls,inputQueue, imagesQueue, rectanglesQueue, cam):
 
 
 
-        label2 = draw_metadata_onscreen(frame, rectanglesQueue, label2)
-        cv2.putText(frame, label2, (10,23), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (0,255,0), 2)
 
 
         # if perfomance issue on Raspberry Pi comment it
@@ -390,6 +409,7 @@ def configure(args):
             help="path to Caffe pre-trained model")
     ap.add_argument("-c", "--confidence", type=float, required=False,
             help="minimum probability to filter weak detections")
+            
     more_args = vars(ap.parse_args())
 
     more_args =  {k: v for k, v in more_args.items() if v is not None}
@@ -452,12 +472,15 @@ def start():
 def initialize_video_streams(url=None):
     i = 0
     arg = None
+    right = None
+    left = None
     if url is not None:
         arg = url
         i = len(videos)
 #  initialise picam or IPCam
     else:
         arg = args.get('video_file'+ str(i),None)
+        
     while arg is not None:
         if not (i,arg) in videos:
             if arg  == 'picam':
@@ -466,12 +489,16 @@ def initialize_video_streams(url=None):
                  vs = cv2.VideoCapture(arg)
             logger.info("[INFO] Video stream: " + str(i) + " vs:" + str(vs) )
             vss.append(vs)
+            camright.append(args.get('cam_right'+ str(i),None))
+            camleft.append(args.get('cam_left'+ str(i),None))
+            CameraMove(camright[i],camleft[i])
             videos.append((str(i),arg))
             imagesQueue.append(Queue(maxsize=IMAGES_BUFFER+5))
             inputQueue.append(Queue(maxsize=PARAMS_BUFFER+5))
             rectanglesQueue.append(Queue(maxsize=PARAMS_BUFFER+5))
             i+=1
             arg = args.get('video_file'+ str(i),None)
+
 
 
     # Start process
@@ -575,13 +602,15 @@ def gen(camera):
 
 def detect(cam):
     """Video streaming generator function."""
+    label2 = 'No data'
     while True:
          #logger.debug('imagesQueue:', imagesQueue.empty())
          
          #while(not imagesQueue[cam].empty()):
          try:
             frame = imagesQueue[cam].get(block=False)
-            #draw_metadata_onscreen(frame,rectanglesQueue[cam])
+            label2 = draw_metadata_onscreen(frame, rectanglesQueue[cam], label2)
+            cv2.putText(frame, label2, (10,23), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (0,255,0), 2)
             iterable = cv2.imencode('.jpg', frame)[1].tobytes()
             yield b'--frame\r\nContent-Type: image/jpeg\r\n\r\n' + iterable + b'\r\n'
          except: pass # continue
