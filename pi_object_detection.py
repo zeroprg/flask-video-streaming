@@ -58,7 +58,7 @@ COLORS = np.random.uniform(0, 255, size=(len(CLASSES), 3))
 IMAGES_FOLDER = "static/img/"
 PARAMS_FOLDER = "static/params/"
 
-DRAW_RECTANGLES = True
+DRAW_RECTANGLES = False
 DELETE_FILES_LATER = 6*60*60 # sec  (8hours)
 ENCODING = "utf-8"
 NUMBER_OF_FILES = 10
@@ -145,6 +145,8 @@ def do_statistic(cam,hashes):
         print("do_statistic: persist_params")
         persist_params(PARAMS_FOLDER + str(int(time.time())) + '.json')
 
+DIMENSION_X = 300
+DIMENSION_Y = 300
 
 def classify_frame( net, inputQueue,rectanglesQueue,cam):
         conf_threshold = float(args["confidence"])        
@@ -166,11 +168,11 @@ def classify_frame( net, inputQueue,rectanglesQueue,cam):
                    frame = inputQueue.get(block=False)
                 except: continue   
                 logger.debug('cam:' + str(cam))
-                _frame = cv2.resize(frame, (227, 227))
+                _frame = cv2.resize(frame, (DIMENSION_X, DIMENSION_Y))
                 cols = frame.shape[1]
                 rows = frame.shape[0]
                 blob = cv2.dnn.blobFromImage(_frame, 0.007843,
-                        (227, 227), (127.5,127.5,127.5), True)
+                        (DIMENSION_X, DIMENSION_Y), (127.5,127.5,127.5), True)
                 # set the blob as input to our deep learning object
                 # detector and obtain the detections
                 net.setInput(blob)
@@ -224,7 +226,7 @@ def classify_frame( net, inputQueue,rectanglesQueue,cam):
                                 if (hashes).get(key, None)== None:
                                     # count objects for last sec, last 5 sec and last minute
                                     print('ImageHashCodesCountByTimer init by hash: {}'.format(hash))
-                                    hashes[key] = ImageHashCodesCountByTimer(1,30, (10,20,30))
+                                    hashes[key] = ImageHashCodesCountByTimer(5,120, (10,60,120))
                                     hashes[key].add(hash)
                                     filename = str(cam)+'_' + key +'_'+ str(hash)+ '.jpg'
                                     
@@ -534,9 +536,9 @@ def index():
     img_folder = IMAGES_FOLDER
     img_paginator = IMG_PAGINATOR
     for i in range(len(videos)):
-        if DRAW_RECTANGLES: video_urls.append((videos[i][0],'video_feed?cam='+str(videos[i][0])))
-        else:
-            video_urls.append((videos[i][0], videos[i][1]))
+        video_urls.append((videos[i][0],'video_feed?cam='+str(videos[i][0])))
+        #else:
+        #    video_urls.append((videos[i][0], videos[i][1]))
     """ Delete old files """
     images_filenames=[]
     delete_file_older_then(IMAGES_FOLDER, DELETE_FILES_LATER)
@@ -609,8 +611,11 @@ def detect(cam):
          #while(not imagesQueue[cam].empty()):
          try:
             frame = imagesQueue[cam].get(block=False)
-            label2 = draw_metadata_onscreen(frame, rectanglesQueue[cam], label2)
-            cv2.putText(frame, label2, (10,23), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (0,255,0), 2)
+            # draw rectangles when run on good hardware
+            if DRAW_RECTANGLES: 
+                label2 = draw_metadata_onscreen(frame, rectanglesQueue[cam], label2)
+                cv2.putText(frame, label2, (10,23), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (0,255,0), 2)
+                
             iterable = cv2.imencode('.jpg', frame)[1].tobytes()
             yield b'--frame\r\nContent-Type: image/jpeg\r\n\r\n' + iterable + b'\r\n'
          except: pass # continue
