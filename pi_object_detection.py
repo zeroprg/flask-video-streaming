@@ -19,7 +19,7 @@ import dhash
 import glob
 import logging
 
-import psycopg2
+#import psycopg2
 
 from PIL import Image, ImageEnhance
 from time import gmtime, strftime
@@ -93,7 +93,7 @@ class CameraMove:
         os.system(self.move_left) #urlopen(self.move_left)
         time.sleep(5.0)
         os.system(self.move_left) #urlopen(self.move_left)
-        time.sleep(5.0)
+        time.sleep(10.0)
         os.system(self.move_right) #urlopen(self.move_right)
         time.sleep(5.0)
         os.system(self.move_right) #urlopen(self.move_right)
