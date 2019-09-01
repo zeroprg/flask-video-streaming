@@ -17,7 +17,9 @@ import imutils
 import time
 import dhash
 import glob
-import logging 
+import logging
+
+import psycopg2
 
 from PIL import Image, ImageEnhance
 from time import gmtime, strftime
@@ -36,7 +38,7 @@ from picamera import PiCamera
 import picamera
 
 logger = logging.getLogger('logger')
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.DEBUG)
 console = logging.StreamHandler()
 logger.addHandler(console)
 logger.debug('DEBUG mode')
@@ -48,21 +50,21 @@ CLASSES = ["background", "aeroplane", "bicycle", "bird", "boat",
 	"bottle", "bus", "car", "cat", "chair", "cow", "diningtable",
 	"dog", "horse", "motorbike", "person", "pottedplant", "sheep",
 	"sofa", "train", "tvmonitor"]
-LOOKED1 = { "car": [], "person":  []}
-LOOKED2 = { "car": [], "person": []}
+LOOKED1 = { "car": [], "person":  [], "bicycle":[]}
+LOOKED2 = { "car": [], "person": [],  "bicycle":[]}
 
-subject_of_interes = ["person"]
+subject_of_interes = ["person", "bicycle"]
 hashes = {}
 COLORS = np.random.uniform(0, 255, size=(len(CLASSES), 3))
 
 IMAGES_FOLDER = "static/img/"
 PARAMS_FOLDER = "static/params/"
 
-DRAW_RECTANGLES = False
+DRAW_RECTANGLES = True
 DELETE_FILES_LATER = 6*60*60 # sec  (8hours)
 ENCODING = "utf-8"
 NUMBER_OF_FILES = 10
-HASH_DELTA = 59
+HASH_DELTA = 57
 PARAMS_BUFFER = 120
 IMAGES_BUFFER = 25
 RECOGNZED_FRAME = 1
@@ -73,7 +75,7 @@ camright =[]
 piCameraResolution = (640,480)# (1080,720) (1296,972)
 piCameraRate=24
 IMG_PAGINATOR = 50
-
+cur = None
 
 class CameraMove:
     def __init__(self, move_left,move_right, timestep=10):
@@ -87,10 +89,20 @@ class CameraMove:
     def cameraLoop(self):
         print(self.move_left)
         os.system(self.move_left) #urlopen(self.move_left)
-        time.sleep(30.0)
+        time.sleep(5.0)
+        os.system(self.move_left) #urlopen(self.move_left)
+        time.sleep(5.0)
+        os.system(self.move_left) #urlopen(self.move_left)
+        time.sleep(5.0)
         os.system(self.move_right) #urlopen(self.move_right)
+        time.sleep(5.0)
+        os.system(self.move_right) #urlopen(self.move_right)
+        time.sleep(5.0)
+        os.system(self.move_right) #urlopen(self.move_right)
+        time.sleep(2.0)
+        time.sleep(20.0)
         self.t1 = threading.Timer(self.timestep, self.cameraLoop) 
-        time.sleep(30.0)      
+
         self.t1.start()
 
 
@@ -118,7 +130,7 @@ def getParametersJSON(hashes, cam):
         trace.filenames = hashes[key].toString(str(cam)+'_'+key+'_', '.jpg')
         trace.x = tm
         #last = len(hashes[key].counted) -1 
-        trace.y = max(hashes[key].counted)# check for last 60 sec
+        trace.y = hashes[key].getCountedObjects()# check for last 60 sec
         trace.text =  str(trace.y )+ ' ' + key + '(s) was founded'
         ret.append(trace.__dict__)
         logging.debug( trace.__dict__ )
@@ -145,17 +157,20 @@ def do_statistic(cam,hashes):
         print("do_statistic: persist_params")
         persist_params(PARAMS_FOLDER + str(int(time.time())) + '.json')
 
-DIMENSION_X = 300
-DIMENSION_Y = 300
+DIMENSION_X = 285
+DIMENSION_Y = 220
 
 def classify_frame( net, inputQueue,rectanglesQueue,cam):
-        conf_threshold = float(args["confidence"])        
+        conf_threshold = float(args["confidence"])
         hashes = {}
+        #conn = psycopg2.connect("dbname=videoprint user=videoprint host='localhost' password='vist2508' port=5432")
+        #cur = conn.cursor()
         #starttime=time.time()
         # keep looping
         frame = None
+        label2="No data"
         while True:
-                #clean_params(cam,starttime)
+
                 # check to see if there is a frame in our input queue
                 #while not inputQueue.empty():
                 # grab the frame from the input queue, resize it, and
@@ -166,11 +181,9 @@ def classify_frame( net, inputQueue,rectanglesQueue,cam):
                 
                 try:
                    frame = inputQueue.get(block=False)
-                except: continue   
-                logger.debug('cam:' + str(cam))
+                except: continue
+                
                 _frame = cv2.resize(frame, (DIMENSION_X, DIMENSION_Y))
-                cols = frame.shape[1]
-                rows = frame.shape[0]
                 blob = cv2.dnn.blobFromImage(_frame, 0.007843,
                         (DIMENSION_X, DIMENSION_Y), (127.5,127.5,127.5), True)
                 # set the blob as input to our deep learning object
@@ -180,7 +193,7 @@ def classify_frame( net, inputQueue,rectanglesQueue,cam):
                 # loop over the detections
                 (fH, fW) = frame.shape[:2]
                 #logger.debug(detections)
-                label2 = 'No data'
+                
                 if detections is not None:
                         # loop over the detections
                         for i in np.arange(0, detections.shape[2]):
@@ -226,16 +239,16 @@ def classify_frame( net, inputQueue,rectanglesQueue,cam):
                                 if (hashes).get(key, None)== None:
                                     # count objects for last sec, last 5 sec and last minute
                                     print('ImageHashCodesCountByTimer init by hash: {}'.format(hash))
-                                    hashes[key] = ImageHashCodesCountByTimer(5,120, (10,60,120))
+                                    hashes[key] = ImageHashCodesCountByTimer(3,180, (10,60,180))
                                     hashes[key].add(hash)
                                     filename = str(cam)+'_' + key +'_'+ str(hash)+ '.jpg'
                                     
                                 else:
-                                     #if not is_hash_the_same(hash,hashes[key]): hashes[key].add(hash)                                     
+                                     #if not is_hash_the_same(hash,hashes[key]): hashes[key].add(hash)
                                      hashes[key].add(hash)
                                      label2 =''
                                      for key in hashes:
-                                        label2 += key+'(s):' + (hashes[key]).getCountedObjects()                                         
+                                        label2 += key+'(s):' + str(hashes[key].getCountedObjects())
                                         #label2 += key+'(s):' + str(hashes[key].counted[0]) + ',' + str(hashes[key].counted[1]) + ',' + str(hashes[key].counted[2]) + ' '
 
 
@@ -251,16 +264,18 @@ def classify_frame( net, inputQueue,rectanglesQueue,cam):
                                     #use it if you 100% sure you need save this image on disk
                                     filename = str(cam)+'_' + key +'_'+ str(hash)+ '.jpg'
                                     fontScale = min(endY-startY, endX-startX)/280
+                                    #time_s = time.time()
                                     cv2.putText(crop_img_data,str(datetime.datetime.now().strftime('%H:%M %d/%m/%y')),(1,15),cv2.FONT_HERSHEY_SIMPLEX,fontScale,(0,255,0),1)
+                                    #cur.execute("INSERT INTO frame(time,video) VALUES(%s , %s)", ( time_s, crop_img_data.tobytes()))
                                     cv2.imwrite(IMAGES_FOLDER + filename,crop_img_data)
-                                    logger.info("Persisting ,filename: " + IMAGES_FOLDER + filename)
+                                    #logger.info("Persisting ,filename: " + IMAGES_FOLDER + filename)
                                     
                                 do_statistic(cam, hashes)
                                 
                                    
 #  draw metadata on screen
 def draw_metadata_onscreen(frame, rectanglesQueue,label2):
-    logger.debug('!!!!!!!!!!!!!!!! Display rectangles!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
+    #logger.debug('!!!!!!!!!!!!!!!! Display rectangles!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
 
     while not rectanglesQueue.empty():
         try:
@@ -274,12 +289,14 @@ def draw_metadata_onscreen(frame, rectanglesQueue,label2):
 
 
 def get_frame(vss,video_urls,inputQueue, imagesQueue, rectanglesQueue, cam):
-    # loop over the frames from the video stream    
+    # loop over the frames from the video stream
     detections = None
-    cols,rows = 0,0
+    #cols,rows = 0,0
     label2 = 'No data'
-    while  True:
-        logger.debug('cam:' +video_urls[1])
+    #conn = psycopg2.connect("dbname=videoprint user=videoprint host='localhost' password='vist2508' port=5432")
+    #cur = conn.cursor()
+
+    while  True:        
         if 'picam' == video_urls[1]:
             if vss == None:
                 vss = VideoStream(usePiCamera=True,resolution=piCameraResolution,framerate=piCameraRate).start()
@@ -293,17 +310,21 @@ def get_frame(vss,video_urls,inputQueue, imagesQueue, rectanglesQueue, cam):
                vss = cv2.VideoCapture(video_urls[1])
                continue
 
+
         inputQueue.put(frame)
+        #time_s = time.time()
+        #b = frame.tobytes()
+        #cur.execute("INSERT INTO video(time,frame) VALUES(%s , %s)", (time_s, b))
+        #conn.commit()
 
         if imagesQueue.qsize()>IMAGES_BUFFER-1:
            while not imagesQueue.empty(): imagesQueue.get()  
         if inputQueue.qsize()>IMAGES_BUFFER-1:
            while not inputQueue.empty(): inputQueue.get()  
 
-
-
-
-
+        if DRAW_RECTANGLES: 
+            label2 = draw_metadata_onscreen(frame, rectanglesQueue, label2)
+            cv2.putText(frame, label2, (10,23), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (0,255,0), 2)
         # if perfomance issue on Raspberry Pi comment it
         if not args["not_show_in_window"]:
             cv2.imshow("Camera" + str(cam), frame)
@@ -362,7 +383,7 @@ def destroy():
     # do a bit of cleanup
     cv2.destroyAllWindows()
     vs.stop()
-
+    #conn.close()
 
 separator = "="
 args = {}
@@ -438,10 +459,7 @@ def start():
     logger.info("[INFO] starting video stream...")
 
 
-       
     initialize_video_streams()
-        
-        
 
     for cam in range(len(vss)):
         p_get_frame = Process(target=get_frame, args=(vss[cam],videos[cam],inputQueue[cam],imagesQueue[cam],rectanglesQueue[cam],cam))
@@ -504,7 +522,7 @@ def initialize_video_streams(url=None):
 
 
     # Start process
-    time.sleep(2.0)
+    time.sleep(4.0)
     fps = FPS().start()
     
 
@@ -612,9 +630,6 @@ def detect(cam):
          try:
             frame = imagesQueue[cam].get(block=False)
             # draw rectangles when run on good hardware
-            if DRAW_RECTANGLES: 
-                label2 = draw_metadata_onscreen(frame, rectanglesQueue[cam], label2)
-                cv2.putText(frame, label2, (10,23), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (0,255,0), 2)
                 
             iterable = cv2.imencode('.jpg', frame)[1].tobytes()
             yield b'--frame\r\nContent-Type: image/jpeg\r\n\r\n' + iterable + b'\r\n'

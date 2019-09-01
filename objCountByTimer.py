@@ -68,12 +68,7 @@ class ObjCountByTimer:
         return hash1==hash2
         
     def getCountedObjects(self):
-        old=0
-        res = ''
-        for value in self.counted:
-          res += str(old+value) + ','    
-          old = value
-        return res  
+        return max(self.counted)    
     
     def toString(self,prefix,postfix):
         ls = list(self.store)
