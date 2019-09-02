@@ -4,4 +4,9 @@ itsdangerous==0.24
 Jinja2==2.9.6
 MarkupSafe==1.0
 Werkzeug==0.12.2
-flaskcors
+dhash
+imutils
+imagehash
+flask_cors
+#use only for Raspberry Pi
+#picamera
