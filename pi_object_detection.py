@@ -19,26 +19,28 @@ import dhash
 import glob
 import logging
 
-#import psycopg2
+import sqlite3
 
 from PIL import Image, ImageEnhance
 from time import gmtime, strftime
 import datetime
 import cv2
 import json
+
 #from screen_statistics import Screen_statistic
+import db
 from objCountByTimer import ObjCountByTimer
 import base64
 
 from flask import Flask, render_template, Response, request,redirect,jsonify
 from flask_cors  import cross_origin, CORS
 # import the necessary packages
-from picamera.array import PiRGBArray
-from picamera import PiCamera
-import picamera
+#from picamera.array import PiRGBArray
+#from picamera import PiCamera
+#import picamera
 
 logger = logging.getLogger('logger')
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 console = logging.StreamHandler()
 logger.addHandler(console)
 logger.debug('DEBUG mode')
@@ -50,10 +52,10 @@ CLASSES = ["background", "aeroplane", "bicycle", "bird", "boat",
 	"bottle", "bus", "car", "cat", "chair", "cow", "diningtable",
 	"dog", "horse", "motorbike", "person", "pottedplant", "sheep",
 	"sofa", "train", "tvmonitor"]
-LOOKED1 = { "car": [], "person":  [], "bicycle":[]}
-LOOKED2 = { "car": [], "person": [],  "bicycle":[]}
+LOOKED1 = { "car": [], "person": [], "dog":[], "cat":[], "bitd":[]}
+LOOKED2 = { "car": [], "person": [], "dog":[], "cat":[], "bird":[]}
 
-subject_of_interes = ["person", "bicycle"]
+subject_of_interes = ["person","car","bus","dog","cat","bird"]
 hashes = {}
 COLORS = np.random.uniform(0, 255, size=(len(CLASSES), 3))
 
@@ -163,9 +165,7 @@ DIMENSION_Y = 220
 def classify_frame( net, inputQueue,rectanglesQueue,cam):
         conf_threshold = float(args["confidence"])
         hashes = {}
-        #conn = psycopg2.connect("dbname=videoprint user=videoprint host='localhost' password='vist2508' port=5432")
-        #cur = conn.cursor()
-        #starttime=time.time()
+        conn = db.create_connection("framedata.db")
         # keep looping
         frame = None
         label2="No data"
@@ -263,11 +263,12 @@ def classify_frame( net, inputQueue,rectanglesQueue,cam):
                                 if key in subject_of_interes:
                                     #use it if you 100% sure you need save this image on disk
                                     filename = str(cam)+'_' + key +'_'+ str(hash)+ '.jpg'
-                                    fontScale = min(endY-startY, endX-startX)/280
-                                    #time_s = time.time()
+                                    x_dim = endX-startX
+                                    y_dim = endY-startY
+                                    fontScale = min(y_dim, x_dim)/280
                                     cv2.putText(crop_img_data,str(datetime.datetime.now().strftime('%H:%M %d/%m/%y')),(1,15),cv2.FONT_HERSHEY_SIMPLEX,fontScale,(0,255,0),1)
-                                    #cur.execute("INSERT INTO frame(time,video) VALUES(%s , %s)", ( time_s, crop_img_data.tobytes()))
-                                    cv2.imwrite(IMAGES_FOLDER + filename,crop_img_data)
+                                    db.insert_frame(conn, hash, date, time.time(), cam, key, crop_img_data, x_dim, y_dim)
+                                    #cv2.imwrite(IMAGES_FOLDER + filename,crop_img_data)
                                     #logger.info("Persisting ,filename: " + IMAGES_FOLDER + filename)
                                     
                                 do_statistic(cam, hashes)
