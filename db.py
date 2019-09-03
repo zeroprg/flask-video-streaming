@@ -28,13 +28,13 @@ def select_all_stats(conn):
  
     rows = cur.fetchall()
  
-    for row in rows:
-        print(row)
+    #for row in rows:
+    #    print(row)
     return rows
 
 def insert_frame(conn, hashcode, date, time, type , numpy_array, x_dim, y_dim):
     cur = conn.cursor()
-    cur.execute("INSERT INTO objects(hashcode, date, time, type, frame, x_dim, y_dim) VALUES(%s , %s)", (hashcode, date, time, type, numpy_array.tobytes(), x_dim, y_dim))
+    cur.execute("INSERT INTO objects (hashcode, currentdate, currentime, type, frame, x_dim, y_dim) VALUES (?, ?, ?, ?, ?, ?, ?)", (hashcode, date, time, type, numpy_array.tobytes(), x_dim, y_dim))
     conn.commit()
 
 def select_frame_by_time(conn, time1, time2):
@@ -45,17 +45,17 @@ def select_frame_by_time(conn, time1, time2):
     :return:
     """
     cur = conn.cursor()
-    cur.execute("SELECT * FROM tasks WHERE currentime BETWEEN ? and ?", (time1,time2,))
+    cur.execute("SELECT * FROM objects WHERE currentime BETWEEN ? and ?", (time1,time2,))
  
     rows = cur.fetchall()
  
-    for row in rows:
-        print(row)
+    #for row in rows:
+    #    print(row)
     return rows
  
  
 def main():
-    database = r"~\framedata.db"
+    database = "framedata.db"
  
     # create a database connection
     conn = create_connection(database)
