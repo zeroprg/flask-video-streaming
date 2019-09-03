@@ -267,7 +267,9 @@ def classify_frame( net, inputQueue,rectanglesQueue,cam):
                                     y_dim = endY-startY
                                     fontScale = min(y_dim, x_dim)/280
                                     cv2.putText(crop_img_data,str(datetime.datetime.now().strftime('%H:%M %d/%m/%y')),(1,15),cv2.FONT_HERSHEY_SIMPLEX,fontScale,(0,255,0),1)
-                                    db.insert_frame(conn, hash, date, time.time(), cam, key, crop_img_data, x_dim, y_dim)
+                                    now = datetime.datetime.now()
+                                    day = "{date:%Y-%m-%d}".format(date=now)
+                                    db.insert_frame(conn, hash, day, time.time(), key, crop_img_data, x_dim, y_dim, cam)
                                     #cv2.imwrite(IMAGES_FOLDER + filename,crop_img_data)
                                     #logger.info("Persisting ,filename: " + IMAGES_FOLDER + filename)
                                     

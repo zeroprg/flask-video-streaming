@@ -32,9 +32,14 @@ def select_all_stats(conn):
     #    print(row)
     return rows
 
-def insert_frame(conn, hashcode, date, time, type , numpy_array, x_dim, y_dim):
+def insert_frame(conn, hashcode, date, time, type , numpy_array, x_dim, y_dim, cam):
     cur = conn.cursor()
-    cur.execute("INSERT INTO objects (hashcode, currentdate, currentime, type, frame, x_dim, y_dim) VALUES (?, ?, ?, ?, ?, ?, ?)", (hashcode, date, time, type, numpy_array.tobytes(), x_dim, y_dim))
+    cur.execute("UPDATE objects SET lastime = datetime('now') WHERE hashcode = ?  AND cam = ?", ( str(hashcode), cam ))
+    if cur.rowcount==0:
+        try:
+            cur.execute("INSERT INTO objects (hashcode, currentdate, currentime, type, frame, x_dim, y_dim,cam) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", (str(hashcode), date, time, type, numpy_array.tobytes(), x_dim, y_dim, cam))
+        except Error as e:
+            print("Hashcode : {} already existed for object {} and cam: {}".format(hashcode, type, cam))
     conn.commit()
 
 def select_frame_by_time(conn, time1, time2):

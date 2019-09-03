@@ -25,7 +25,7 @@ class TestDB(unittest.TestCase):
         hashcode = 12345467890 * r.randint(1, 5000)
         numpy_array = np.random.rand(100,100)
         print("numpy array: {} ".format(numpy_array) )
-        db.insert_frame(conn, hashcode=hashcode, date=day, time=time, type="car" , numpy_array=numpy_array, x_dim=100, y_dim=100)
+        db.insert_frame(conn, hashcode=hashcode, date=day, time=time, type="car" , numpy_array=numpy_array, x_dim=100, y_dim=100,cam=0)
 
 
 
@@ -54,7 +54,7 @@ class TestDB(unittest.TestCase):
         hashcode = 12345467890 * r.randint(1, 5000)
         numpy_array = np.random.rand(100,100)
         print("numpy array: {} ".format(numpy_array) )
-        db.insert_frame(conn, hashcode=hashcode, date=day, time=time1, type="car" , numpy_array=numpy_array, x_dim=100, y_dim=100)
+        db.insert_frame(conn, hashcode=hashcode, date=day, time=time1, type="car" , numpy_array=numpy_array, x_dim=100, y_dim=100,cam=0)
         conn = db.create_connection(DB_LOCATION)
         # get time 1 second before creation
         time1 -= 1
