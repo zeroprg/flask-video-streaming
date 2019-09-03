@@ -52,7 +52,13 @@ def select_frame_by_time(conn, time1, time2):
     #for row in rows:
     #    print(row)
     return rows
- 
+def delete_frames_later_then(conn, predicate):
+    """
+    Delete all records from objects table which are later then 'predicate'
+    predicate : '-70 minutes' , '-1 seconds '
+    """
+    cur = conn.cursor()
+    cur.execute("DELETE from objects WHERE currentime < datetime('now'," + predicate+ ")")
  
 def main():
     database = "framedata.db"
