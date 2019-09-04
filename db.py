@@ -32,14 +32,23 @@ def select_all_stats(conn):
     #    print(row)
     return rows
 
+def insert_statistic(conn, params):
+    cur = conn.cursor()
+    for param in params:
+       try:
+          cur.execute("INSERT INTO statistic(type,currentime,y,text,cam) VALUES (?, ?, ?, ?, ?)", (param.name, param.x, param.y, param.text, param.cam))
+       except Error as e:
+          print("Error during insertion of statistic {}".format(e))
+    conn.commit()
+    
+
+
 def insert_frame(conn, hashcode, date, time, type , numpy_array, x_dim, y_dim, cam):
     cur = conn.cursor()
-    cur.execute("UPDATE objects SET lastime = datetime('now') WHERE hashcode = ?  AND cam = ?", ( str(hashcode), cam ))
-    if cur.rowcount==0:
-        try:
-            cur.execute("INSERT INTO objects (hashcode, currentdate, currentime, type, frame, x_dim, y_dim,cam) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", (str(hashcode), date, time, type, numpy_array.tobytes(), x_dim, y_dim, cam))
-        except Error as e:
-            print("Hashcode : {} already existed for object {} and cam: {}".format(hashcode, type, cam))
+    try:
+        cur.execute("INSERT INTO objects (hashcode, currentdate, currentime, type, frame, x_dim, y_dim,cam) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", (str(hashcode), date, time, type, numpy_array.tobytes(), x_dim, y_dim, cam))
+    except:
+        print("Hashcode : {} already existed for object {} and cam: {}".format(hashcode, type, cam))
     conn.commit()
 
 def select_frame_by_time(conn, time1, time2):

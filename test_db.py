@@ -65,8 +65,8 @@ class TestDB(unittest.TestCase):
         print("Current time from DB:".format(ls[0][2]))
 
     def test_delete_by_time(self):
-        conn = db.create_connection(DB_LOCATION)
         time.sleep(2)
+        conn = db.create_connection(DB_LOCATION)
         print("Test delete records n minutes before")
         predicate = "'-1 seconds'"  
         db.delete_frames_later_then(conn,predicate)

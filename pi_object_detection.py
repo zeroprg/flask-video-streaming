@@ -62,7 +62,7 @@ COLORS = np.random.uniform(0, 255, size=(len(CLASSES), 3))
 IMAGES_FOLDER = "static/img/"
 PARAMS_FOLDER = "static/params/"
 
-DRAW_RECTANGLES = True
+DRAW_RECTANGLES = False
 DELETE_FILES_LATER = 6*60*60 # sec  (8hours)
 ENCODING = "utf-8"
 NUMBER_OF_FILES = 10
@@ -116,7 +116,7 @@ class Trace(dict):
         self.y = 0
         self.name = ''
         self.text = ''
-        self.filenames = []  
+        self.filenames = []
     def toJSON(self):
             return json.dumps(self, default=lambda o: o.__dict__,
                 sort_keys=True, indent=4)
@@ -129,13 +129,14 @@ def getParametersJSON(hashes, cam):
         trace.name = key
         trace.cam = cam
         tm = int(time.time()) #strftime("%H:%M:%S", localtime())
-        trace.filenames = hashes[key].toString(str(cam)+'_'+key+'_', '.jpg')
+        trace.filenames = None #hashes[key].toString(str(cam)+'_'+key+'_', '.jpg')
         trace.x = tm
-        #last = len(hashes[key].counted) -1 
-        trace.y = hashes[key].getCountedObjects()# check for last 60 sec
-        trace.text =  str(trace.y )+ ' ' + key + '(s) was founded'
-        ret.append(trace.__dict__)
-        logging.debug( trace.__dict__ )
+        #last = len(hashes[key].counted) -1
+        trace.y = hashes[key].getCountedObjects()
+        trace.text =  str(trace.y )+ ' ' + key + '(s)'
+        #ret.append(trace.__dict__) used for JSON generation
+        ret.append(trace)
+        #logging.debug( trace.__dict__ )
     return ret
 
 
@@ -147,17 +148,11 @@ class ImageHashCodesCountByTimer(ObjCountByTimer):
 
 
 
-def do_statistic(cam,hashes):
+def do_statistic(conn,cam,hashes):
   # Do some statistic work here  
     params = getParametersJSON(hashes, cam)
-    if len(params)>0:
-        logger.debug('get_frame: params' )
-        logger.debug(params)
-        paramsQueue.put( params )
-        logger.info(' paramsQueue.qsize():{}'.format(paramsQueue.qsize()))
-    if paramsQueue.qsize() > PARAMS_BUFFER:
-        print("do_statistic: persist_params")
-        persist_params(PARAMS_FOLDER + str(int(time.time())) + '.json')
+    db.insert_statistic(conn,params)
+
 
 DIMENSION_X = 285
 DIMENSION_Y = 220
@@ -252,11 +247,11 @@ def classify_frame( net, inputQueue,rectanglesQueue,cam):
                                         #label2 += key+'(s):' + str(hashes[key].counted[0]) + ',' + str(hashes[key].counted[1]) + ',' + str(hashes[key].counted[2]) + ' '
 
 
-                                if DRAW_RECTANGLES: 
-                                    label1 = "{}: {:.2f}%".format(key,confidence * 100)
-                                    #logger.debug('------------------- Rectangle placed in buffer ------------------------')
-                                    rectanglesQueue.put((label1, (startX-25, startY-25), (endX+25, endY+25),label2))
-                                    logger.debug((label1, (startX-25, startY-25), (endX+25, endY+25)))
+                                
+                                label1 = "{}: {:.2f}%".format(key,confidence * 100)
+                                #logger.debug('------------------- Rectangle placed in buffer ------------------------')
+                                rectanglesQueue.put((label1, (startX-25, startY-25), (endX+25, endY+25),label2))
+                                logger.debug((label1, (startX-25, startY-25), (endX+25, endY+25)))
                                     
 
                                 # process further only  if image is really different from other ones
@@ -273,7 +268,7 @@ def classify_frame( net, inputQueue,rectanglesQueue,cam):
                                     #cv2.imwrite(IMAGES_FOLDER + filename,crop_img_data)
                                     #logger.info("Persisting ,filename: " + IMAGES_FOLDER + filename)
                                     
-                                do_statistic(cam, hashes)
+                                do_statistic(conn, cam, hashes)
                                 
                                    
 #  draw metadata on screen
@@ -283,8 +278,9 @@ def draw_metadata_onscreen(frame, rectanglesQueue,label2):
     while not rectanglesQueue.empty():
         try:
             (label1,dot1,dot2,label2) = rectanglesQueue.get(block=False)
-            cv2.rectangle(frame, dot1, dot2, (0,255,0), 1)
-            cv2.putText(frame, label1, (dot1[0], dot1[1]), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,255,0), 1)
+            if DRAW_RECTANGLES: 
+               cv2.rectangle(frame, dot1, dot2, (0,255,0), 1)
+               cv2.putText(frame, label1, (dot1[0], dot1[1]), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,255,0), 1)
         except: continue
     return label2
     
@@ -325,9 +321,8 @@ def get_frame(vss,video_urls,inputQueue, imagesQueue, rectanglesQueue, cam):
         if inputQueue.qsize()>IMAGES_BUFFER-1:
            while not inputQueue.empty(): inputQueue.get()  
 
-        if DRAW_RECTANGLES: 
-            label2 = draw_metadata_onscreen(frame, rectanglesQueue, label2)
-            cv2.putText(frame, label2, (10,23), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (0,255,0), 2)
+        label2 = draw_metadata_onscreen(frame, rectanglesQueue, label2)
+        cv2.putText(frame, label2, (10,23), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (0,255,0), 2)
         # if perfomance issue on Raspberry Pi comment it
         if not args["not_show_in_window"]:
             cv2.imshow("Camera" + str(cam), frame)
@@ -344,7 +339,7 @@ def get_frame(vss,video_urls,inputQueue, imagesQueue, rectanglesQueue, cam):
 def fetchImagesFromQueueToVideo(filename, imagesQueue):
     #fourcc = cv2.VideoWriter_fourcc(*'DIVX')  # 'x264' doesn't work
     #fourcc = cv2.VideoWriter_fourcc(*'MPEG')
-    # fourcc = 0x00000021  
+    # fourcc = 0x00000021
     #logger.debug(fourcc)
     #out = cv2.VideoWriter(filename,fourcc, 29.0, size, False)  # 'False' for 1-ch instead of 3-ch for color
     #logger.debug(out)
@@ -355,27 +350,9 @@ def fetchImagesFromQueueToVideo(filename, imagesQueue):
          imagesQueue.get()
          #np.save(filename,imagesQueue.get())
     #    out.write(fgmask)
-        #cv2.imshow('img',fgmask)   
+        #cv2.imshow('img',fgmask)
     #out.release()
-    
-def dumpQueue(paramsQueue):
-    params_array = []
-    print("dumpQueue (paramsQueue): {}".format(paramsQueue) )
-    while not paramsQueue.empty():
-        a = paramsQueue.get()
-        params_array +=a
-    x = json.dumps(params_array)
-    return x
-    
-def persist_params(filename):
-    logger.info("Persisting ,filename: " + filename)
-    x = dumpQueue(paramsQueue)
-    f = open(filename,"w+")    
 
-    f.write(x)
-    f.close()
-
-    return x
 
 def destroy():
 # stop the timer and display FPS information
