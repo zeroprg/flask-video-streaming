@@ -52,23 +52,20 @@ CLASSES = ["background", "aeroplane", "bicycle", "bird", "boat",
 	"bottle", "bus", "car", "cat", "chair", "cow", "diningtable",
 	"dog", "horse", "motorbike", "person", "pottedplant", "sheep",
 	"sofa", "train", "tvmonitor"]
-LOOKED1 = { "car": [], "person": [], "dog":[], "cat":[], "bitd":[]}
-LOOKED2 = { "car": [], "person": [], "dog":[], "cat":[], "bird":[]}
+LOOKED1 = { "car": [], "person": [],  "bird":[]}
+LOOKED2 = { "car": [], "person": [],  "bird":[]}
 
-subject_of_interes = ["person","car","bus","dog","cat","bird"]
+subject_of_interes = ["person","car","bird"]
 hashes = {}
 COLORS = np.random.uniform(0, 255, size=(len(CLASSES), 3))
 
-IMAGES_FOLDER = "static/img/"
-PARAMS_FOLDER = "static/params/"
 
 DRAW_RECTANGLES = False
 DELETE_FILES_LATER = 6*60*60 # sec  (8hours)
 ENCODING = "utf-8"
 NUMBER_OF_FILES = 10
-HASH_DELTA = 57
-PARAMS_BUFFER = 120
-IMAGES_BUFFER = 25
+HASH_DELTA = 67 #57
+IMAGES_BUFFER = 100
 RECOGNZED_FRAME = 1
 THREAD_NUMBERS  = 1 #must be less then 4 for PI
 videos = []
@@ -76,8 +73,8 @@ camleft = []
 camright =[]
 piCameraResolution = (640,480)# (1080,720) (1296,972)
 piCameraRate=24
-IMG_PAGINATOR = 50
-cur = None
+IMG_PAGINATOR = 40
+SQLITE_DB = "framedata.db"#?cache=shared&mode=rwc&_journal_mode=WAL"
 
 class CameraMove:
     def __init__(self, move_left,move_right, timestep=10):
@@ -89,7 +86,7 @@ class CameraMove:
         self.t1.start()
         
     def cameraLoop(self):
-        print(self.move_left)
+        logger.debug(self.move_left)
         os.system(self.move_left) #urlopen(self.move_left)
         time.sleep(5.0)
         os.system(self.move_left) #urlopen(self.move_left)
@@ -129,13 +126,13 @@ def getParametersJSON(hashes, cam):
         trace.name = key
         trace.cam = cam
         tm = int(time.time()) #strftime("%H:%M:%S", localtime())
-        trace.filenames = None #hashes[key].toString(str(cam)+'_'+key+'_', '.jpg')
+        trace.hashcodes = hashes[key].toString()
         trace.x = tm
         #last = len(hashes[key].counted) -1
         trace.y = hashes[key].getCountedObjects()
         trace.text =  str(trace.y )+ ' ' + key + '(s)'
-        #ret.append(trace.__dict__) used for JSON generation
-        ret.append(trace)
+        ret.append(trace.__dict__) # used for proper JSON generation (dictionary)
+        #ret.append(trace)
         #logging.debug( trace.__dict__ )
     return ret
 
@@ -149,7 +146,7 @@ class ImageHashCodesCountByTimer(ObjCountByTimer):
 
 
 def do_statistic(conn,cam,hashes):
-  # Do some statistic work here  
+  # Do some statistic work here
     params = getParametersJSON(hashes, cam)
     db.insert_statistic(conn,params)
 
@@ -160,7 +157,7 @@ DIMENSION_Y = 220
 def classify_frame( net, inputQueue,rectanglesQueue,cam):
         conf_threshold = float(args["confidence"])
         hashes = {}
-        conn = db.create_connection("framedata.db")
+        conn = db.create_connection(SQLITE_DB)
         # keep looping
         frame = None
         label2="No data"
@@ -173,11 +170,9 @@ def classify_frame( net, inputQueue,rectanglesQueue,cam):
                 #logger.debug('inputQueue.qsize()',inputQueue.qsize())
                 #print(inputQueue)
                 #print(rectanglesQueue)
-                
                 try:
                    frame = inputQueue.get(block=False)
                 except: continue
-                
                 _frame = cv2.resize(frame, (DIMENSION_X, DIMENSION_Y))
                 blob = cv2.dnn.blobFromImage(_frame, 0.007843,
                         (DIMENSION_X, DIMENSION_Y), (127.5,127.5,127.5), True)
@@ -188,7 +183,6 @@ def classify_frame( net, inputQueue,rectanglesQueue,cam):
                 # loop over the detections
                 (fH, fW) = frame.shape[:2]
                 #logger.debug(detections)
-                
                 if detections is not None:
                         # loop over the detections
                         for i in np.arange(0, detections.shape[2]):
@@ -230,14 +224,12 @@ def classify_frame( net, inputQueue,rectanglesQueue,cam):
                                 logger.debug(hashes)
                                 if not key in LOOKED1: continue
                                 diffr = 1
-                                
                                 if (hashes).get(key, None)== None:
                                     # count objects for last sec, last 5 sec and last minute
-                                    print('ImageHashCodesCountByTimer init by hash: {}'.format(hash))
-                                    hashes[key] = ImageHashCodesCountByTimer(3,180, (10,60,180))
+                                    logger.debug('ImageHashCodesCountByTimer init by hash: {}'.format(hash))
+                                    hashes[key] = ImageHashCodesCountByTimer(5,180, (15,30,180))
                                     hashes[key].add(hash)
                                     filename = str(cam)+'_' + key +'_'+ str(hash)+ '.jpg'
-                                    
                                 else:
                                      #if not is_hash_the_same(hash,hashes[key]): hashes[key].add(hash)
                                      hashes[key].add(hash)
@@ -247,12 +239,10 @@ def classify_frame( net, inputQueue,rectanglesQueue,cam):
                                         #label2 += key+'(s):' + str(hashes[key].counted[0]) + ',' + str(hashes[key].counted[1]) + ',' + str(hashes[key].counted[2]) + ' '
 
 
-                                
                                 label1 = "{}: {:.2f}%".format(key,confidence * 100)
                                 #logger.debug('------------------- Rectangle placed in buffer ------------------------')
                                 rectanglesQueue.put((label1, (startX-25, startY-25), (endX+25, endY+25),label2))
                                 logger.debug((label1, (startX-25, startY-25), (endX+25, endY+25)))
-                                    
 
                                 # process further only  if image is really different from other ones
                                 if key in subject_of_interes:
@@ -267,10 +257,7 @@ def classify_frame( net, inputQueue,rectanglesQueue,cam):
                                     db.insert_frame(conn, hash, day, time.time(), key, crop_img_data, x_dim, y_dim, cam)
                                     #cv2.imwrite(IMAGES_FOLDER + filename,crop_img_data)
                                     #logger.info("Persisting ,filename: " + IMAGES_FOLDER + filename)
-                                    
                                 do_statistic(conn, cam, hashes)
-                                
-                                   
 #  draw metadata on screen
 def draw_metadata_onscreen(frame, rectanglesQueue,label2):
     #logger.debug('!!!!!!!!!!!!!!!! Display rectangles!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
@@ -290,10 +277,7 @@ def draw_metadata_onscreen(frame, rectanglesQueue,label2):
 def get_frame(vss,video_urls,inputQueue, imagesQueue, rectanglesQueue, cam):
     # loop over the frames from the video stream
     detections = None
-    #cols,rows = 0,0
     label2 = 'No data'
-    #conn = psycopg2.connect("dbname=videoprint user=videoprint host='localhost' password='vist2508' port=5432")
-    #cur = conn.cursor()
 
     while  True:        
         if 'picam' == video_urls[1]:
@@ -316,10 +300,10 @@ def get_frame(vss,video_urls,inputQueue, imagesQueue, rectanglesQueue, cam):
         #cur.execute("INSERT INTO video(time,frame) VALUES(%s , %s)", (time_s, b))
         #conn.commit()
 
-        if imagesQueue.qsize()>IMAGES_BUFFER-1:
-           while not imagesQueue.empty(): imagesQueue.get()  
-        if inputQueue.qsize()>IMAGES_BUFFER-1:
-           while not inputQueue.empty(): inputQueue.get()  
+        if imagesQueue.qsize()>IMAGES_BUFFER-20:
+           imagesQueue.get()
+        if inputQueue.qsize()>IMAGES_BUFFER-20:
+           inputQueue.get()
 
         label2 = draw_metadata_onscreen(frame, rectanglesQueue, label2)
         cv2.putText(frame, label2, (10,23), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (0,255,0), 2)
@@ -373,7 +357,6 @@ args = {}
 inputQueue =  []
 rectanglesQueue = []
 imagesQueue = []
-paramsQueue = Queue(maxsize=PARAMS_BUFFER+5)
 
 #catchedObjQueue = Queue()
 
@@ -412,7 +395,6 @@ def configure(args):
             help="path to Caffe pre-trained model")
     ap.add_argument("-c", "--confidence", type=float, required=False,
             help="minimum probability to filter weak detections")
-            
     more_args = vars(ap.parse_args())
 
     more_args =  {k: v for k, v in more_args.items() if v is not None}
@@ -421,7 +403,7 @@ def configure(args):
     args.update(more_args)
 
     SHOW_VIDEO = not args["not_show_in_window"]
-    print("SHOW_VIDEO="+str(SHOW_VIDEO))
+    logger.info("SHOW_VIDEO="+str(SHOW_VIDEO))
 
     logger.debug(args)
 
@@ -438,7 +420,6 @@ def start():
     # and initialize the FPS counter
     logger.info("[INFO] starting video stream...")
 
-
     initialize_video_streams()
 
     for cam in range(len(vss)):
@@ -446,11 +427,9 @@ def start():
         p_get_frame.daemon = True
         p_get_frame.start()
        #p_get_frame.join()
-    
     #for i in range(0,len(videos)-1):
         # Share common parameters between threads
         #while(inputQueue[i].empty()): None
-        
  #       print('inputQueue[i].qsize():' + str(i) + ": " + str(inputQueue[i].qsize()))
 
     time.sleep(2.0)
@@ -461,8 +440,6 @@ def start():
             p_classifier.daemon = True
             p_classifier.start()
             #p_classifier.join()
-            
-        
         logger.info("p_classifiers for cam:" +str(cam)+ " started")
         cam += 1
     return p_get_frame
@@ -480,7 +457,6 @@ def initialize_video_streams(url=None):
 #  initialise picam or IPCam
     else:
         arg = args.get('video_file'+ str(i),None)
-        
     while arg is not None:
         if not (i,arg) in videos:
             if arg  == 'picam':
@@ -494,8 +470,8 @@ def initialize_video_streams(url=None):
             CameraMove(camright[i],camleft[i])
             videos.append((str(i),arg))
             imagesQueue.append(Queue(maxsize=IMAGES_BUFFER+5))
-            inputQueue.append(Queue(maxsize=PARAMS_BUFFER+5))
-            rectanglesQueue.append(Queue(maxsize=PARAMS_BUFFER+5))
+            inputQueue.append(Queue(maxsize=IMAGES_BUFFER+5))
+            rectanglesQueue.append(Queue(maxsize=IMAGES_BUFFER+5))
             i+=1
             arg = args.get('video_file'+ str(i),None)
 
@@ -527,64 +503,64 @@ def serve_static(filename):
 def index():
     """Video streaming home page."""
     start = request.args.get('start')
-    print("start", start)
     if start == None: start = 0
     start = int(start)
     video_urls = []
-    img_folder = IMAGES_FOLDER
     img_paginator = IMG_PAGINATOR
+    conn = db.create_connection(SQLITE_DB)
+    images_filenames = []
     for i in range(len(videos)):
         video_urls.append((videos[i][0],'video_feed?cam='+str(videos[i][0])))
-        #else:
-        #    video_urls.append((videos[i][0], videos[i][1]))
-    """ Delete old files """
-    images_filenames=[]
-    delete_file_older_then(IMAGES_FOLDER, DELETE_FILES_LATER)
-    delete_file_older_then(PARAMS_FOLDER, DELETE_FILES_LATER)
-    images_filenames = traverse_dir( IMAGES_FOLDER, True, str(0)+"_*", start, start + IMG_PAGINATOR)
-    images_filenames.extend( traverse_dir(IMAGES_FOLDER, True, str(1)+"_*", start, start + IMG_PAGINATOR ))
-    
+        images_filenames.append(db.select_last_frames(conn,i,IMG_PAGINATOR))
+
+    """ Delete old frames wil be here """
     return render_template('index.html', **locals())
 
 @app.route('/moreparams')
 def moreparams():
     """ Read list of json files or return one specific  for specific time """
-    time = request.args.get('time')
-    if time == '' or time is None: time = 0
-    else: time = int(time)
-    files = gen_array_of_params()
-    print(files)
-    from_indx = find_index(files,time)
-    to_indx = len(files)
-    print("from_indx:{}, to_indx: {}".format( from_indx, to_indx))
-    _arr = ''
-    for file in files:
-        _arr +=  open( file, 'r').read()
-    return Response( _arr.replace('][',','), mimetype='text/plain')
-        
-def gen_array_of_params():
-    params_filenames =  traverse_dir(PARAMS_FOLDER, False)
-    #x = json.dumps(params_filenames)
-    return params_filenames
+    hour_back1 = request.args.get('hour_back1', default=1, type = int)
+    hour_back2 = request.args.get('hour_back2', default=0, type = int)
 
-        
+    if hour_back1 != '': hour_back1 = int(hour_back1)
+    else: hour_back1 = 1 # default value: 60 min back
+    now_in_seconds = time.time()
+    if hour_back2 != '': now_in_seconds = now_in_seconds - int(hour_back2)*60*60
+    print("hour_back:{}, now_in_seconds:{}".format(hour_back1, now_in_seconds))
+
+    params = gen_params(hours=hour_back1, currentime = now_in_seconds)
+    return Response( params, mimetype='text/plain')
 
 @app.route('/moreimgs')
 def moreimgs():
-    start = int(request.args.get('start'))
-    cam = int(request.args.get('cam'))
-    direction = int(request.args.get('direction'))
-    return Response( gen_array_of_imgs(cam,start,direction), mimetype='text/plain')
+    """ Read list of json files or return one specific  for specific time """
+    direction = request.args.get('direction', default=1, type = int)
+    start =     request.args.get('start', default=0, type = int)
+    cam =       request.args.get('cam', default=0, type = int)
 
-def gen_array_of_imgs(cam,start,direction):
-    a = start
-    b = start+direction*IMG_PAGINATOR
-    if start > start+direction*IMG_PAGINATOR:
-        b = start
-        a = start+direction*IMG_PAGINATOR
+    if direction < 0 : 
+        if start >= IMG_PAGINATOR: start = start - IMG_PAGINATOR
+        else: start = 0
+    conn = db.create_connection(SQLITE_DB)
+    rows =  db.select_last_frames(conn, cam, IMG_PAGINATOR, offset = start, as_json=True)
+#    ret = json.dumps(rows)
+    return Response( rows,  mimetype='text/plain')
 
-    images_filenames =  traverse_dir(IMAGES_FOLDER, True, str(cam)+"_*", a,b)
-    x = json.dumps(images_filenames)
+
+@app.route('/imgs_at_time')
+def imgs_at_time():
+    """ Read list of json files or return one specific  for specific time """
+    seconds = request.args.get('time', default=time.time(), type=int)
+    delta   = request.args.get('delta', default=10, type=int)
+    cam = request.args.get('cam', default = 0, type = int)
+    return Response( gen_array_of_imgs(cam, delta=delta, currentime=seconds), mimetype='text/plain')
+
+def gen_array_of_imgs(cam,delta=10, currentime = time.time()):
+    time1 = currentime - delta
+    time2 = currentime + delta
+    conn = db.create_connection(SQLITE_DB)
+    rows = db.select_frame_by_time(conn, cam, time1,time2)
+    x = json.dumps(rows)
     return x
 
 
@@ -592,39 +568,38 @@ def gen_array_of_imgs(cam,start,direction):
 
 def gen(camera):
     """Video streaming generator function."""
-    while True:
-        frame = camera.get_frame()
-        yield (b'--frame\r\n'
+    try:
+        while True:
+          frame = camera.get_frame()
+          yield (b'--frame\r\n'
                b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
+    except GeneratorExit: pass
 
 
 
 
 def detect(cam):
     """Video streaming generator function."""
-    label2 = 'No data'
-    while True:
-         #logger.debug('imagesQueue:', imagesQueue.empty())
-         
-         #while(not imagesQueue[cam].empty()):
-         try:
-            frame = imagesQueue[cam].get(block=False)
+    try:
+        #logger.debug('imagesQueue:', imagesQueue.empty())
+       while True:
+         while(not imagesQueue[cam].empty()):
+            frame = imagesQueue[cam].get(block=True)
             # draw rectangles when run on good hardware
-                
             iterable = cv2.imencode('.jpg', frame)[1].tobytes()
             yield b'--frame\r\nContent-Type: image/jpeg\r\n\r\n' + iterable + b'\r\n'
-         except: pass # continue
+    except GeneratorExit: pass
 
-def gen_params():
-    ret = []
+def gen_params(hours=1, currentime=time.time()):
     """Parameters streaming generator function."""
-    if paramsQueue.qsize() > PARAMS_BUFFER:
-        ret = persist_params(PARAMS_FOLDER + str(int(time.time())) + '.json')
+    time1 = currentime - hours*60*60
+    print("time1: {} now: {}".format(time1, currentime))
+    conn = db.create_connection(SQLITE_DB)
+    ls = db.select_statistic_by_time(conn,time1,currentime)
+    ret = json.dumps(ls) #, indent = 4)
     logger.debug(ret)
     return ret
-#def gen_images():
-#   """Images streaming generator function."""
-#   return catchedObjQueue.get()
+
 
 def ping_video_url(url):
     """ Ping url """
@@ -675,7 +650,10 @@ def video_feed():
 @app.route('/params_feed')
 def params_feed():
     """Parameters streaming route. Put this in the src attribute of an img tag."""
-    return Response( gen_params(),
+    hours = request.args.get('hour_back1', default=1)
+    start_hour = request.args.get('hour_back2', default=0)
+    currentime = time.time() - int(start_hour)*60*60
+    return Response( gen_params(hours, currentime=currentime ),
                     mimetype='text/plain')
 #@app.route('/images_feed')
 #def images_feed():

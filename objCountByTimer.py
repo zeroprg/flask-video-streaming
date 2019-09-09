@@ -70,7 +70,7 @@ class ObjCountByTimer:
     def getCountedObjects(self):
         return max(self.counted)    
     
-    def toString(self,prefix,postfix):
+    def toString(self, prefix = '', postfix= ''):
         ls = list(self.store)
         return [ prefix + str(val[1]) + postfix for val in ls] 
         

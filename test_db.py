@@ -3,6 +3,7 @@ import time
 import datetime
 import numpy as np
 import random as r
+import json
 
 import db
 
@@ -31,7 +32,7 @@ class TestDB(unittest.TestCase):
 
     def test_select_all(self):
         conn = db.create_connection(DB_LOCATION)
-        rows = db.select_all_stats(conn)
+        rows = db.select_all_objects(conn)
         self.assertEqual( len(rows)>0, True);
 
     def test_select_frame_by_time(self):
@@ -42,6 +43,7 @@ class TestDB(unittest.TestCase):
         time2 = now + datetime.timedelta(seconds = 1)
         ls = db.select_frame_by_time(conn, time1, time2)
         self.assertEqual(len(ls), 1)
+        print(json.dumps(ls,indent=4))
 
     def test_time_in_epoch_format(self):
         time.sleep(1.0)

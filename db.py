@@ -1,4 +1,7 @@
+
 import sqlite3
+import cv2
+import base64
 from sqlite3 import Error
  
  
@@ -17,14 +20,14 @@ def create_connection(db_file):
     return conn
  
  
-def select_all_stats(conn):
+def select_all_objects(conn):
     """
     Query all rows in the tasks table
     :param conn: the Connection object
     :return:
     """
     cur = conn.cursor()
-    cur.execute("SELECT hashcode, currentdate, currentime, type FROM objects")
+    cur.execute("SELECT hashcode, currentdate, currentime, type, x_dim, y_dim FROM objects")
  
     rows = cur.fetchall()
  
@@ -35,44 +38,101 @@ def select_all_stats(conn):
 def insert_statistic(conn, params):
     cur = conn.cursor()
     for param in params:
-       try:
-          cur.execute("INSERT INTO statistic(type,currentime,y,text,cam) VALUES (?, ?, ?, ?, ?)", (param.name, param.x, param.y, param.text, param.cam))
-       except Error as e:
-          print("Error during insertion of statistic {}".format(e))
-    conn.commit()
-    
-
-
-def insert_frame(conn, hashcode, date, time, type , numpy_array, x_dim, y_dim, cam):
-    cur = conn.cursor()
-    try:
-        cur.execute("INSERT INTO objects (hashcode, currentdate, currentime, type, frame, x_dim, y_dim,cam) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", (str(hashcode), date, time, type, numpy_array.tobytes(), x_dim, y_dim, cam))
-    except:
-        print("Hashcode : {} already existed for object {} and cam: {}".format(hashcode, type, cam))
+        hashcodes = ''
+        length = len(param['hashcodes'])
+       # for i in range(length): hashcodes += str(param['hashcodes'][i]) + ',' if i < length - 1 else str(param['hashcodes'][i])
+        hashcodes = str(param['hashcodes'])
+        cur.execute("INSERT INTO statistic(type,currentime,y,text,hashcodes,cam) VALUES (?, ?, ?, ?, ?, ?)", (param['name'], param['x'], param['y'], param['text'], hashcodes, param['cam']))
     conn.commit()
 
-def select_frame_by_time(conn, time1, time2):
+
+def select_statistic_by_time(conn, time1, time2):
     """
-    Query frames by time
+    Query statistic by time
     :param conn: the Connection object
-    :param time1, time2 in TEXT format  as ISO8601 strings ("YYYY-MM-DD HH:MM:SS.SSS")
+    :param time1, time2 in second INTEGER
     :return:
     """
+
+    conn.row_factory= sqlite3.Row
     cur = conn.cursor()
-    cur.execute("SELECT * FROM objects WHERE currentime BETWEEN ? and ?", (time1,time2,))
- 
-    rows = cur.fetchall()
- 
+
+    cur.execute("SELECT * FROM statistic WHERE currentime BETWEEN ? and ?", (time1,time2,))
+    # convert row object to the dictionary
+    rows = [dict(r) for r in cur.fetchall()]
+
     #for row in rows:
     #    print(row)
     return rows
+
+
+def insert_frame(conn, hashcode, date, time, type, numpy_array, x_dim, y_dim, cam):
+    cur = conn.cursor()
+    #    print(x_dim/y_dim, y_dim/x_dim)
+    if y_dim == 0 or x_dim == 0 or  x_dim/y_dim > 5 or y_dim/x_dim > 5: return
+    cur.execute("UPDATE objects SET lastime=? WHERE hashcode=?", (time, str(hashcode)))
+    if cur.rowcount == 0: 
+       buffer = cv2.imencode('.jpg', numpy_array)[1]
+       jpg_as_base64='data:image/jpeg;base64,'+ base64.b64encode(buffer).decode('utf-8')
+
+       try:
+          cur.execute("INSERT INTO objects (hashcode, currentdate, currentime, type, frame, x_dim, y_dim, cam) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", (str(hashcode), date, time, type, jpg_as_base64, x_dim, y_dim, cam))
+       except Error as e:
+          print("type {} cam: {} e: {}".format( type, cam, e))
+    conn.commit()
+
+
+def select_frame_by_time(conn, cam, time1, time2):
+    """
+    Query frames by time
+    :param conn: the Connection object
+    :param cam, time1, time2 in epoch seconds
+    :return:
+    """
+    conn.row_factory= sqlite3.Row
+    cur = conn.cursor()
+    cur.execute("SELECT cam, hashcode, currentdate, currentime, type, frame FROM objects WHERE cam=? AND currentime BETWEEN ? and ?", (cam,time1,time2,))
+ 
+    rows = [dict(r) for r in cur.fetchall()]
+ 
+    return rows
+
+def select_last_frames(conn, cam, n_rows, offset=0, as_json = False, type=None):
+    """
+    Query last n rows of frames b
+    :param conn: the Connection object
+    :param n_rows number of rows
+    :return:
+    """
+    if as_json == False: conn.row_factory = sqlite3.Row
+    cur = conn.cursor()
+    if type == None:
+        cur.execute("SELECT hashcode, currentdate, currentime, type, frame, cam FROM objects where cam=?  ORDER BY currentime DESC LIMIT ? OFFSET ?", (cam,n_rows,offset,))
+    else:
+        cur.execute("SELECT hashcode, currentdate, currentime, type, frame, cam FROM objects where cam=? and type=? ORDER BY currentime DESC LIMIT ? OFFSET ?", (cam,n_rows,offset,type,))
+    i = 1
+    if as_json == True:
+        rows = "["
+        fetched_rows = cur.fetchall()
+        length = len(fetched_rows)
+        for r in fetched_rows:
+            delta =   '{' + '"cam":{}, "hashcode":"{}",  "currentdate":"{}", "currentime":{}, "type":"{}", "frame":"{}"'.format(r[5], r[0], r[1], r[2], r[3], r[4])+'}'
+            rows += delta + ',' if i < length else  delta +']'
+            i+=1
+    else:
+        rows = [ dict(r) for r in cur.fetchall() ]
+   # for row in rows: print(row['currentime'],row['cam'])
+    return rows
+
+
+
 def delete_frames_later_then(conn, predicate):
     """
     Delete all records from objects table which are later then 'predicate'
-    predicate : '-70 minutes' , '-1 seconds '
+    predicate : '-70 minutes' , '-1 seconds ', '-2 hour'
     """
     cur = conn.cursor()
-    cur.execute("DELETE from objects WHERE currentime < datetime('now'," + predicate+ ")")
+    cur.execute("DELETE from objects WHERE currentime < strftime('%s','now'," + predicate+ ")")
  
 def main():
     database = "framedata.db"
