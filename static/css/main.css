@@ -58,7 +58,7 @@ body {
     -ms-flex-wrap: wrap; /* IE 10 */
     flex-wrap: wrap;
     padding: 0 4px;
-    max-height: 250px;
+    max-height: 600px;
     overflow-y: scroll;
 
 }

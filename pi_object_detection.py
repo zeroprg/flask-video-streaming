@@ -52,29 +52,29 @@ CLASSES = ["background", "aeroplane", "bicycle", "bird", "boat",
 	"bottle", "bus", "car", "cat", "chair", "cow", "diningtable",
 	"dog", "horse", "motorbike", "person", "pottedplant", "sheep",
 	"sofa", "train", "tvmonitor"]
-LOOKED1 = { "car": [], "person": [],  "bird":[]}
-LOOKED2 = { "car": [], "person": [],  "bird":[]}
+LOOKED1 = { "car": [], "train":[],"bus":[], "person": [],  }
+LOOKED2 = { "car": [], "train":[],"bus":[], "person": [],  }
 
-subject_of_interes = ["person","car","bird"]
+subject_of_interes = ["person","car","bus", "train"]
 hashes = {}
 COLORS = np.random.uniform(0, 255, size=(len(CLASSES), 3))
 
 
-DRAW_RECTANGLES = False
+DRAW_RECTANGLES = True
 DELETE_FILES_LATER = 6*60*60 # sec  (8hours)
 ENCODING = "utf-8"
 NUMBER_OF_FILES = 10
-HASH_DELTA = 67 #57
+HASH_DELTA = 56
 IMAGES_BUFFER = 100
 RECOGNZED_FRAME = 1
-THREAD_NUMBERS  = 1 #must be less then 4 for PI
+THREAD_NUMBERS  = 3 #must be less then 4 for PI
 videos = []
 camleft = []
 camright =[]
 piCameraResolution = (640,480)# (1080,720) (1296,972)
 piCameraRate=24
-IMG_PAGINATOR = 40
-SQLITE_DB = "framedata.db"#?cache=shared&mode=rwc&_journal_mode=WAL"
+IMG_PAGINATOR = 120
+SQLITE_DB = "framedata.db"
 
 class CameraMove:
     def __init__(self, move_left,move_right, timestep=10):
@@ -161,6 +161,8 @@ def classify_frame( net, inputQueue,rectanglesQueue,cam):
         # keep looping
         frame = None
         label2="No data"
+        # child Thread reference
+        p_classifier = None
         while True:
 
                 # check to see if there is a frame in our input queue
@@ -172,6 +174,14 @@ def classify_frame( net, inputQueue,rectanglesQueue,cam):
                 #print(rectanglesQueue)
                 try:
                    frame = inputQueue.get(block=False)
+                   # recursion bad idea
+                   #if inputQueue.qsize()>0:
+                   #   classify_frame(net,inputQueue,rectanglesQueue,cam)
+                      #p_classifier.daemon = True
+                      #p_classifier.start()  
+                   # stop unnecessary thread  
+                   #else: return
+
                 except: continue
                 _frame = cv2.resize(frame, (DIMENSION_X, DIMENSION_Y))
                 blob = cv2.dnn.blobFromImage(_frame, 0.007843,
@@ -227,12 +237,12 @@ def classify_frame( net, inputQueue,rectanglesQueue,cam):
                                 if (hashes).get(key, None)== None:
                                     # count objects for last sec, last 5 sec and last minute
                                     logger.debug('ImageHashCodesCountByTimer init by hash: {}'.format(hash))
-                                    hashes[key] = ImageHashCodesCountByTimer(5,180, (15,30,180))
-                                    hashes[key].add(hash)
+                                    hashes[key] = ImageHashCodesCountByTimer(1,180, (10,40,180))
+                                    if hashes[key].add(hash) == False:  continue
                                     filename = str(cam)+'_' + key +'_'+ str(hash)+ '.jpg'
                                 else:
                                      #if not is_hash_the_same(hash,hashes[key]): hashes[key].add(hash)
-                                     hashes[key].add(hash)
+                                     if hashes[key].add(hash) == False:  continue
                                      label2 =''
                                      for key in hashes:
                                         label2 += key+'(s):' + str(hashes[key].getCountedObjects())
@@ -272,6 +282,9 @@ def draw_metadata_onscreen(frame, rectanglesQueue,label2):
     return label2
     
  
+def change_res(camera, width, height):
+    camera.set(3, width)
+    camera.set(4, height)
 
 
 def get_frame(vss,video_urls,inputQueue, imagesQueue, rectanglesQueue, cam):
@@ -279,7 +292,7 @@ def get_frame(vss,video_urls,inputQueue, imagesQueue, rectanglesQueue, cam):
     detections = None
     label2 = 'No data'
 
-    while  True:        
+    while  True:
         if 'picam' == video_urls[1]:
             if vss == None:
                 vss = VideoStream(usePiCamera=True,resolution=piCameraResolution,framerate=piCameraRate).start()
@@ -291,8 +304,8 @@ def get_frame(vss,video_urls,inputQueue, imagesQueue, rectanglesQueue, cam):
             flag,frame = vss.read()
             if not flag:
                vss = cv2.VideoCapture(video_urls[1])
+               #change_res(vss,640,480)
                continue
-
 
         inputQueue.put(frame)
         #time_s = time.time()
@@ -439,6 +452,7 @@ def start():
             p_classifier = Process(target=classify_frame, args=(net,inputQueue[cam],rectanglesQueue[cam],cam))
             p_classifier.daemon = True
             p_classifier.start()
+            time.sleep(2.0)
             #p_classifier.join()
         logger.info("p_classifiers for cam:" +str(cam)+ " started")
         cam += 1
@@ -463,6 +477,8 @@ def initialize_video_streams(url=None):
                 vs = None
             else: 
                  vs = cv2.VideoCapture(arg)
+                 #change_res(vs,640,480)
+
             logger.info("[INFO] Video stream: " + str(i) + " vs:" + str(vs) )
             vss.append(vs)
             camright.append(args.get('cam_right'+ str(i),None))
@@ -521,14 +537,14 @@ def moreparams():
     """ Read list of json files or return one specific  for specific time """
     hour_back1 = request.args.get('hour_back1', default=1, type = int)
     hour_back2 = request.args.get('hour_back2', default=0, type = int)
-
+    cam = request.args.get('cam', default=0, type = int)
     if hour_back1 != '': hour_back1 = int(hour_back1)
     else: hour_back1 = 1 # default value: 60 min back
     now_in_seconds = time.time()
     if hour_back2 != '': now_in_seconds = now_in_seconds - int(hour_back2)*60*60
-    print("hour_back:{}, now_in_seconds:{}".format(hour_back1, now_in_seconds))
+    print("cam: {}, hour_back:{}, now_in_seconds:{}".format(cam, hour_back1, now_in_seconds))
 
-    params = gen_params(hours=hour_back1, currentime = now_in_seconds)
+    params = gen_params(cam=cam, hours=hour_back1, currentime = now_in_seconds)
     return Response( params, mimetype='text/plain')
 
 @app.route('/moreimgs')
@@ -590,12 +606,12 @@ def detect(cam):
             yield b'--frame\r\nContent-Type: image/jpeg\r\n\r\n' + iterable + b'\r\n'
     except GeneratorExit: pass
 
-def gen_params(hours=1, currentime=time.time()):
+def gen_params(cam=0, hours=1, currentime=time.time()):
     """Parameters streaming generator function."""
     time1 = currentime - hours*60*60
     print("time1: {} now: {}".format(time1, currentime))
     conn = db.create_connection(SQLITE_DB)
-    ls = db.select_statistic_by_time(conn,time1,currentime)
+    ls = db.select_statistic_by_time(conn,cam,time1,currentime)
     ret = json.dumps(ls) #, indent = 4)
     logger.debug(ret)
     return ret

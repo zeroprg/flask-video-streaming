@@ -82,7 +82,8 @@ class ObjCountByTimer:
                 break
             n+=1
         #print('self.store.qsize({}), n={}'.format(len(self.store), n))    
-        if len(self.store) == n:
+        ret = len(self.store) == n
+        if ret:
             self.store.append([0,hashcode])
+        return  ret
 
-        

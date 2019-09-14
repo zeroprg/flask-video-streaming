@@ -14,6 +14,7 @@ def create_connection(db_file):
     conn = None
     try:
         conn = sqlite3.connect(db_file)
+        conn.execute("PRAGMA journal_mode=WAL")
     except Error as e:
         print(e)
  
@@ -42,11 +43,14 @@ def insert_statistic(conn, params):
         length = len(param['hashcodes'])
        # for i in range(length): hashcodes += str(param['hashcodes'][i]) + ',' if i < length - 1 else str(param['hashcodes'][i])
         hashcodes = str(param['hashcodes'])
+    try:
         cur.execute("INSERT INTO statistic(type,currentime,y,text,hashcodes,cam) VALUES (?, ?, ?, ?, ?, ?)", (param['name'], param['x'], param['y'], param['text'], hashcodes, param['cam']))
-    conn.commit()
+        conn.commit()
+    except Error as e:
+         print(" e: {}".format( e))
 
 
-def select_statistic_by_time(conn, time1, time2):
+def select_statistic_by_time(conn, cam, time1, time2):
     """
     Query statistic by time
     :param conn: the Connection object
@@ -57,7 +61,7 @@ def select_statistic_by_time(conn, time1, time2):
     conn.row_factory= sqlite3.Row
     cur = conn.cursor()
 
-    cur.execute("SELECT * FROM statistic WHERE currentime BETWEEN ? and ?", (time1,time2,))
+    cur.execute("SELECT * FROM statistic WHERE cam=? AND currentime BETWEEN ? and ?", (cam,time1,time2,))
     # convert row object to the dictionary
     rows = [dict(r) for r in cur.fetchall()]
 
@@ -68,18 +72,16 @@ def select_statistic_by_time(conn, time1, time2):
 
 def insert_frame(conn, hashcode, date, time, type, numpy_array, x_dim, y_dim, cam):
     cur = conn.cursor()
-    #    print(x_dim/y_dim, y_dim/x_dim)
     if y_dim == 0 or x_dim == 0 or  x_dim/y_dim > 5 or y_dim/x_dim > 5: return
-    cur.execute("UPDATE objects SET lastime=? WHERE hashcode=?", (time, str(hashcode)))
-    if cur.rowcount == 0: 
-       buffer = cv2.imencode('.jpg', numpy_array)[1]
-       jpg_as_base64='data:image/jpeg;base64,'+ base64.b64encode(buffer).decode('utf-8')
-
-       try:
+    try:
+       cur.execute("UPDATE objects SET lastime=? WHERE hashcode=?", (time, str(hashcode)))
+       if cur.rowcount == 0:
+          buffer = cv2.imencode('.jpg', numpy_array)[1]
+          jpg_as_base64='data:image/jpeg;base64,'+ base64.b64encode(buffer).decode('utf-8')
           cur.execute("INSERT INTO objects (hashcode, currentdate, currentime, type, frame, x_dim, y_dim, cam) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", (str(hashcode), date, time, type, jpg_as_base64, x_dim, y_dim, cam))
-       except Error as e:
+       conn.commit()
+    except Error as e:
           print("type {} cam: {} e: {}".format( type, cam, e))
-    conn.commit()
 
 
 def select_frame_by_time(conn, cam, time1, time2):

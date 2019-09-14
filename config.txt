@@ -1,16 +1,20 @@
-#video_file1=http://138.26.107.148/mjpg/video.mjpg?COUNTER
-#video_file0=http://38.101.209.29:8082/mjpg/video.mjpg?COUNTER
-#video_file3=http://104.157.73.60/cgi-bin/faststream.jpg?stream=half&amp;fps=15&amp;rand=COUNTER
-#video_file1=http://112.161.180.19:8080/cam_1.cgi
-#video_file1=http://138.26.107.148/mjpg/video.mjpg?COUNTER
-#video_file2=http://92.154.61.153:8080/oneshotimage1?1529845789
-#video_file2=http://37.142.116.227/cgi-bin/camera?resolution=640&amp;amp;quality=1&amp;amp;Language=0&amp;amp;1529847411
+#Traffic controls cameras:
+#video_file1=http://203.77.210.41:2000/mjpg/video.mjpg
+#video_file1=http://107.85.197.18:8080/-wvhttp-01-/GetOneShot?image_size=640x480&frame_count=1000000000
+
+#Japanees Laundry:
+#video_file1=http://180.13.193.172:8083/-wvhttp-01-/GetOneShot?image_size=640x480&frame_count=1000000000
+
+#Parking Lots:
+#video_file1=http://170.249.152.2:8080/cgi-bin/viewer/video.jpg?r=COUNTER
+video_file1=http://159.255.189.4:8081/mjpg/video.mjpg
+#video_file1=http://213.226.254.135:91/mjpg/video.mjpg
 
 
 #video_file2=picam
-video_file0=http://192.168.1.100:81/videostream.cgi?loginuse=GwEBAA%3D%3D&loginpas=Nw0AG1ZceWtl&_=15282579520910.657573406191367
-video_file1=http://192.168.1.101:81/videostream.cgi?loginuse=GwEBAA%3D%3D&loginpas=Nw0AG1ZceWtl&_=15282579520910.657573406191367
-video_file2=http://38.101.209.29:8082/mjpg/video.mjpg?COUNTER
+#video_file0=http://192.168.1.100:81/videostream.cgi?loginuse=GwEBAA%3D%3D&loginpas=Nw0AG1ZceWtl&_=15282579520910.657573406191367
+#video_file1=http://192.168.1.101:81/videostream.cgi?loginuse=GwEBAA%3D%3D&loginpas=Nw0AG1ZceWtl&_=15282579520910.657573406191367
+video_file0=http://38.101.209.29:8082/mjpg/video.mjpg?COUNTER
 
 #Commands to move cameras right and left step from 0 to 3
 #cam_right0=curl 'http://z**o:V*st*!@192.168.1.100:81/decoder_control.cgi?loginuse=GwEBAA%3D%3D&loginpas=Nw0AG1ZceWtl&command=6&onestep=2&_=35282579520910.657573406191367'
@@ -22,6 +26,6 @@ video_file2=http://38.101.209.29:8082/mjpg/video.mjpg?COUNTER
 
 prototxt=MobileNetSSD_deploy.prototxt.txt
 model=MobileNetSSD_deploy.caffemodel
-confidence=0.52
+confidence=0.48
 
 
