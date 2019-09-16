@@ -83,13 +83,14 @@
                     </div>
                     <div class="col-md-12">
                         <h1 class="animated fadeInDown">AI processed video streams from public cameras.</h1>
-                        <h3> This is free smart cloud storage for security cameras, (bellow public available video-streams) </h3>
+                        <h3> This is free smart cloud storage  for cameras video streams works on ODROID ARM based computer  (100% python , no php  for more information check 
+                        <a href="//aicameras.ca" target="_blank"> http://aicameras.ca</a> ), bellow public available video-streams: </h3>
                         <div id="URLlist"></div>
  
                         <h3>Enter IP Camera url at this box </h3>
                         <h3><b>Warning:</b> "By specifying IP Address or camera URL bellow you will share your link with all other subscribers. To make this link private your have to subscribe to payable version"</h3>
 
-                        <form class="form-horizontal" action="./urls" method="get">
+                        <form class="form-horizontal" action="./urls" method="get" onsubmit="target_popup(this)">
                             <div class="form-group">
                                 <label class="control-label col-sm-2" for="pwd">URL:</label>
                                 <div class="col-sm-10">
@@ -116,10 +117,8 @@
         </section>
     </header>
 {% for cam,video_url in video_urls %}
-<section class="video" id="section{{cam}}" style="display:none">
-  <div class="container"> 
- 
-
+<section id="section{{cam}}" style="display:none">
+<!--  <div class="container">  -->
  <div class="row">
    <div class="col-sm-12">
       <div class="header">
@@ -142,7 +141,7 @@
   </div>     
 
  <div class="row">
-    <div class="col-sm-12">
+    <div class="col-sm-6">
       <b> camera URL: {{video_url}}:</b>
        To draw safety zones click this button: <button id ="drwZone{{cam}}" onclick = "refresh({{cam}})">Show zones</button>
       <br> <br>
@@ -165,19 +164,19 @@
                 <br>
                 <button align="center">Save</button>
             </div>
-      </div>
-     </div>
-     <br>
-     <div id ="right_div" style="float:right; display:block;" class="col-sm-12">      
+       </div>
+     
+     </div>     <!--div class="col-sm-12"-->
+
+     <div id ="right_div" class="col-sm-6"> <!-- style="float:right; display:block;"  -->     
          <div class="tab">
-            <button class="tablinks" onclick="/*eslint-disable no-unused-vars, no-undef-expression, no-param-reassign*/
-            openTab(event, 'Eventsnotifyer{{cam}}')">Events notifyer</button>
-            <button class="tablinks" onclick="openTab(event, 'Objectsfilter{{cam}}')">Founded Objects</button>
+            <button class="tablinks active" onclick="openTab(event, 'Objectsfilter{{cam}}')">Founded Objects</button>
+            <button class="tablinks" onclick="openTab(event, 'Eventsnotifyer{{cam}}')">Events notifyer</button>
          </div>
          <div id="Eventsnotifyer{{cam}}" class="tabcontent">
             <h3>Events notifyer</h3>
             <p>Specify Events which will triger eMail or SMS/Voice notify.</p>
-              if <select name="objects">
+              <select name="objects">
                 <option value="person">person</option>
                 <option value="car">car</option>
                 <option value="dog">dog</option>
@@ -204,7 +203,7 @@
               <input type="text" placeholder="" min="0"  max="100" />
           </div>
 
-          <div id="Objectsfilter{{cam}}" class="tabcontent" style="display: block;">
+          <div id="Objectsfilter{{cam}}" class="tabcontent" style="display:block" > 
             <!-- Header -->
   <!--           <nav>
               <ul class="pagination header">
@@ -223,32 +222,15 @@
             
           <!-- Photo Grid -->
           <div id="cam{{cam}}" class="images_row">
-           
-           {% set i = 0 %} 
-           {% for result in images_filenames[cam|int] %}
-                {% if i%10 == 0 %}
-                   <div class="column">
-                {% endif %}   
-                <a class="thumb" target="_blank" href="">
-                   <img src="{{result['frame']}}" style="width:99%" alt="">
-                </a>
-                {% if i%10 == 0 %}
-                   </div>
-                {% endif %}   
-                {% set i= i + 1%}
+<!--           {% for result in images_filenames[cam|int] %}
+              <img  class="img_thumb" src="{{result['frame']}}"  alt="{{result['currentime']}}">
            {% endfor %}
-
-          </div> 
-       </div>
-     </div>
-  </div>
-<!--<div class="row">
-    <div class="col-sm-12">
-        <div id= "myDiv{{cam}}" class="col-sm-12" style="height:250px; width:100%"></div>
-    </div>    
- </div-->     
+ -->         </div> 
  
-</div> 
+      </div> <!-- tabcontent-->
+     </div>  <!-- right div -->
+</div> <!-- class row -->  
+<!-- </div> <!-- container-->
 </section>    
  {% endfor %}
 
@@ -363,6 +345,7 @@
 
 <script src="static/js/jPolygon.js"></script>
 <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
 
 <script>
 //document.getElementById("first{{cam}}").onclick = function() {alert(start);showmore(1,{{cam}},0);};
@@ -375,14 +358,20 @@ var start = 0;
 var params = [];
 var p_start = 0;
 
+function popup_image(){
+	$(".img_thumb").click(function(){ $(".img_thumb").removeClass("popup"); $(this).addClass("popup"); setTimeout(function(){ $(".img_thumb").removeClass("popup");}, 5000); }
+	);
+}
+ 
+
 function show_date(secs){
    date = new Date(sec*1000)
    return date.getHours() + ":" +
-    date.getMinutes() + ":" +
+    date.getMinutes() +" "+
    // date.getSeconds() + " " +
     (date.getMonth() + 1) + "/" +
     date.getDate() + "/" +
-    date.getFullYear()+" seconds:"+secs;
+    date.getFullYear()+" sec:"+secs;
 }
 
 function openTab(evt, tabName) {
@@ -421,9 +410,9 @@ for (var i = 0; i < btns.length; i++) {
 */
 
 
-function imgs(cam, time, delta)
+function retrieve_imgs(cam, time, delta)
 {   
-  seconds = time.split("seconds:")[1]; 
+  seconds = time.split("sec:")[1]; 
   $.ajax({
       url: "/imgs_at_time?time=" + seconds + "&cam=" + cam + "&delta="+delta,
       type: "get",      
@@ -431,18 +420,13 @@ function imgs(cam, time, delta)
        // parse array of images filenames
        //console.log(response);
        var ret = JSON.parse(response);
-       a =  '<div>';
+       imgs =  '';
        for (i = 0; i < ret.length; i++) {
-              if( i%3 === 0 ) a += '</div><div class="column">';                
-                a+= '<a class="thumb" target="_blank" href=".">' +
-                        '<img src="'+ ret[0].frame+ '" style="width:99%" alt="">' +
-                    '</a>';
+                imgs += '<img class="img_thumb" src="'+ ret[i].frame+ '" alt="'+ ret[i].currentime +'">';
         }
-        a += '</div>';
-        $('#cam' + cam ).html(a);
-        var _obj = document.getElementById("forward"+cam);
-        _obj.style.visibility = start===0?'hidden':'visible';
-        styleit();
+
+       $('#cam' + cam ).html(imgs);
+       popup_image();
       },
       error: function(xhr) {
         //Do Something to handle error
@@ -469,18 +453,12 @@ function showmore(direction, cam, _start)
        // parse array of images filenames
        //console.log(response);
        var ret = JSON.parse(response);
-       a =  '<div>';
+       img_lst =  '';
        for (i = 0; i < ret.length; i++) {
-              if( i%3 === 0 ) a += '</div><div class="column">';                
-                a+= '<a class="thumb" target="_blank" href=".">' +
-                        '<img src="'+ ret[0].frame+ '" style="width:99%" alt="">' +
-                    '</a>';
+                img_lst += '<img  class="img_thumb" src="'+ ret[i].frame + '"  alt="'+ ret[i].currentime + '">'
         }
-        a += '</div>';
-        $('#cam' + cam ).html(a);
-        var _obj = document.getElementById("forward"+cam);
-        _obj.style.visibility = start===0?'hidden':'visible';
-        styleit();
+        $('#cam' + cam ).html(img_lst);
+        popup_image();
       },
       error: function(xhr) {
         //Do Something to handle error
@@ -491,68 +469,15 @@ function showmore(direction, cam, _start)
   var r = new XMLHttpRequest();
   var r_h = new XMLHttpRequest();
   MAX_BUFFER = 10000;
-  BEAT = 1;
+  BEAT = 60;
   PLOT_TYPE1 = 'bar';
   PLOT_TYPE2 = 'scatter';
   MODE2 = 'lines';
-  window.setInterval(function(){
-      ajaxCallFunction();  //calling every 5 second
-  }, BEAT*1000);
+//  window.setInterval(function(){
+//      moreparams(0, "0-1");  //calling every 30 second
+//  }, BEAT*1000);
  
   
- var populate_params = function(cam_to_populate) {
-         //if( blocked_cam === undefined ) blocked_cam = -1;
-         //console.log(r.responseText);
-         if(r.responseText !== ''){
-             let traces = JSON.parse(r.responseText);
-             //console.log("traces = " + traces);
-             if(traces == null || traces.length === 0) return;
-             
-             for( j = 0 ; j< traces.length; j++){
-                var k = 0;
-                tr = traces[j];
-                //console.log("tr= " + tr);
-                cam = tr.cam;
-                // if we met blocked camera stop processing it
-                //if( cam === blocked_cam) continue;
- 
-                for( i = 0 ; i< data[cam].length; i++){
-                   if( tr.type === data[cam][i].name ) {
-                     date = show_date(tr.currentime)  
-                     data[cam][i].x.push(date);
-                     data[cam][i].y.push(tr.y);
-                     //data[cam][i].filenames = tr.hashcodes[0]
-                     data[cam][i].text.push(tr.text + ' cam:' + cam);
-                     data[cam][i].type = PLOT_TYPE1;
-                     if( data[cam][i].x.length >= MAX_BUFFER ) {
-                         data[cam][i].x.shift();
-                         data[cam][i].y.shift();
-                         data[cam][i].text.shift();
-                     }  
-
-                   } else {
-                       k++;
-                   }
-                }
-               // check if this a new object not existed before
-                if( k === data[cam].length ){
-                     _data = {"x": [],"y": [],"text": [], "filenames": []};
-                      date = show_date(traces[j].currentime)
-                     _data.x.push(date);
-                     //_data.filenames = traces[j].hashcodes[0]
-
-                     _data.y.push(traces[j].y);
-                     _data.text.push(traces[j].text + ' cam:' + traces[j].cam);
-                     _data.name = traces[j].type;
-                     _data.type = PLOT_TYPE1;
-                     data[cam].push(_data);    
-                     
-                 }    
-             }  
-             Plotly.newPlot('myDiv'+cam, data[cam],layout);
-         }
-  }
-
 
  var populate_lastparams = function(cam_to_populate, secs) {
          //if( blocked_cam === undefined ) blocked_cam = -1;
@@ -611,52 +536,17 @@ function showmore(direction, cam, _start)
          Plotly.newPlot('lastDiv'+cam_to_populate, history_data[cam_to_populate],layout);         
          document.getElementById('lastDiv'+cam_to_populate).on('plotly_click', function(data){
             var pts = '';
-//            var filenames =''
             //console.log(data.points);
-            imgs(cam_to_populate, data.points[0].x, 10);
-/*
-
-            for(var i=0; i < data.points.length; i++){
-                pts = 'x = '+data.points[i].x +'\ny = '+ data.points[i].y + '\n\n';
-                filenames = data.filenames;
-            }
-           alert('Closest point clicked:\n\n'+pts);
-           alert(filenames)
-           populate_images(filenames);
-           var pos = $(".win-pos").offset(); //to get position. ***Please use it in html body to get the right position.
-           var popupwdth = $(".popup-win").width()/2; //to caculate the popup window size.
-           alert("Top position: " + pos.top + " Left position: " + pos.left + " Popup width: " + popupwdth + "Files: " + filenames); // remove it after implement the code.
-           $('.popup-win').css({top: pos.top, left: pos.left, position:'absolute', margin:-popupwdth, display:'block'});
-*/
+            retrieve_imgs(cam_to_populate, data.points[0].x, 600); // check in 10 minutes interval
+            elem = document.getElementById('cam' + cam_to_populate );
+            elem.parentNode.style.display = "block"
+            elem.scrollIntoView();
         });
      }  
 
   }
 
 
- function populate_images(filenames){
-   a =  '<div>';
-   for (i = 0; i < filenames.length; i++) {
-          if( i%3 === 0 ) a += '</div><div class="column">';
-            
-            a+= '<a class="thumb" target="_blank" href="' + filenames[i]+ '">' +
-                    '<img src="' + filenames[i]+ '" style="width:100%;" alt="">' +
-                '</a>';
-        
-            
-    }
-    a += '</div>';
-    $('.popup-win').html(a);
- }
- 
-  function ajaxCallFunction(){
-    //this function uses ajax to interact with the server
-
-     // r.multipart = true;
-     //r.open('GET', "{{ url_for('params_feed') }}", true);
-     //r.send();
-     //r.onprogress = function(){ populate_params();};
-  }
 
   function moreparams(camera , value){
     hours = value.split("-");
@@ -710,7 +600,6 @@ function showmore(direction, cam, _start)
 
     <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
     <script src="static/js/min/toucheffects-min.js"></script>
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
     <script src="static/js/flickity.pkgd.min.js"></script>
     <script src="static/js/jquery.fancybox.pack.js"></script>
     <!-- Include all compiled plugins (below), or include individual files as needed -->

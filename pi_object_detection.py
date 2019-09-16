@@ -421,6 +421,19 @@ def configure(args):
     logger.debug(args)
 
 
+
+def startOneStreamProcesses(cam):
+        p_get_frame = Process(target=get_frame, args=(vss[cam],videos[cam],inputQueue[cam],imagesQueue[cam],rectanglesQueue[cam],cam))
+        p_get_frame.daemon = True
+        p_get_frame.start()
+        
+        net = cv2.dnn.readNetFromCaffe(args["prototxt"], args["model"])
+
+        p_classifier = Process(target=classify_frame, args=(net,inputQueue[cam],rectanglesQueue[cam],cam))
+        p_classifier.daemon = True
+        p_classifier.start()
+
+
 def start():
     # load our serialized model from disk
     configure(args)
@@ -440,20 +453,11 @@ def start():
         p_get_frame.daemon = True
         p_get_frame.start()
        #p_get_frame.join()
-    #for i in range(0,len(videos)-1):
-        # Share common parameters between threads
-        #while(inputQueue[i].empty()): None
- #       print('inputQueue[i].qsize():' + str(i) + ": " + str(inputQueue[i].qsize()))
-
-    time.sleep(2.0)
-    for cam in range(len(vss)):
-        for i in range(THREAD_NUMBERS):
-            # Share common parameters between threads
-            p_classifier = Process(target=classify_frame, args=(net,inputQueue[cam],rectanglesQueue[cam],cam))
-            p_classifier.daemon = True
-            p_classifier.start()
-            time.sleep(2.0)
-            #p_classifier.join()
+        p_classifier = Process(target=classify_frame, args=(net,inputQueue[cam],rectanglesQueue[cam],cam))
+        p_classifier.daemon = True
+        p_classifier.start()
+        time.sleep(2.0)
+       #p_classifier.join()
         logger.info("p_classifiers for cam:" +str(cam)+ " started")
         cam += 1
     return p_get_frame
@@ -478,9 +482,10 @@ def initialize_video_streams(url=None):
             else: 
                  vs = cv2.VideoCapture(arg)
                  #change_res(vs,640,480)
-
+                 
             logger.info("[INFO] Video stream: " + str(i) + " vs:" + str(vs) )
             vss.append(vs)
+            logger.info("new {} stream: {} for url {} added ".format(i, vss, arg))
             camright.append(args.get('cam_right'+ str(i),None))
             camleft.append(args.get('cam_left'+ str(i),None))
             CameraMove(camright[i],camleft[i])
@@ -494,7 +499,7 @@ def initialize_video_streams(url=None):
 
 
     # Start process
-    time.sleep(4.0)
+    time.sleep(3.0)
     fps = FPS().start()
     
 
@@ -528,7 +533,7 @@ def index():
     for i in range(len(videos)):
         video_urls.append((videos[i][0],'video_feed?cam='+str(videos[i][0])))
         images_filenames.append(db.select_last_frames(conn,i,IMG_PAGINATOR))
-
+    logger.info("video_urls: {}".format(video_urls))
     """ Delete old frames wil be here """
     return render_template('index.html', **locals())
 
@@ -628,7 +633,7 @@ def ping_video_url(url):
     return flag
 
 
-@app.route('/urls',methods=['GET'])
+@app.route('/urls',methods=['GET','POST'])
 @cross_origin(origin='http://localhost:5000')
 def urls():
     """Add/Delete/Update a new video url, list all availabe urls."""
@@ -639,8 +644,9 @@ def urls():
     if add_url is not None:
         if ping_video_url(add_url):
             initialize_video_streams(add_url)
-            #return redirect("/", code=303)
-            return Response('{"message":"URL added  successfully"}', mimetype='text/plain')
+            startOneStreamProcesses(cam=len(videos)-1)
+            #return index() #redirect("/")
+            return Response('{"message":"URL added  successfully , video start processing"}', mimetype='text/plain')
     if list_url is not None:
        return Response(json.dumps(videos), mimetype='text/plain')
     if delete_url is not None:
