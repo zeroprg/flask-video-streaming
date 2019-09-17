@@ -18,11 +18,15 @@ var URLlist = React.createClass({
         document.getElementById("section"+arg2).style.display ='none';
     },
 
-    buttonClickShow(data, arg2) {
-        console.log("arg2:" + arg2); 
+    buttonClickShow(data, cam) {
+        console.log("cam:" + cam); 
         console.log("data:" + data);
-        document.getElementById("section"+arg2).style.display ='block';
-        window.moreparams(arg2, "0-1");
+        elem = document.getElementById("section"+cam);
+        elem.style.display ='block'
+        window.moreparams(cam, "0-1");
+        window.showmore(1,cam,0);
+        elem.scrollIntoView();
+
 /*
         fetch(data)
              .then(response => {
@@ -79,13 +83,13 @@ var URLlist = React.createClass({
                     <li key={data[0]}>
                         <a href={data[1]}>{data[1]}</a>
                         &nbsp;
-                        <a href="#" onClick={() => this.buttonClickShow(this.state.url+data[1] , data[0])} className="btn btn-primary a-btn - slide - text">
+                        <a onClick={() => this.buttonClickShow(this.state.url+data[1] , data[0])} className="btn btn-primary a-btn - slide - text">
                             <span className="glyphicon glyphicon-play-circle" aria-hidden="true"></span>
                             <span>
                                 <strong>Show</strong>
                             </span>
                         </a>
-                        <a href="#" onClick={() =>  this.buttonClickHide(this.state.url+data[1] , data[0])} className="btn btn-primary a-btn - slide - text">
+                        <a  onClick={() =>  this.buttonClickHide(this.state.url+data[1] , data[0])} className="btn btn-primary a-btn - slide - text">
                             <span className="glyphicon glyphicon-" aria-hidden="true"></span>
                             <span>
                                 <strong>Hide</strong>

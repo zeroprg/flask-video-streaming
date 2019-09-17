@@ -67,7 +67,7 @@ NUMBER_OF_FILES = 10
 HASH_DELTA = 56
 IMAGES_BUFFER = 100
 RECOGNZED_FRAME = 1
-THREAD_NUMBERS  = 3 #must be less then 4 for PI
+THREAD_NUMBERS  = 1 #must be less then 4 for PI
 videos = []
 camleft = []
 camright =[]
@@ -151,8 +151,8 @@ def do_statistic(conn,cam,hashes):
     db.insert_statistic(conn,params)
 
 
-DIMENSION_X = 285
-DIMENSION_Y = 220
+DIMENSION_X = 300 #285
+DIMENSION_Y = 300 #220
 
 def classify_frame( net, inputQueue,rectanglesQueue,cam):
         conf_threshold = float(args["confidence"])
@@ -237,7 +237,7 @@ def classify_frame( net, inputQueue,rectanglesQueue,cam):
                                 if (hashes).get(key, None)== None:
                                     # count objects for last sec, last 5 sec and last minute
                                     logger.debug('ImageHashCodesCountByTimer init by hash: {}'.format(hash))
-                                    hashes[key] = ImageHashCodesCountByTimer(1,180, (10,40,180))
+                                    hashes[key] = ImageHashCodesCountByTimer(1,30, (10,20,30))
                                     if hashes[key].add(hash) == False:  continue
                                     filename = str(cam)+'_' + key +'_'+ str(hash)+ '.jpg'
                                 else:
@@ -304,7 +304,7 @@ def get_frame(vss,video_urls,inputQueue, imagesQueue, rectanglesQueue, cam):
             flag,frame = vss.read()
             if not flag:
                vss = cv2.VideoCapture(video_urls[1])
-               #change_res(vss,640,480)
+               change_res(vss,640,480)
                continue
 
         inputQueue.put(frame)
@@ -481,7 +481,7 @@ def initialize_video_streams(url=None):
                 vs = None
             else: 
                  vs = cv2.VideoCapture(arg)
-                 #change_res(vs,640,480)
+                 change_res(vs,640,480)
                  
             logger.info("[INFO] Video stream: " + str(i) + " vs:" + str(vs) )
             vss.append(vs)
