@@ -52,10 +52,10 @@ CLASSES = ["background", "aeroplane", "bicycle", "bird", "boat",
 	"bottle", "bus", "car", "cat", "chair", "cow", "diningtable",
 	"dog", "horse", "motorbike", "person", "pottedplant", "sheep",
 	"sofa", "train", "tvmonitor"]
-LOOKED1 = { "car": [], "train":[],"bus":[], "person": [],  }
-LOOKED2 = { "car": [], "train":[],"bus":[], "person": [],  }
+LOOKED1 = {  "person": [],  }
+LOOKED2 = {  "person": [],  }
 
-subject_of_interes = ["person","car","bus", "train"]
+subject_of_interes = [ "person"]
 hashes = {}
 COLORS = np.random.uniform(0, 255, size=(len(CLASSES), 3))
 

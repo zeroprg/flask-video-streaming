@@ -28,7 +28,7 @@ def select_all_objects(conn):
     :return:
     """
     cur = conn.cursor()
-    cur.execute("SELECT hashcode, currentdate, currentime, type, x_dim, y_dim FROM objects")
+    cur.execute("SELECT hashcode, currentdate, currentime, type, x_dim, y_dim FROM objects  ORDER BY currentime DESC ")
  
     rows = cur.fetchall()
  
@@ -61,7 +61,7 @@ def select_statistic_by_time(conn, cam, time1, time2):
     conn.row_factory= sqlite3.Row
     cur = conn.cursor()
 
-    cur.execute("SELECT * FROM statistic WHERE cam=? AND currentime BETWEEN ? and ?", (cam,time1,time2,))
+    cur.execute("SELECT * FROM statistic WHERE cam=? AND currentime BETWEEN ? and ? ORDER BY currentime ASC", (cam,time1,time2,))
     # convert row object to the dictionary
     rows = [dict(r) for r in cur.fetchall()]
 
@@ -93,7 +93,7 @@ def select_frame_by_time(conn, cam, time1, time2):
     """
     conn.row_factory= sqlite3.Row
     cur = conn.cursor()
-    cur.execute("SELECT cam, hashcode, currentdate, currentime, type, frame FROM objects WHERE cam=? AND currentime BETWEEN ? and ?", (cam,time1,time2,))
+    cur.execute("SELECT cam, hashcode, currentdate, currentime, type, frame FROM objects WHERE cam=? AND currentime BETWEEN ? and ? ORDER BY currentime DESC", (cam,time1,time2,))
  
     rows = [dict(r) for r in cur.fetchall()]
  
