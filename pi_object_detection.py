@@ -35,9 +35,9 @@ import base64
 from flask import Flask, render_template, Response, request,redirect,jsonify
 from flask_cors  import cross_origin, CORS
 # import the necessary packages
-#from picamera.array import PiRGBArray
-#from picamera import PiCamera
-#import picamera
+from picamera.array import PiRGBArray
+from picamera import PiCamera
+import picamera
 
 logger = logging.getLogger('logger')
 logger.setLevel(logging.INFO)
@@ -71,7 +71,7 @@ THREAD_NUMBERS  = 1 #must be less then 4 for PI
 videos = []
 camleft = []
 camright =[]
-piCameraResolution = (640,480)# (1080,720) (1296,972)
+piCameraResolution = (1080,720) # (1296,972)
 piCameraRate=24
 IMG_PAGINATOR = 120
 SQLITE_DB = "framedata.db"
