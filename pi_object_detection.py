@@ -1,3 +1,4 @@
+
 # import the necessary packages
 from imutils.video import VideoStream
 from imutils.video import FPS
@@ -39,6 +40,7 @@ from picamera.array import PiRGBArray
 from picamera import PiCamera
 import picamera
 
+
 logger = logging.getLogger('logger')
 logger.setLevel(logging.INFO)
 console = logging.StreamHandler()
@@ -52,28 +54,28 @@ CLASSES = ["background", "aeroplane", "bicycle", "bird", "boat",
 	"bottle", "bus", "car", "cat", "chair", "cow", "diningtable",
 	"dog", "horse", "motorbike", "person", "pottedplant", "sheep",
 	"sofa", "train", "tvmonitor"]
-LOOKED1 = {  "person": [],  }
-LOOKED2 = {  "person": [],  }
+LOOKED1 = {"cat":[],"dog":[],"car":[],"person":[]}
+#LOOKED2 = {  "cat":[],"dog":[],"bird":[],"person": [],  }
 
-subject_of_interes = [ "person"]
+subject_of_interes = ["cat","dog","car","person"]
 hashes = {}
 COLORS = np.random.uniform(0, 255, size=(len(CLASSES), 3))
 
 
-DRAW_RECTANGLES = True
+DRAW_RECTANGLES = False
 DELETE_FILES_LATER = 6*60*60 # sec  (8hours)
 ENCODING = "utf-8"
 NUMBER_OF_FILES = 10
-HASH_DELTA = 56
-IMAGES_BUFFER = 100
+HASH_DELTA = 46 # bigger number  shows diff
+IMAGES_BUFFER = 80
 RECOGNZED_FRAME = 1
-THREAD_NUMBERS  = 1 #must be less then 4 for PI
+THREAD_NUMBERS  = 2 #must be less then 4 for PI
 videos = []
 camleft = []
 camright =[]
-piCameraResolution = (1296,976)  # (1080,720) # (1296,972)
-piCameraRate=24
-IMG_PAGINATOR = 120
+piCameraResolution = (1024,768) #(640,480)  #(1920,1080) #(1080,720) # (1296,972)
+piCameraRate=10
+IMG_PAGINATOR = 40
 SQLITE_DB = "framedata.db"
 
 class CameraMove:
@@ -151,8 +153,8 @@ def do_statistic(conn,cam,hashes):
     db.insert_statistic(conn,params)
 
 
-DIMENSION_X = 300 #285
-DIMENSION_Y = 300 #220
+DIMENSION_X = 300
+DIMENSION_Y = 300
 
 def classify_frame( net, inputQueue,rectanglesQueue,cam):
         conf_threshold = float(args["confidence"])
@@ -174,14 +176,6 @@ def classify_frame( net, inputQueue,rectanglesQueue,cam):
                 #print(rectanglesQueue)
                 try:
                    frame = inputQueue.get(block=False)
-                   # recursion bad idea
-                   #if inputQueue.qsize()>0:
-                   #   classify_frame(net,inputQueue,rectanglesQueue,cam)
-                      #p_classifier.daemon = True
-                      #p_classifier.start()  
-                   # stop unnecessary thread  
-                   #else: return
-
                 except: continue
                 _frame = cv2.resize(frame, (DIMENSION_X, DIMENSION_Y))
                 blob = cv2.dnn.blobFromImage(_frame, 0.007843,
