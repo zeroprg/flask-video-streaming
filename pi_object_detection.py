@@ -35,10 +35,6 @@ import base64
 
 from flask import Flask, render_template, Response, request,redirect,jsonify
 from flask_cors  import cross_origin, CORS
-# import the necessary packages
-from picamera.array import PiRGBArray
-from picamera import PiCamera
-import picamera
 
 
 logger = logging.getLogger('logger')
@@ -54,10 +50,9 @@ CLASSES = ["background", "aeroplane", "bicycle", "bird", "boat",
 	"bottle", "bus", "car", "cat", "chair", "cow", "diningtable",
 	"dog", "horse", "motorbike", "person", "pottedplant", "sheep",
 	"sofa", "train", "tvmonitor"]
-LOOKED1 = {"cat":[],"dog":[],"car":[],"person":[]}
-#LOOKED2 = {  "cat":[],"dog":[],"bird":[],"person": [],  }
+LOOKED1 = {"cat":[],"dog":[],"car":[],"person":[],"bus":[],"bicycle":[],"train":[]}
 
-subject_of_interes = ["cat","dog","car","person"]
+subject_of_interes = ["cat","dog","car","person", "bus","bicycle","train"]
 hashes = {}
 COLORS = np.random.uniform(0, 255, size=(len(CLASSES), 3))
 
@@ -66,10 +61,10 @@ DRAW_RECTANGLES = False
 DELETE_FILES_LATER = 6*60*60 # sec  (8hours)
 ENCODING = "utf-8"
 NUMBER_OF_FILES = 10
-HASH_DELTA = 46 # bigger number  shows diff
-IMAGES_BUFFER = 80
+HASH_DELTA = 45 # bigger number  shows diff
+IMAGES_BUFFER = 55
 RECOGNZED_FRAME = 1
-THREAD_NUMBERS  = 2 #must be less then 4 for PI
+THREAD_NUMBERS  = 5 #must be less then 4 for PI
 videos = []
 camleft = []
 camright =[]
@@ -231,7 +226,7 @@ def classify_frame( net, inputQueue,rectanglesQueue,cam):
                                 if (hashes).get(key, None)== None:
                                     # count objects for last sec, last 5 sec and last minute
                                     logger.debug('ImageHashCodesCountByTimer init by hash: {}'.format(hash))
-                                    hashes[key] = ImageHashCodesCountByTimer(1,30, (10,20,30))
+                                    hashes[key] = ImageHashCodesCountByTimer(1,20, (3,10,20))
                                     if hashes[key].add(hash) == False:  continue
                                     filename = str(cam)+'_' + key +'_'+ str(hash)+ '.jpg'
                                 else:
@@ -473,10 +468,13 @@ def initialize_video_streams(url=None):
         if not (i,arg) in videos:
             if arg  == 'picam':
                 vs = None
-            else: 
+                # import the necessary packages
+                from picamera.array import PiRGBArray
+                from picamera import PiCamera
+                import picamera
+            else:
                  vs = cv2.VideoCapture(arg)
                  change_res(vs,640,480)
-                 
             logger.info("[INFO] Video stream: " + str(i) + " vs:" + str(vs) )
             vss.append(vs)
             logger.info("new {} stream: {} for url {} added ".format(i, vss, arg))
