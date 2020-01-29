@@ -50,9 +50,9 @@ CLASSES = ["background", "aeroplane", "bicycle", "bird", "boat",
 	"bottle", "bus", "car", "cat", "chair", "cow", "diningtable",
 	"dog", "horse", "motorbike", "person", "pottedplant", "sheep",
 	"sofa", "train", "tvmonitor"]
-LOOKED1 = {"cat":[],"dog":[],"car":[],"person":[],"bus":[],"bicycle":[],"train":[]}
+LOOKED1 = {"car":[],"person":[],"bus":[],"bicycle":[]}
 
-subject_of_interes = ["cat","dog","car","person", "bus","bicycle","train"]
+subject_of_interes = ["car","person", "bus","bicycle"]
 hashes = {}
 COLORS = np.random.uniform(0, 255, size=(len(CLASSES), 3))
 
@@ -61,8 +61,8 @@ DRAW_RECTANGLES = False
 DELETE_FILES_LATER = 6*60*60 # sec  (8hours)
 ENCODING = "utf-8"
 NUMBER_OF_FILES = 10
-HASH_DELTA = 45 # bigger number  shows diff
-IMAGES_BUFFER = 55
+HASH_DELTA = 54 # bigger number  shows diff
+IMAGES_BUFFER = 45
 RECOGNZED_FRAME = 1
 THREAD_NUMBERS  = 5 #must be less then 4 for PI
 videos = []
@@ -226,15 +226,16 @@ def classify_frame( net, inputQueue,rectanglesQueue,cam):
                                 if (hashes).get(key, None)== None:
                                     # count objects for last sec, last 5 sec and last minute
                                     logger.debug('ImageHashCodesCountByTimer init by hash: {}'.format(hash))
-                                    hashes[key] = ImageHashCodesCountByTimer(1,20, (3,10,20))
+                                    hashes[key] = ImageHashCodesCountByTimer(1,30, (3,10,30))
                                     if hashes[key].add(hash) == False:  continue
-                                    filename = str(cam)+'_' + key +'_'+ str(hash)+ '.jpg'
+                                    #filename = str(cam)+'_' + key +'_'+ str(hash)+ '.jpg'
                                 else:
                                      #if not is_hash_the_same(hash,hashes[key]): hashes[key].add(hash)
                                      if hashes[key].add(hash) == False:  continue
                                      label2 =''
                                      for key in hashes:
-                                        label2 += key+'(s):' + str(hashes[key].getCountedObjects())
+                                        if hashes[key].getCountedObjects() == 0: continue
+                                        label2 += ' ' + key+':' + str(hashes[key].getCountedObjects())
                                         #label2 += key+'(s):' + str(hashes[key].counted[0]) + ',' + str(hashes[key].counted[1]) + ',' + str(hashes[key].counted[2]) + ' '
 
 
@@ -246,11 +247,11 @@ def classify_frame( net, inputQueue,rectanglesQueue,cam):
                                 # process further only  if image is really different from other ones
                                 if key in subject_of_interes:
                                     #use it if you 100% sure you need save this image on disk
-                                    filename = str(cam)+'_' + key +'_'+ str(hash)+ '.jpg'
+                                    #filename = str(cam)+'_' + key +'_'+ str(hash)+ '.jpg'
                                     x_dim = endX-startX
                                     y_dim = endY-startY
                                     fontScale = min(y_dim, x_dim)/280
-                                    cv2.putText(crop_img_data,str(datetime.datetime.now().strftime('%H:%M %d/%m/%y')),(1,15),cv2.FONT_HERSHEY_SIMPLEX,fontScale,(0,255,0),1)
+                                    if fontScale > 4: cv2.putText(crop_img_data,str(datetime.datetime.now().strftime('%H:%M %d/%m/%y')),(1,15),cv2.FONT_HERSHEY_SIMPLEX,fontScale,(0,255,0),1)
                                     now = datetime.datetime.now()
                                     day = "{date:%Y-%m-%d}".format(date=now)
                                     db.insert_frame(conn, hash, day, time.time(), key, crop_img_data, x_dim, y_dim, cam)

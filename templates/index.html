@@ -117,20 +117,31 @@
         </section>
     </header>
 {% for cam,video_url in video_urls %}
-<section id="section{{cam}}" style="display:none">
+<section id="section{{cam}}" style="display:block">
 <!--  <div class="container">  -->
  <div class="row">
    <div class="col-sm-12">
       <div class="header">
-        <select name="Objects log"  onchange="moreparams({{cam}}, this.value)">
+	<!---select class="mdb-select md-form colorful-select dropdown-danger" multiple  onchange="moreparams({{cam}}, this.value)>
+	  <option value="" disabled selected>Choose your country</option>
+	  <option value="1">person</option>
+	  <option value="2">car</option>
+	  <option value="3">bus</option>
+	  <option value="3">dog</option>
+	  <option value="3">cat</option>
+	</select>
+	<label class="mdb-main-label">Label example</label>
+        <button class="btn-save btn btn-danger btn-sm">Save</button -->
+	
+        <select class="mdb-select md-form colorful-select dropdown-danger" name="Objects log"  onchange="moreparams({{cam}}, this.value)">
               <option value="0-1">Show statistic for last hour</option>
-              <option value="0-3"> for last 3hour</option>
+              <option value="0-3"> for last 3 hour</option>
               <option value="0-6"> for last 6 hours</option>
               <option value="0-12"> for last 12 hours</option>
               <option value="12-24"> between 12h and 24h back (yersterday)</option>
               <option value="24-48"> between 24h and 48h back (day before yersterday)</option>
               <option value="48-100">all records from 48h and 100h back</option>	     
-    	  </select>
+    	</select>
        
     <!--	<span class="win-pos"></span> --> <!-- please use it in master page to get the position. -->
     <!--    <div class="popup-win"></div> --><!-- this is for popup area, please use your content inside this. -->
@@ -491,12 +502,13 @@ function showmore(direction, cam, _start)
   MAX_BUFFER = 10000;
   BEAT = 60;
   PLOT_TYPE1 = 'bar';
-  PLOT_TYPE2 = 'scatter';
+  PLOT_TYPE2 = 'bar';//'scatter';
   MODE2 = 'lines';
-//  window.setInterval(function(){
-//      moreparams(0, "0-1");  //calling every 30 second
-//  }, BEAT*1000);
- 
+ {% for cam,video_url in video_urls %}
+  window.setInterval(function(){
+      moreparams({{cam}}, "0-1");  //calling every second
+  }, BEAT*100);
+ {% endfor %}
   
 
  var populate_lastparams = function(cam_to_populate, secs) {

@@ -43,6 +43,7 @@ def insert_statistic(conn, params):
         length = len(param['hashcodes'])
        # for i in range(length): hashcodes += str(param['hashcodes'][i]) + ',' if i < length - 1 else str(param['hashcodes'][i])
         hashcodes = str(param['hashcodes'])
+    if param['y'] == 0: return # never store dummy noise
     try:
         cur.execute("INSERT INTO statistic(type,currentime,y,text,hashcodes,cam) VALUES (?, ?, ?, ?, ?, ?)", (param['name'], param['x'], param['y'], param['text'], hashcodes, param['cam']))
         conn.commit()
