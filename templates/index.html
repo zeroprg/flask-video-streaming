@@ -504,10 +504,12 @@ function showmore(direction, cam, _start)
   PLOT_TYPE1 = 'bar';
   PLOT_TYPE2 = 'bar';//'scatter';
   MODE2 = 'lines';
+
  {% for cam,video_url in video_urls %}
-  window.setInterval(function(){
+  fun{{cam}} = function(){
       moreparams({{cam}}, "0-1");  //calling every second
-  }, BEAT*100);
+  }
+  window.setInterval(fun{{cam}}, BEAT*100);
  {% endfor %}
   
 
@@ -534,7 +536,7 @@ function showmore(direction, cam, _start)
                      history_data[cam][i].x.push(date);
                      history_data[cam][i].y.push(tr.y);
 //                     history_data[cam][i].filenames = tr.hashcodes[0];                       
-                     history_data[cam][i].text.push(tr.text + ' cam:' + cam);
+//                     history_data[cam][i].text.push(tr.text + ' cam:' + cam);
                      history_data[cam][i].type = PLOT_TYPE2;
                      history_data[cam][i].mode = MODE2;
                    } else {
@@ -622,8 +624,6 @@ function showmore(direction, cam, _start)
   {% for cam,video_url in video_urls %}
      data.push([]);
      history_data.push([]);
-     //window.setTimeout( moreparams, 15000*{{cam}},  {{cam}} , "0-1");
-
   {% endfor %}
 
 </script>
