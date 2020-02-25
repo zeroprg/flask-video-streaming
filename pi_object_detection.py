@@ -58,10 +58,11 @@ COLORS = np.random.uniform(0, 255, size=(len(CLASSES), 3))
 
 
 DRAW_RECTANGLES = True
+DNN_TARGET_MYRIAD = False
 DELETE_FILES_LATER = 6*60*60 # sec  (8hours)
 ENCODING = "utf-8"
 NUMBER_OF_FILES = 10
-HASH_DELTA = 60 # bigger number  more precise object's count
+HASH_DELTA = 64 # bigger number  more precise object's count
 IMAGES_BUFFER = 45
 RECOGNZED_FRAME = 1
 THREAD_NUMBERS  = 5 #must be less then 4 for PI
@@ -160,19 +161,17 @@ def classify_frame(inputQueue,rectanglesQueue, confidence, prototxt, model, cam)
         # child Thread reference
         net = cv2.dnn.readNetFromCaffe(prototxt, model)
         # specify the target device as the Myriad processor on the NCS
-        #net.setPreferableTarget(cv2.dnn.DNN_TARGET_MYRIAD)
+        if DNN_TARGET_MYRIAD:
+            net.setPreferableTarget(cv2.dnn.DNN_TARGET_MYRIAD)
+        else:
+            net.setPreferableTarget(cv2.dnn.DNN_TARGET_OPENCL)
+
         p_classifier = None
         while True:
 
-                # check to see if there is a frame in our input queue
-                #while not inputQueue.empty():
-                # grab the frame from the input queue, resize it, and
-                # construct a blob from it
-                #logger.debug('inputQueue.qsize()',inputQueue.qsize())
-                #print(inputQueue)
-                #print(rectanglesQueue)
                 try:
                    frame = inputQueue.get(block=False)
+                   if frame is None: continue
                 except: continue
                 _frame = cv2.resize(frame, (DIMENSION_X, DIMENSION_Y))
                 blob = cv2.dnn.blobFromImage(_frame, 0.007843,
