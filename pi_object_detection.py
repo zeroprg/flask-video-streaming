@@ -57,11 +57,11 @@ hashes = {}
 COLORS = np.random.uniform(0, 255, size=(len(CLASSES), 3))
 
 
-DRAW_RECTANGLES = False
+DRAW_RECTANGLES = True
 DELETE_FILES_LATER = 6*60*60 # sec  (8hours)
 ENCODING = "utf-8"
 NUMBER_OF_FILES = 10
-HASH_DELTA = 54 # bigger number  shows diff
+HASH_DELTA = 60 # bigger number  more precise object's count
 IMAGES_BUFFER = 45
 RECOGNZED_FRAME = 1
 THREAD_NUMBERS  = 5 #must be less then 4 for PI
@@ -151,14 +151,16 @@ def do_statistic(conn,cam,hashes):
 DIMENSION_X = 300
 DIMENSION_Y = 300
 
-def classify_frame( net, inputQueue,rectanglesQueue,cam):
-        conf_threshold = float(args["confidence"])
+def classify_frame(inputQueue,rectanglesQueue, confidence, prototxt, model, cam):
         hashes = {}
         conn = db.create_connection(SQLITE_DB)
         # keep looping
         frame = None
-        label2="No data"
+        label2 = "No data"
         # child Thread reference
+        net = cv2.dnn.readNetFromCaffe(prototxt, model)
+        # specify the target device as the Myriad processor on the NCS
+        #net.setPreferableTarget(cv2.dnn.DNN_TARGET_MYRIAD)
         p_classifier = None
         while True:
 
@@ -187,10 +189,9 @@ def classify_frame( net, inputQueue,rectanglesQueue,cam):
                         for i in np.arange(0, detections.shape[2]):
                                 # extract the confidence (i.e., probability) associated
                                 # with the prediction
-                                confidence = detections[0, 0, i, 2]
                                 # filter out weak detections by ensuring the `confidence`
                                 # is greater than the minimum confidence
-                                if confidence < conf_threshold: continue
+                                if  detections[0, 0, i, 2] < confidence: continue
 
                                 # otherwise, extract the index of the class label from
                                 # the `detections`, then compute the (x, y)-coordinates
@@ -277,31 +278,27 @@ def change_res(camera, width, height):
     camera.set(4, height)
 
 
-def get_frame(vss,video_urls,inputQueue, imagesQueue, rectanglesQueue, cam):
+def get_frame(video_urls,inputQueue, imagesQueue, rectanglesQueue, cam):
     # loop over the frames from the video stream
     detections = None
     label2 = 'No data'
+    if 'picam' == video_urls[1]:
+        video_s = VideoStream(usePiCamera=True,resolution=piCameraResolution,framerate=piCameraRate).start()
+        time.sleep(2.0)
+    else:
+        # grab the frame from the threaded video stream, resize it, and
+        # grab its dimensions
+        video_s = cv2.VideoCapture(video_urls[1])
+
+
 
     while  True:
-        if 'picam' == video_urls[1]:
-            if vss == None:
-                vss = VideoStream(usePiCamera=True,resolution=piCameraResolution,framerate=piCameraRate).start()
-                time.sleep(2.0)
-            frame = vss.read()
-        else:
-    # grab the frame from the threaded video stream, resize it, and
-    # grab its dimensions
-            flag,frame = vss.read()
-            if not flag:
-               vss = cv2.VideoCapture(video_urls[1])
-               change_res(vss,640,480)
-               continue
+        flag,frame = video_s.read()
+        if not flag:
+            video_s = cv2.VideoCapture(video_urls[1])
+            continue
 
         inputQueue.put(frame)
-        #time_s = time.time()
-        #b = frame.tobytes()
-        #cur.execute("INSERT INTO video(time,frame) VALUES(%s , %s)", (time_s, b))
-        #conn.commit()
 
         if imagesQueue.qsize()>IMAGES_BUFFER-20:
            imagesQueue.get()
@@ -311,7 +308,7 @@ def get_frame(vss,video_urls,inputQueue, imagesQueue, rectanglesQueue, cam):
         label2 = draw_metadata_onscreen(frame, rectanglesQueue, label2)
         cv2.putText(frame, label2, (10,23), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (0,255,0), 2)
         # if perfomance issue on Raspberry Pi comment it
-        if not args["not_show_in_window"]:
+        if not "not_show_in_window" in args.keys():
             cv2.imshow("Camera" + str(cam), frame)
             key=cv2.waitKey(1) & 0xFF
 
@@ -365,7 +362,7 @@ imagesQueue = []
 
 detections = None
 vs = None
-vss = []
+
 fps = None
 p_get_frame = None
 
@@ -412,14 +409,12 @@ def configure(args):
 
 
 
-def startOneStreamProcesses(cam):
-        p_get_frame = Process(target=get_frame, args=(vss[cam],videos[cam],inputQueue[cam],imagesQueue[cam],rectanglesQueue[cam],cam))
+def startOneStreamProcesses( confidence, prototxt, model, cam):
+        p_get_frame = Process(target=get_frame, args=(videos[cam],inputQueue[cam],imagesQueue[cam],rectanglesQueue[cam],cam))
         p_get_frame.daemon = True
         p_get_frame.start()
-        
-        net = cv2.dnn.readNetFromCaffe(args["prototxt"], args["model"])
 
-        p_classifier = Process(target=classify_frame, args=(net,inputQueue[cam],rectanglesQueue[cam],cam))
+        p_classifier = Process(target=classify_frame, args=(inputQueue[cam],rectanglesQueue[cam], float(confidence), prototxt, model, cam))
         p_classifier.daemon = True
         p_classifier.start()
 
@@ -428,7 +423,6 @@ def start():
     # load our serialized model from disk
     configure(args)
     logger.info("[INFO] loading model...")
-    net = cv2.dnn.readNetFromCaffe(args["prototxt"], args["model"])
     # construct a child process *indepedent* from our main process of
     # execution
     logger.info("[INFO] starting process...")
@@ -438,12 +432,12 @@ def start():
 
     initialize_video_streams()
 
-    for cam in range(len(vss)):
-        p_get_frame = Process(target=get_frame, args=(vss[cam],videos[cam],inputQueue[cam],imagesQueue[cam],rectanglesQueue[cam],cam))
+    for cam in range(len(videos)):
+        p_get_frame = Process(target=get_frame, args=(videos[cam],inputQueue[cam],imagesQueue[cam],rectanglesQueue[cam],cam))
         p_get_frame.daemon = True
         p_get_frame.start()
        #p_get_frame.join()
-        p_classifier = Process(target=classify_frame, args=(net,inputQueue[cam],rectanglesQueue[cam],cam))
+        p_classifier = Process(target=classify_frame, args=(inputQueue[cam],rectanglesQueue[cam], float(args["confidence"]), args["prototxt"], args["model"], cam))
         p_classifier.daemon = True
         p_classifier.start()
         time.sleep(2.0)
@@ -467,18 +461,6 @@ def initialize_video_streams(url=None):
         arg = args.get('video_file'+ str(i),None)
     while arg is not None:
         if not (i,arg) in videos:
-            if arg  == 'picam':
-                vs = None
-                # import the necessary packages
-                from picamera.array import PiRGBArray
-                from picamera import PiCamera
-                import picamera
-            else:
-                 vs = cv2.VideoCapture(arg)
-                 change_res(vs,640,480)
-            logger.info("[INFO] Video stream: " + str(i) + " vs:" + str(vs) )
-            vss.append(vs)
-            logger.info("new {} stream: {} for url {} added ".format(i, vss, arg))
             camright.append(args.get('cam_right'+ str(i),None))
             camleft.append(args.get('cam_left'+ str(i),None))
             CameraMove(camright[i],camleft[i])
@@ -637,7 +619,7 @@ def urls():
     if add_url is not None:
         if ping_video_url(add_url):
             initialize_video_streams(add_url)
-            startOneStreamProcesses(cam=len(videos)-1)
+            startOneStreamProcesses( args["confidence"], args["prototxt"], args["model"], cam=len(videos)-1)
             #return index() #redirect("/")
             return Response('{"message":"URL added  successfully , video start processing"}', mimetype='text/plain')
     if list_url is not None:
