@@ -62,7 +62,7 @@ DNN_TARGET_MYRIAD = False
 DELETE_FILES_LATER = 6*60*60 # sec  (8hours)
 ENCODING = "utf-8"
 NUMBER_OF_FILES = 10
-HASH_DELTA = 64 # bigger number  more precise object's count
+HASH_DELTA = 60 # bigger number  more precise object's count
 IMAGES_BUFFER = 45
 RECOGNZED_FRAME = 1
 THREAD_NUMBERS  = 5 #must be less then 4 for PI
@@ -174,6 +174,7 @@ def classify_frame(inputQueue,rectanglesQueue, confidence, prototxt, model, cam)
                    if frame is None: continue
                 except: continue
                 _frame = cv2.resize(frame, (DIMENSION_X, DIMENSION_Y))
+                #_frame = imutils.resize(frame,DIMENSION_X)
                 blob = cv2.dnn.blobFromImage(_frame, 0.007843,
                         (DIMENSION_X, DIMENSION_Y), (127.5,127.5,127.5), True)
                 # set the blob as input to our deep learning object
@@ -251,7 +252,7 @@ def classify_frame(inputQueue,rectanglesQueue, confidence, prototxt, model, cam)
                                     x_dim = endX-startX
                                     y_dim = endY-startY
                                     fontScale = min(y_dim, x_dim)/280
-                                    if fontScale > 4: cv2.putText(crop_img_data,str(datetime.datetime.now().strftime('%H:%M %d/%m/%y')),(1,15),cv2.FONT_HERSHEY_SIMPLEX,fontScale,(0,255,0),1)
+                                    if fontScale > 0.15: cv2.putText(crop_img_data,str(datetime.datetime.now().strftime('%H:%M %d/%m/%y')),(1,15),cv2.FONT_HERSHEY_SIMPLEX,fontScale,(0,255,0),1)
                                     now = datetime.datetime.now()
                                     day = "{date:%Y-%m-%d}".format(date=now)
                                     db.insert_frame(conn, hash, day, time.time(), key, crop_img_data, x_dim, y_dim, cam)
@@ -292,11 +293,9 @@ def get_frame(video_urls,inputQueue, imagesQueue, rectanglesQueue, cam):
 
 
     while  True:
-        flag,frame = video_s.read()
-        if not flag:
-            video_s = cv2.VideoCapture(video_urls[1])
-            continue
 
+        if 'picam' == video_urls[1]: frame = video_s.read()
+        else: flag,frame = video_s.read()
         inputQueue.put(frame)
 
         if imagesQueue.qsize()>IMAGES_BUFFER-20:
