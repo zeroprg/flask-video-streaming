@@ -57,8 +57,8 @@ hashes = {}
 COLORS = np.random.uniform(0, 255, size=(len(CLASSES), 3))
 
 
-DRAW_RECTANGLES = True
-DNN_TARGET_MYRIAD = False
+DRAW_RECTANGLES = False
+DNN_TARGET_MYRIAD = True
 DELETE_FILES_LATER = 6*60*60 # sec  (8hours)
 ENCODING = "utf-8"
 NUMBER_OF_FILES = 10
@@ -294,8 +294,12 @@ def get_frame(video_urls,inputQueue, imagesQueue, rectanglesQueue, cam):
 
     while  True:
 
-        if 'picam' == video_urls[1]: frame = video_s.read()
-        else: flag,frame = video_s.read()
+        if 'picam' == video_urls[1]:
+            frame = video_s.read()
+        else:
+            flag,frame = video_s.read()
+        if frame is None:
+            continue
         inputQueue.put(frame)
 
         if imagesQueue.qsize()>IMAGES_BUFFER-20:
