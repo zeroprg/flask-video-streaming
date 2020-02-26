@@ -57,7 +57,7 @@ hashes = {}
 COLORS = np.random.uniform(0, 255, size=(len(CLASSES), 3))
 
 
-DRAW_RECTANGLES = False
+DRAW_RECTANGLES = True
 DNN_TARGET_MYRIAD = True
 DELETE_FILES_LATER = 6*60*60 # sec  (8hours)
 ENCODING = "utf-8"
@@ -298,6 +298,9 @@ def get_frame(video_urls,inputQueue, imagesQueue, rectanglesQueue, cam):
             frame = video_s.read()
         else:
             flag,frame = video_s.read()
+        if not flag : 
+            video_s = cv2.VideoCapture(video_urls[1])
+            continue
         if frame is None:
             continue
         inputQueue.put(frame)
