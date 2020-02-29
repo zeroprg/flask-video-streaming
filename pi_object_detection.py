@@ -1,5 +1,4 @@
 
-
 # import the necessary packages
 from imutils.video import VideoStream
 from imutils.video import FPS
@@ -59,19 +58,19 @@ COLORS = np.random.uniform(0, 255, size=(len(CLASSES), 3))
 
 
 DRAW_RECTANGLES = True
-DNN_TARGET_MYRIAD = True
+DNN_TARGET_MYRIAD = False
 DELETE_FILES_LATER = 6*60*60 # sec  (8hours)
 ENCODING = "utf-8"
 NUMBER_OF_FILES = 10
-HASH_DELTA = 60 # bigger number  more precise object's count
-IMAGES_BUFFER = 45
+HASH_DELTA = 62 # bigger number  more precise object's count
+IMAGES_BUFFER = 55
 RECOGNZED_FRAME = 1
-THREAD_NUMBERS  = 5 #must be less then 4 for PI
+THREAD_NUMBERS  = 3 #must be less then 4 for PI
 videos = []
 camleft = []
 camright =[]
-piCameraResolution =(640,480)# (1024,768) #(640,480)  #(1920,1080) #(1080,720) # (1296,972)
-piCameraRate=10
+piCameraResolution =(640,480) #(1024,768) #(640,480)  #(1920,1080) #(1080,720) # (1296,972)
+piCameraRate=16
 IMG_PAGINATOR = 40
 SQLITE_DB = "framedata.db"
 
@@ -165,7 +164,7 @@ def classify_frame(inputQueue,rectanglesQueue, confidence, prototxt, model, cam)
         if DNN_TARGET_MYRIAD:
             net.setPreferableTarget(cv2.dnn.DNN_TARGET_MYRIAD)
         else:
-            net.setPreferableTarget(cv2.dnn.DNN_TARGET_OPENCL)
+            net.setPreferableTarget(cv2.dnn.DNN_TARGET_CPU)
 
         p_classifier = None
         while True:
@@ -253,7 +252,7 @@ def classify_frame(inputQueue,rectanglesQueue, confidence, prototxt, model, cam)
                                     x_dim = endX-startX
                                     y_dim = endY-startY
                                     fontScale = min(y_dim, x_dim)/280
-                                    if fontScale > 0.15: cv2.putText(crop_img_data,str(datetime.datetime.now().strftime('%H:%M %d/%m/%y')),(1,15),cv2.FONT_HERSHEY_SIMPLEX,fontScale,(0,255,0),1)
+                                    if fontScale > 0.15: cv2.putText(crop_img_data,str(datetime.datetime.now().strftime('%H:%M %d/%m/%y')),(1,15),cv2.FONT_HERSHEY_SIMPLEX,fontScale,(255,0,0),1)
                                     now = datetime.datetime.now()
                                     day = "{date:%Y-%m-%d}".format(date=now)
                                     db.insert_frame(conn, hash, day, time.time(), key, crop_img_data, x_dim, y_dim, cam)
@@ -268,8 +267,8 @@ def draw_metadata_onscreen(frame, rectanglesQueue,label2):
         try:
             (label1,dot1,dot2,label2) = rectanglesQueue.get(block=False)
             if DRAW_RECTANGLES: 
-               cv2.rectangle(frame, dot1, dot2, (0,255,0), 1)
-               cv2.putText(frame, label1, (dot1[0], dot1[1]), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,255,0), 1)
+               cv2.rectangle(frame, dot1, dot2, (255,0,0), 1)
+               cv2.putText(frame, label1, (dot1[0], dot1[1]), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255,0,0), 1)
         except: continue
     return label2
     
@@ -419,10 +418,10 @@ def startOneStreamProcesses( confidence, prototxt, model, cam):
         p_get_frame = Process(target=get_frame, args=(videos[cam],inputQueue[cam],imagesQueue[cam],rectanglesQueue[cam],cam))
         p_get_frame.daemon = True
         p_get_frame.start()
-
-        p_classifier = Process(target=classify_frame, args=(inputQueue[cam],rectanglesQueue[cam], float(confidence), prototxt, model, cam))
-        p_classifier.daemon = True
-        p_classifier.start()
+        for i in range(0,THREADS_NUMBERS):
+          p_classifier = Process(target=classify_frame, args=(inputQueue[cam],rectanglesQueue[cam], float(confidence), prototxt, model, cam))
+          p_classifier.daemon = True
+          p_classifier.start()
 
 
 def start():
@@ -590,7 +589,7 @@ def detect(cam):
             frame = imagesQueue[cam].get(block=True)
             # draw rectangles when run on good hardware
             label = draw_metadata_onscreen(frame, rectanglesQueue[cam], label)
-            cv2.putText(frame, label, (10,23), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (0,255,0), 2)
+            cv2.putText(frame, label, (10,23), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (255,0,0), 2)
             iterable = cv2.imencode('.jpg', frame)[1].tobytes()
             yield b'--frame\r\nContent-Type: image/jpeg\r\n\r\n' + iterable + b'\r\n'
     except GeneratorExit: pass
