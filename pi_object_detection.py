@@ -298,8 +298,8 @@ def get_frame(video_urls,inputQueue, imagesQueue, rectanglesQueue, cam):
             frame = video_s.read()
         else:
             flag,frame = video_s.read()
-        if not flag : 
-            video_s = cv2.VideoCapture(video_urls[1])
+            if not flag : 
+               video_s = cv2.VideoCapture(video_urls[1])
             continue
         if frame is None:
             continue
