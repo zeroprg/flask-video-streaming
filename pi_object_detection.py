@@ -1,4 +1,5 @@
 
+
 # import the necessary packages
 from imutils.video import VideoStream
 from imutils.video import FPS
@@ -69,7 +70,7 @@ THREAD_NUMBERS  = 5 #must be less then 4 for PI
 videos = []
 camleft = []
 camright =[]
-piCameraResolution = (1024,768) #(640,480)  #(1920,1080) #(1080,720) # (1296,972)
+piCameraResolution =(640,480)# (1024,768) #(640,480)  #(1920,1080) #(1080,720) # (1296,972)
 piCameraRate=10
 IMG_PAGINATOR = 40
 SQLITE_DB = "framedata.db"
@@ -300,7 +301,7 @@ def get_frame(video_urls,inputQueue, imagesQueue, rectanglesQueue, cam):
             flag,frame = video_s.read()
             if not flag : 
                video_s = cv2.VideoCapture(video_urls[1])
-            continue
+               continue
         if frame is None:
             continue
         inputQueue.put(frame)
@@ -310,8 +311,8 @@ def get_frame(video_urls,inputQueue, imagesQueue, rectanglesQueue, cam):
         if inputQueue.qsize()>IMAGES_BUFFER-20:
            inputQueue.get()
 
-        label2 = draw_metadata_onscreen(frame, rectanglesQueue, label2)
-        cv2.putText(frame, label2, (10,23), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (0,255,0), 2)
+#        label2 = draw_metadata_onscreen(frame, rectanglesQueue, label2)
+#        cv2.putText(frame, label2, (10,23), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (0,255,0), 2)
         # if perfomance issue on Raspberry Pi comment it
         if not "not_show_in_window" in args.keys():
             cv2.imshow("Camera" + str(cam), frame)
@@ -581,12 +582,15 @@ def gen(camera):
 
 def detect(cam):
     """Video streaming generator function."""
+    label = ''
     try:
         #logger.debug('imagesQueue:', imagesQueue.empty())
        while True:
          while(not imagesQueue[cam].empty()):
             frame = imagesQueue[cam].get(block=True)
             # draw rectangles when run on good hardware
+            label = draw_metadata_onscreen(frame, rectanglesQueue[cam], label)
+            cv2.putText(frame, label, (10,23), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (0,255,0), 2)
             iterable = cv2.imencode('.jpg', frame)[1].tobytes()
             yield b'--frame\r\nContent-Type: image/jpeg\r\n\r\n' + iterable + b'\r\n'
     except GeneratorExit: pass
