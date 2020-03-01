@@ -32,7 +32,7 @@ video_file0=http://107.85.197.18:8080/-wvhttp-01-/GetOneShot?image_size=1920x108
 #video_file0=http://192.168.1.100:81/videostream.cgi?loginuse=GwEBAA%3D%3D&loginpas=Nw0AG1ZceWtl&_=15282579520910.657573406191367
 #video_file1=http://192.168.1.101:81/videostream.cgi?loginuse=GwEBAA%3D%3D&loginpas=Nw0AG1ZceWtl&_=15282579520910.657573406191367
 
-#video_file0=http://38.101.209.29:8082/mjpg/video.mjpg?COUNTER
+video_file1=http://38.101.209.29:8082/mjpg/video.mjpg?COUNTER
 
 
 #Commands to move cameras right and left step from 0 to 3
@@ -45,7 +45,7 @@ video_file0=http://107.85.197.18:8080/-wvhttp-01-/GetOneShot?image_size=1920x108
 
 prototxt=MobileNetSSD_deploy.prototxt.txt
 model=MobileNetSSD_deploy.caffemodel
-confidence=0.128
+confidence=0.0128
 
 
 
