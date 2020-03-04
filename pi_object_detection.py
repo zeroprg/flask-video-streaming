@@ -75,7 +75,7 @@ def get_frame(images_queue, cam):
             images_queue.get_nowait()
         except:
             continue
-        if not SHOW_VIDEO:
+        if "not_show_in_window" not in args.keys():
             cv2.imshow("Camera" + str(cam), images_queue.get())
             key = cv2.waitKey(1) & 0xFF
 
@@ -118,7 +118,6 @@ def destroy():
 
 separator = "="
 args = {}
-SHOW_VIDEO = False
 imagesQueue = []
 detections = None
 vs = None
