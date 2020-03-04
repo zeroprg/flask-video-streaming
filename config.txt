@@ -12,15 +12,13 @@ video_file1=http://159.255.189.4:8081/mjpg/video.mjpg
 #video_file0=http://213.226.254.135:91/mjpg/video.mjpg
 
 #Jacusi
-video_file2=http://208.72.70.171:80/mjpg/video.mjpg
+#video_file2=http://208.72.70.171:80/mjpg/video.mjpg
 
 #Hotel in Sochi
-video_file1=http://158.58.130.148/mjpg/video.mjpg
+#video_file1=http://158.58.130.148/mjpg/video.mjpg
 
 #Park in Moscow
 #video_file0=http://95.215.176.83:8084/mjpg/video.mjpg
-
-
 
 #video_file0=picam
 #video_file1=http://192.168.0.100:81/videostream.cgi?loginuse=GwEBAA%3D%3D&loginpas=Nw0AG1ZceWtl&_=15282579520910.657573406191367
