@@ -1,22 +1,17 @@
 # import the necessary packages
-from imutils.video import VideoStream
-from imutils.video import FPS
 
+from imutils.video import FPS
 from multiprocessing import Process
 from multiprocessing import Queue
 import os
 import threading
-import numpy as np
 import argparse
 import time
 import logging
-
 import cv2
 import json
-
 import db
-from objCountByTimer import ObjCountByTimer
-import base64
+
 from classifier import Detection
 
 from flask import Flask, render_template, Response, request, redirect, jsonify, send_from_directory
@@ -28,32 +23,14 @@ console = logging.StreamHandler()
 logger.addHandler(console)
 logger.debug('DEBUG mode')
 
-# initialize the list of class labels MobileNet SSD was trained to
-# detect, then generate a set of bounding box colors for each class
-CLASSES = ["background", "aeroplane", "bicycle", "bird", "boat",
-           "bottle", "bus", "car", "cat", "chair", "cow", "diningtable",
-           "dog", "horse", "motorbike", "person", "pottedplant", "sheep",
-           "sofa", "train", "tvmonitor"]
-LOOKED1 = {"car": [], "person": [], "bus": []}
 
-subject_of_interes = ["car", "person", "bus"]
-hashes = {}
-COLORS = np.random.uniform(0, 255, size=(len(CLASSES), 3))
-
-DRAW_RECTANGLES = True
-DNN_TARGET_MYRIAD = True
 DELETE_FILES_LATER = 6 * 60 * 60  # sec  (8hours)
 ENCODING = "utf-8"
-NUMBER_OF_FILES = 10
-HASH_DELTA = 65  # bigger number  more precise object's count
-IMAGES_BUFFER = 55
+IMAGES_BUFFER = 100
 
-THREAD_NUMBERS = 3  # must be less then 4 for PI
 videos = []
 camleft = []
 camright = []
-piCameraResolution = (640, 480)  # (1024,768) #(640,480)  #(1920,1080) #(1080,720) # (1296,972)
-piCameraRate = 16
 IMG_PAGINATOR = 40
 SQLITE_DB = "framedata.db"
 
@@ -92,41 +69,17 @@ def change_res(camera, width, height):
     camera.set(4, height)
 
 
-def get_frame(video_urls, sqlite_db, images_queue, confidence, prototxt, model, cam):
-    # loop over the frames from the video stream
-    detection = Detection(sqlite_db, confidence, prototxt, model);
-    if 'picam' == video_urls[1]:
-        video_s = VideoStream(usePiCamera=True, resolution=piCameraResolution, framerate=piCameraRate).start()
-        time.sleep(2.0)
-    else:
-        # grab the frame from the threaded video stream, resize it, and
-        # grab its dimensions
-        video_s = cv2.VideoCapture(video_urls[1])
-
+def get_frame(images_queue, cam):
     while True:
-        if 'picam' == video_urls[1]:
-            frame = video_s.read()
-        else:
-            flag, frame = video_s.read()
-            if not flag:
-                video_s = cv2.VideoCapture(video_urls[1])
-                continue
-        if frame is None:
+        try:
+            images_queue.get_nowait()
+        except:
             continue
-        frame = detection.classify_frame(frame, cam)
-        images_queue.put(frame)
-
-        if images_queue.qsize() > IMAGES_BUFFER - 20:
-            images_queue.get()
-
-        # if perfomance issue on Raspberry Pi comment it
-        if not "not_show_in_window" in args.keys():
-            cv2.imshow("Camera" + str(cam), frame)
+        if not SHOW_VIDEO:
+            cv2.imshow("Camera" + str(cam), images_queue.get())
             key = cv2.waitKey(1) & 0xFF
 
-        images_queue.put(frame)
-
-    if (__name__ == '__main__'):
+    if __name__ == '__main__':
         # stop the timer and display FPS information
         fps.stop()
         logger.debug("[INFO] elapsed time: {:.2f}".format(fps.elapsed()))
@@ -165,15 +118,8 @@ def destroy():
 
 separator = "="
 args = {}
-
-# initialize the input queue (frames), output queue (detections),
-# and the list of actual detections returned by the child process
-inputQueue = []
-rectanglesQueue = []
+SHOW_VIDEO = False
 imagesQueue = []
-
-# catchedObjQueue = Queue()
-
 detections = None
 vs = None
 
@@ -222,11 +168,10 @@ def configure(args):
     logger.debug(args)
 
 
-def startOneStreamProcesses(confidence, prototxt, model, cam):
-    p_get_frame = Process(target=get_frame,
-                          args=(videos[cam], SQLITE_DB, inputQueue[cam], imagesQueue[cam], rectanglesQueue[cam], cam))
-    p_get_frame.daemon = True
-    p_get_frame.start()
+def start_one_stream_processes(cam):
+    p = Process(target=get_frame, args=(imagesQueue[cam], cam))
+    p.daemon = True
+    p.start()
 
 
 def start():
@@ -243,19 +188,15 @@ def start():
     initialize_video_streams()
 
     for cam in range(len(videos)):
-        p_get_frame = Process(target=get_frame,
-                              args=(
-                              videos[cam], SQLITE_DB, imagesQueue[cam], float(args["confidence"]), args["prototxt"],
-                              args["model"], cam))
-        p_get_frame.daemon = True
-        p_get_frame.start()
-        # p_get_frame.join()
+        Detection(SQLITE_DB, float(args["confidence"]), args["prototxt"], args["model"], videos[cam][1],
+                  imagesQueue[cam], cam);
 
-        time.sleep(2.0)
-        # p_classifier.join()
         logger.info("p_classifiers for cam:" + str(cam) + " started")
+
+        p = Process(target=get_frame, args=(imagesQueue[cam], cam))
+        p.daemon = True
+        p.start()
         cam += 1
-    return p_get_frame
 
 
 # initialize the video stream, allow the cammera sensor to warmup,
@@ -308,7 +249,8 @@ def serve_static(filename):
 def index():
     """Video streaming home page."""
     start = request.args.get('start')
-    if start == None: start = 0
+    if start == None:
+        start = 0
     start = int(start)
     video_urls = []
     img_paginator = IMG_PAGINATOR
@@ -434,7 +376,7 @@ def urls():
     if add_url is not None:
         if ping_video_url(add_url):
             initialize_video_streams(add_url)
-            startOneStreamProcesses(args["confidence"], args["prototxt"], args["model"], cam=len(videos) - 1)
+            start_one_stream_processes(cam=len(videos) - 1)
             # return index() #redirect("/")
             return Response('{"message":"URL added  successfully , video start processing"}', mimetype='text/plain')
     if list_url is not None:
