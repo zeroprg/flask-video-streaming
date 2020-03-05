@@ -47,7 +47,7 @@ class Detection:
                                   args=(output_queue, cam))
             p_get_frame.daemon = True
             p_get_frame.start()
-            time.sleep(0.99/NUMBER_OF_THREADS)
+            time.sleep(0.2 + 0.99/NUMBER_OF_THREADS)
 
     def classify(self, output_queue, cam):
         if self.video_s is None:
