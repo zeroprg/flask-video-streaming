@@ -8,7 +8,7 @@ video_file0=http://107.85.197.18:8080/-wvhttp-01-/GetOneShot?image_size=1920x108
 
 #Parking Lots:
 #video_file0=http://170.249.152.2:8080/cgi-bin/viewer/video.jpg?r=COUNTER
-video_file1=http://159.255.189.4:8081/mjpg/video.mjpg
+#video_file1=http://159.255.189.4:8081/mjpg/video.mjpg
 #video_file0=http://213.226.254.135:91/mjpg/video.mjpg
 
 #Jacusi
