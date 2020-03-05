@@ -28,7 +28,7 @@ DIMENSION_X = 300
 DIMENSION_Y = 300
 piCameraResolution = (640, 480)  # (1024,768) #(640,480)  #(1920,1080) #(1080,720) # (1296,972)
 piCameraRate = 16
-NUMBER_OF_THREADS = 4
+NUMBER_OF_THREADS = 3
 
 
 class Detection:
