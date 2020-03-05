@@ -500,7 +500,7 @@ function showmore(direction, cam, _start)
   var r = new XMLHttpRequest();
   var r_h = new XMLHttpRequest();
   MAX_BUFFER = 10000;
-  BEAT = 60;
+  BEAT = 1;
   PLOT_TYPE1 = 'bar';
   PLOT_TYPE2 = 'bar';//'scatter';
   MODE2 = 'lines';
@@ -509,7 +509,7 @@ function showmore(direction, cam, _start)
   fun{{cam}} = function(){
       moreparams({{cam}}, "0-1");  //calling every second
   }
-  window.setInterval(fun{{cam}}, BEAT*100);
+  window.setInterval(fun{{cam}}, BEAT*1000);
  {% endfor %}
   
 
