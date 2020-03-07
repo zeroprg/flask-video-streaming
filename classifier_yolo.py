@@ -28,6 +28,7 @@ configPath = "yolo-coco/yolov3.cfg"
 LOOKED1 = {"car": [], "person": [], "bus": [], "truck": [], "motorbike": []}
 subject_of_interes = ["car", "person", "bus", "motorbike"]
 
+DNN_TARGET_MYRIAD = False
 HASH_DELTA = 53 # bigger number  more precise object's count
 DIMENSION_X = 416
 DIMENSION_Y = 416
@@ -70,7 +71,11 @@ class Detection:
             # and determine only the *output* layer names that we need from YOLO
             print("[INFO] loading YOLO from disk...")
             self.net = cv2.dnn.readNetFromDarknet(configPath, weightsPath)
-
+            # specify the target device as the Myriad processor on the NCS
+            if DNN_TARGET_MYRIAD:
+                self.net.setPreferableTarget(cv2.dnn.DNN_TARGET_MYRIAD)
+            else:
+                self.net.setPreferableTarget(cv2.dnn.DNN_TARGET_CPU)
         while True:
             try:
                 frame = self.read_video_stream(self.video_s)
