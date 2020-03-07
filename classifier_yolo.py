@@ -21,15 +21,11 @@ np.random.seed(42)
 COLORS = np.random.randint(0, 255, size=(len(CLASSES), 3),
                            dtype="uint8")
 
-# derive the paths to the YOLO weights and model configuration
-weightsPath = "yolo-coco/yolov3.weights"
-configPath = "yolo-coco/yolov3.cfg"
-
 LOOKED1 = {"car": [], "person": [], "bus": [], "truck": [], "motorbike": []}
 subject_of_interes = ["car", "person", "bus", "motorbike"]
 
 DNN_TARGET_MYRIAD = False
-HASH_DELTA = 53 # bigger number  more precise object's count
+HASH_DELTA = 53  # bigger number  more precise object's count
 DIMENSION_X = 416
 DIMENSION_Y = 416
 piCameraResolution = (640, 480)  # (1024,768) #(640,480)  #(1920,1080) #(1080,720) # (1296,972)
@@ -40,28 +36,22 @@ NUMBER_OF_THREADS = 2
 class Detection:
     def __init__(self, sqlite_db, confidence, prototxt, model, video_url, output_queue, cam):
         self.confidence = confidence
-        self.threshold = confidence
-        self.prototxt = prototxt
-        self.model = model
+        self.threshold = 0.2
         self.video_url = video_url
         self.hashes = {}
         self.sqlite_db = sqlite_db
         self.topic_label = ''
         self.net = self.video_s = None
+        # derive the paths to the YOLO weights and model configuration
+        self.weightsPath = model    # "yolo-coco/yolov3.weights"
+        self.configPath = prototxt   #"yolo-coco/yolov3.cfg"
 
-        # load our YOLO object detector trained on COCO dataset (80 classes)
-        # and determine only the *output* layer names that we need from YOLO
-        print("[INFO] loading YOLO from disk...")
-        net = cv2.dnn.readNetFromDarknet(configPath, weightsPath)
-        ln = net.getLayerNames()
-        self.ln = [ln[i[0] - 1] for i in net.getUnconnectedOutLayers()]
 
         for i in range(NUMBER_OF_THREADS):
             p_get_frame = Process(target=self.classify,
                                   args=(output_queue, cam))
             p_get_frame.daemon = True
             p_get_frame.start()
-
 
     def classify(self, output_queue, cam):
         if self.video_s is None:
@@ -70,8 +60,11 @@ class Detection:
             # load our YOLO object detector trained on COCO dataset (80 classes)
             # and determine only the *output* layer names that we need from YOLO
             print("[INFO] loading YOLO from disk...")
-            self.net = cv2.dnn.readNetFromDarknet(configPath, weightsPath)
-            # specify the target device as the Myriad processor on the NCS
+            self.net = cv2.dnn.readNetFromDarknet(self.configPath, self.weightsPath)
+            ln = self.net.getLayerNames()
+            self.ln = [ln[i[0] - 1] for i in self.net.getUnconnectedOutLayers()]
+
+    # specify the target device as the Myriad processor on the NCS
             if DNN_TARGET_MYRIAD:
                 self.net.setPreferableTarget(cv2.dnn.DNN_TARGET_MYRIAD)
             else:
@@ -151,7 +144,6 @@ class Detection:
                 # filter out weak detections by ensuring the `confidence`
                 # is greater than the minimum confidence
                 if confidence > self.confidence:
-
                     # scale the bounding box coordinates back relative to
                     # the size of the image, keeping in mind that YOLO
                     # actually returns the center (x, y)-coordinates of
@@ -190,20 +182,19 @@ class Detection:
                 # use 20 pixels from the top for labeling
                 crop_img_data = frame[y - 20: y + h, x:x + w]
                 try:
-                   hash = dhash(crop_img_data)
-                   now = datetime.datetime.now()
-                   day = "{date:%Y-%m-%d}".format(date=now)
-                   #do_statistic(conn, cam, self.hashes)
-                   db.insert_frame(conn, hash, day, time.time(), key, crop_img_data, w, h, cam)
+                    hash = dhash(crop_img_data)
+                    now = datetime.datetime.now()
+                    day = "{date:%Y-%m-%d}".format(date=now)
+                    # do_statistic(conn, cam, self.hashes)
+                    db.insert_frame(conn, hash, day, time.time(), key, crop_img_data, w, h, cam)
                 except:
                     continue
-                #draw rectangle
+                # draw rectangle
                 cv2.rectangle(frame, (x, y), (x + w, y + h), color, 2)
                 text = "{}: {:.4f}".format(CLASSES[classIDs[i]],
                                            confidences[i])
                 cv2.putText(frame, text, (x, y - 5),
                             cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
-
 
                 if self.hashes.get(key, None) is None:
                     # count objects for last sec, last 5 sec and last minute
@@ -227,7 +218,7 @@ class Detection:
 
 class ImageHashCodesCountByTimer(ObjCountByTimer):
     def equals(self, hash1, hash2):
-        delta = hash1-hash2
+        delta = hash1 - hash2
         if delta < 0:
             delta -= delta
         return delta < HASH_DELTA
@@ -273,7 +264,7 @@ class Trace(dict):
                           sort_keys=True, indent=4)
 
 
-def dhash(image_data, hashSize = 8):
+def dhash(image_data, hashSize=8):
     image_out = np.array(image_data).astype(np.uint8)
 
     # convert the image to grayscale and compute the hash
@@ -286,6 +277,3 @@ def dhash(image_data, hashSize = 8):
     diff = resized[:, 1:] > resized[:, :-1]
     # convert the difference image to a hash
     return sum([2 ** i for (i, v) in enumerate(diff.flatten()) if v])
-
-
-
