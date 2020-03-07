@@ -18,9 +18,9 @@ CLASSES = ["background", "aeroplane", "bicycle", "bird", "boat",
            "bottle", "bus", "car", "cat", "chair", "cow", "diningtable",
            "dog", "horse", "motorbike", "person", "pottedplant", "sheep",
            "sofa", "train", "tvmonitor"]
-LOOKED1 = {"person": []}
+LOOKED1 = {"person": [], "car": []}
 
-subject_of_interes = ["person"]
+subject_of_interes = ["person", "car"]
 DNN_TARGET_MYRIAD = False
 
 HASH_DELTA = 53  # bigger number  more precise object's count
