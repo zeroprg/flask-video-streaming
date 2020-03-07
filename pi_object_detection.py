@@ -26,7 +26,7 @@ logger.debug('DEBUG mode')
 
 DELETE_FILES_LATER = 6 * 60 * 60  # sec  (8hours)
 ENCODING = "utf-8"
-IMAGES_BUFFER = 100
+IMAGES_BUFFER = 50
 
 videos = []
 camleft = []
