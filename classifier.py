@@ -23,12 +23,12 @@ LOOKED1 = {"person": []}
 subject_of_interes = ["person"]
 DNN_TARGET_MYRIAD = False
 
-HASH_DELTA = 49  # bigger number  more precise object's count
+HASH_DELTA = 53  # bigger number  more precise object's count
 DIMENSION_X = 300
 DIMENSION_Y = 300
 piCameraResolution = (640, 480)  # (1024,768) #(640,480)  #(1920,1080) #(1080,720) # (1296,972)
 piCameraRate = 16
-NUMBER_OF_THREADS = 3
+NUMBER_OF_THREADS = 2
 
 
 class Detection:
