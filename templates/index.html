@@ -117,7 +117,7 @@
         </section>
     </header>
 {% for cam,video_url in video_urls %}
-<section id="section{{cam}}" style="display:block">
+<section id="section{{cam}}" style="display:none">
 <!--  <div class="container">  -->
  <div class="row">
    <div class="col-sm-12">
@@ -500,7 +500,7 @@ function showmore(direction, cam, _start)
   var r = new XMLHttpRequest();
   var r_h = new XMLHttpRequest();
   MAX_BUFFER = 10000;
-  BEAT = 1;
+  BEAT = 100;
   PLOT_TYPE1 = 'bar';
   PLOT_TYPE2 = 'bar';//'scatter';
   MODE2 = 'lines';

@@ -12,7 +12,7 @@ import cv2
 import json
 import db
 
-from classifier import Detection
+from classifier_yolo import Detection
 
 from flask import Flask, render_template, Response, request, redirect, jsonify, send_from_directory
 from flask_cors import cross_origin, CORS
@@ -33,7 +33,7 @@ camleft = []
 camright = []
 IMG_PAGINATOR = 40
 SQLITE_DB = "framedata.db"
-
+SHOW_VIDEO = False
 
 class CameraMove:
     def __init__(self, move_left, move_right, timestep=10):
@@ -75,9 +75,9 @@ def get_frame(images_queue, cam):
             images_queue.get_nowait()
         except:
             continue
-        if "not_show_in_window" not in args.keys():
-            cv2.imshow("Camera" + str(cam), images_queue.get())
-            key = cv2.waitKey(1) & 0xFF
+        #if SHOW_VIDEO:
+        #    cv2.imshow("Camera" + str(cam), images_queue.get())
+        #    key = cv2.waitKey(1) & 0xFF
 
     if __name__ == '__main__':
         # stop the timer and display FPS information
@@ -168,6 +168,11 @@ def configure(args):
 
 
 def start_one_stream_processes(cam):
+    Detection(SQLITE_DB, float(args["confidence"]), args["prototxt"], args["model"], videos[cam][1],
+              imagesQueue[cam], cam);
+
+    logger.info("p_classifiers for cam:" + str(cam) + " started")
+
     p = Process(target=get_frame, args=(imagesQueue[cam], cam))
     p.daemon = True
     p.start()
