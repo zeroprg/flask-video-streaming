@@ -18,9 +18,9 @@ CLASSES = ["background", "aeroplane", "bicycle", "bird", "boat",
            "bottle", "bus", "car", "cat", "chair", "cow", "diningtable",
            "dog", "horse", "motorbike", "person", "pottedplant", "sheep",
            "sofa", "train", "tvmonitor"]
-LOOKED1 = {"car": [], "person": [], "bus": []}
+LOOKED1 = {"person": []}
 
-subject_of_interes = ["car", "person", "bus"]
+subject_of_interes = ["person"]
 DNN_TARGET_MYRIAD = False
 
 HASH_DELTA = 49  # bigger number  more precise object's count
@@ -28,7 +28,7 @@ DIMENSION_X = 300
 DIMENSION_Y = 300
 piCameraResolution = (640, 480)  # (1024,768) #(640,480)  #(1920,1080) #(1080,720) # (1296,972)
 piCameraRate = 16
-NUMBER_OF_THREADS = 4
+NUMBER_OF_THREADS = 3
 
 
 class Detection:
@@ -47,7 +47,7 @@ class Detection:
                                   args=(output_queue, cam))
             p_get_frame.daemon = True
             p_get_frame.start()
-            time.sleep(0.2 + 0.99/NUMBER_OF_THREADS)
+            time.sleep(0.1 + 0.99/NUMBER_OF_THREADS)
 
     def classify(self, output_queue, cam):
         if self.video_s is None:
@@ -141,17 +141,20 @@ class Detection:
                 hash = 0
                 try:
                     crop_img = Image.fromarray(crop_img_data)
-                    hash = dhash.dhash_int(crop_img)
+                    hash = dhash(crop_img_data)
                 except:
                     continue  # pass
 
                 if key not in LOOKED1:
                     continue
-                # print(self.hashes)
+                label1 = "{}: {:.2f}%".format(key, self.confidence * 100)
+                # Draw rectangles
+                cv2.rectangle(frame, (startX - 25, startY - 25), (endX + 25, endY + 25), (255, 0, 0), 1)
+                cv2.putText(frame, label1, (startX - 25, startY - 25), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 1)
                 if self.hashes.get(key, None) is None:
                     # count objects for last sec, last 5 sec and last minute
 
-                    self.hashes[key] = ImageHashCodesCountByTimer(10, 60, (10, 20, 60))
+                    self.hashes[key] = ImageHashCodesCountByTimer()
                     if not self.hashes[key].add(hash):
                         continue
 
@@ -165,10 +168,7 @@ class Detection:
                             continue
                         label += ' ' + key + ':' + str(self.hashes[key].getCountedObjects())
                     self.topic_label = label
-                label1 = "{}: {:.2f}%".format(key, self.confidence * 100)
-                # Draw rectangles
-                cv2.rectangle(frame, (startX - 25, startY - 25), (endX + 25, endY + 25), (255, 0, 0), 1)
-                cv2.putText(frame, label1, (startX - 25, startY - 25), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 1)
+
 
                 # process further only  if image is really different from other ones
                 if key in subject_of_interes:
@@ -190,9 +190,12 @@ class Detection:
         return frame
 
 
+
 class ImageHashCodesCountByTimer(ObjCountByTimer):
     def equals(self, hash1, hash2):
-        delta = dhash.get_num_bits_different(hash1, hash2)
+        delta = hash1 - hash2
+        if delta < 0:
+            delta -= delta
         return delta < HASH_DELTA
 
 
@@ -234,3 +237,18 @@ class Trace(dict):
     def to_json(self):
         return json.dumps(self, default=lambda o: o.__dict__,
                           sort_keys=True, indent=4)
+
+
+def dhash(image_data, hashSize=8):
+    image_out = np.array(image_data).astype(np.uint8)
+
+    # convert the image to grayscale and compute the hash
+
+    image = cv2.cvtColor(image_out, cv2.COLOR_BGR2GRAY)
+
+    # resize the input image, adding a single column (width) so we
+    # can compute the horizontal gradient
+    resized = cv2.resize(image, (hashSize + 1, hashSize), interpolation=cv2.INTER_LINEAR)
+    diff = resized[:, 1:] > resized[:, :-1]
+    # convert the difference image to a hash
+    return sum([2 ** i for (i, v) in enumerate(diff.flatten()) if v])
