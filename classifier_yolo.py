@@ -25,7 +25,7 @@ LOOKED1 = {"car": [], "person": [], "bus": [], "truck": [], "motorbike": []}
 subject_of_interes = ["car", "person", "bus", "motorbike"]
 
 DNN_TARGET_MYRIAD = False
-HASH_DELTA = 53  # bigger number  more precise object's count
+HASH_DELTA = 33  # bigger number  more precise object's count
 DIMENSION_X = 416
 DIMENSION_Y = 416
 piCameraResolution = (640, 480)  # (1024,768) #(640,480)  #(1920,1080) #(1080,720) # (1296,972)
@@ -180,7 +180,7 @@ class Detection:
                 # draw a bounding box rectangle and label on the frame
                 color = [int(c) for c in COLORS[classIDs[i]]]
                 # use 20 pixels from the top for labeling
-                crop_img_data = frame[y - 20: y + h, x:x + w]
+                crop_img_data = frame[y - 40: y + h + 40, x - 40:x + w + 40]
                 try:
                     hash = dhash(crop_img_data)
                     now = datetime.datetime.now()
@@ -191,10 +191,9 @@ class Detection:
                     continue
                 # draw rectangle
                 cv2.rectangle(frame, (x, y), (x + w, y + h), color, 2)
-                text = "{}: {:.4f}".format(CLASSES[classIDs[i]],
-                                           confidences[i])
+                text = "{}:".format(CLASSES[classIDs[i]])
                 cv2.putText(frame, text, (x, y - 5),
-                            cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 1)
 
                 if self.hashes.get(key, None) is None:
                     # count objects for last sec, last 5 sec and last minute
