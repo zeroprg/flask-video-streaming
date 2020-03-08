@@ -41,7 +41,7 @@ video_file0=http://107.85.197.18:8080/-wvhttp-01-/GetOneShot?image_size=1920x108
 
 
 
-prototxt=yolo-coco/yolo3-tiny.cfg
+prototxt=yolo-coco/yolov3-tiny.cfg
 #prototxt=MobileNetSSD_deploy.prototxt.txt
 model=yolo-coco/yolov3-tiny.weights
 #model=MobileNetSSD_deploy.caffemodel

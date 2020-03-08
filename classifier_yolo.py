@@ -24,14 +24,14 @@ COLORS = np.random.randint(0, 255, size=(len(CLASSES), 3),
 LOOKED1 = {"car": [], "person": [], "bus": [], "truck": [], "motorbike": []}
 subject_of_interes = ["car", "person", "bus", "motorbike"]
 
-DNN_TARGET_MYRIAD = False
+DNN_TARGET_MYRIAD = True
 HASH_DELTA = 33  # bigger number  more precise object's count
 DIMENSION_X = 416
 DIMENSION_Y = 416
 piCameraResolution = (640, 480)  # (1024,768) #(640,480)  #(1920,1080) #(1080,720) # (1296,972)
 piCameraRate = 16
 NUMBER_OF_THREADS = 1
-
+BOX_EXTENDER = 35
 
 class Detection:
     def __init__(self, sqlite_db, confidence, prototxt, model, video_url, output_queue, cam):
@@ -174,13 +174,13 @@ class Detection:
                 if key not in LOOKED1:
                     continue
                 # extract the bounding box coordinates
-                (x, y) = (boxes[i][0], boxes[i][1])
-                (w, h) = (boxes[i][2], boxes[i][3])
+                (x, y) = (boxes[i][0] - BOX_EXTENDER, boxes[i][1] - BOX_EXTENDER)
+                (w, h) = (boxes[i][2] + 2*BOX_EXTENDER, boxes[i][3] + 2*BOX_EXTENDER)
 
                 # draw a bounding box rectangle and label on the frame
                 color = [int(c) for c in COLORS[classIDs[i]]]
                 # use 20 pixels from the top for labeling
-                crop_img_data = frame[y - 40: y + h + 40, x - 40:x + w + 40]
+                crop_img_data = frame[y: y + h , x :x + w ]
                 try:
                     hash = dhash(crop_img_data)
                     now = datetime.datetime.now()
