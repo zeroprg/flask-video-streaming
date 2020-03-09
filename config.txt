@@ -1,7 +1,7 @@
 
 #Traffic controls cameras:
 #video_file0=http://203.77.210.41:2000/mjpg/video.mjpg
-#video_file0=http://107.85.197.18:8080/-wvhttp-01-/GetOneShot?image_size=1920x1080&frame_count=100
+video_file2=http://107.85.197.18:8080/-wvhttp-01-/GetOneShot?image_size=1920x1080&frame_count=100
 
 #Japanees Laundry:
 #video_file3=http://180.13.193.172:8083/-wvhttp-01-/GetOneShot?image_size=640x480&frame_count=1000000000
@@ -30,7 +30,7 @@ video_file0=http://158.58.130.148/mjpg/video.mjpg
 #video_file0=http://192.168.1.100:81/videostream.cgi?loginuse=GwEBAA%3D%3D&loginpas=Nw0AG1ZceWtl&_=15282579520910.657573406191367
 #video_file1=http://192.168.1.101:81/videostream.cgi?loginuse=GwEBAA%3D%3D&loginpas=Nw0AG1ZceWtl&_=15282579520910.657573406191367
 
-#video_file0=http://38.101.209.29:8082/mjpg/video.mjpg?COUNTER
+video_file1=http://38.101.209.29:8082/mjpg/video.mjpg?COUNTER
 
 
 #Commands to move cameras right and left step from 0 to 3
@@ -41,8 +41,8 @@ video_file0=http://158.58.130.148/mjpg/video.mjpg
 
 
 
-prototxt=yolo-coco/yolov3-tiny.cfg
-#prototxt=MobileNetSSD_deploy.prototxt.txt
-model=yolo-coco/yolov3-tiny.weights
-#model=MobileNetSSD_deploy.caffemodel
+#prototxt=yolo-coco/yolov3-tiny.cfg
+prototxt=MobileNetSSD_deploy.prototxt.txt
+#model=yolo-coco/yolov3-tiny.weights
+model=MobileNetSSD_deploy.caffemodel
 confidence=0.10
