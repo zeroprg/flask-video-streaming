@@ -24,7 +24,7 @@ COLORS = np.random.randint(0, 255, size=(len(CLASSES), 3),
 LOOKED1 = {"car": [], "person": [], "bus": [], "truck": [], "motorbike": []}
 subject_of_interes = ["car", "person", "bus", "motorbike"]
 
-DNN_TARGET_MYRIAD = True
+DNN_TARGET_MYRIAD = False
 HASH_DELTA = 33  # bigger number  more precise object's count
 DIMENSION_X = 416
 DIMENSION_Y = 416
