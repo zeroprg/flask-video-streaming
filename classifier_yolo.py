@@ -25,12 +25,12 @@ LOOKED1 = {"car": [], "person": [], "bus": [], "truck": [], "motorbike": []}
 subject_of_interes = ["car", "person", "bus", "motorbike"]
 
 DNN_TARGET_MYRIAD = False
-HASH_DELTA = 55  # bigger number  more precise object's count
+HASH_DELTA = 3  # bigger number  more precise object's count
 DIMENSION_X = 416
 DIMENSION_Y = 416
 piCameraResolution = (640, 480)  # (1024,768) #(640,480)  #(1920,1080) #(1080,720) # (1296,972)
 piCameraRate = 16
-NUMBER_OF_THREADS = 1
+NUMBER_OF_THREADS = 3
 BOX_EXTENDER = 30
 
 class Detection:
@@ -52,6 +52,7 @@ class Detection:
                                   args=(output_queue, cam))
             p_get_frame.daemon = True
             p_get_frame.start()
+            time.sleep(0.0025)
 
     def classify(self, output_queue, cam):
         if self.video_s is None:

@@ -12,7 +12,7 @@ import cv2
 import json
 import db
 
-from classifier import Detection
+from classifier_yolo import Detection
 
 from flask import Flask, render_template, Response, request, redirect, jsonify, send_from_directory
 from flask_cors import cross_origin, CORS
