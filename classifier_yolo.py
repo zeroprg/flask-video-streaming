@@ -24,13 +24,13 @@ COLORS = np.random.randint(0, 255, size=(len(CLASSES), 3),
 LOOKED1 = {"car": [], "person": [], "bus": [], "truck": [], "motorbike": []}
 subject_of_interes = ["car", "person", "bus", "motorbike"]
 
-DNN_TARGET_MYRIAD = False
+DNN_TARGET_MYRIAD = True
 HASH_DELTA = 3  # bigger number  more precise object's count
 DIMENSION_X = 416
 DIMENSION_Y = 416
-piCameraResolution = (640, 480)  # (1024,768) #(640,480)  #(1920,1080) #(1080,720) # (1296,972)
+piCameraResolution = (1024,768) #(640,480)  #(1920,1080) #(1080,720) # (1296,972)
 piCameraRate = 16
-NUMBER_OF_THREADS = 3
+NUMBER_OF_THREADS = 1
 BOX_EXTENDER = 30
 
 class Detection:
@@ -175,7 +175,7 @@ class Detection:
                 if key not in LOOKED1:
                     continue
                 # extract the bounding box coordinates
-                (x, y) = (boxes[i][0] - BOX_EXTENDER, boxes[i][1] - BOX_EXTENDER)
+                (x, y) = (boxes[i][0] - BOX_EXTENDER, boxes[i][1] - 2*BOX_EXTENDER)
                 (w, h) = (boxes[i][2] + 2*BOX_EXTENDER, boxes[i][3] + 2*BOX_EXTENDER)
 
                 # draw a bounding box rectangle and label on the frame
