@@ -72,7 +72,7 @@ def change_res(camera, width, height):
 def get_frame(images_queue, cam):
     while True:
         try:
-            images_queue.get_nowait()
+            images_queue.get()
         except:
             continue
         #if SHOW_VIDEO:
