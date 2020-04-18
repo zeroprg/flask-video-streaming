@@ -21,22 +21,22 @@ np.random.seed(42)
 COLORS = np.random.randint(0, 255, size=(len(CLASSES), 3),
                            dtype="uint8")
 
-LOOKED1 = {"car": [], "person": [], "bus": [], "truck": [], "motorbike": []}
-subject_of_interes = ["car", "person", "bus", "motorbike"]
+LOOKED1 = {"car": [], "person": [], "bus": [], "truck": [], "motorbike": [], "train":[]}
+subject_of_interes = ["car", "person", "bus", "motorbike", "train"]
 
-DNN_TARGET_MYRIAD = True
+DNN_TARGET_MYRIAD = False
 HASH_DELTA = 3  # bigger number  more precise object's count
 DIMENSION_X = 416
 DIMENSION_Y = 416
-piCameraResolution = (1024,768) #(640,480)  #(1920,1080) #(1080,720) # (1296,972)
+piCameraResolution = (640, 480)  # (1024,768) #(640,480)  #(1920,1080) #(1080,720) # (1296,972)
 piCameraRate = 16
-NUMBER_OF_THREADS = 1
+NUMBER_OF_THREADS = 2
 BOX_EXTENDER = 30
 
 class Detection:
     def __init__(self, sqlite_db, confidence, prototxt, model, video_url, output_queue, cam):
         self.confidence = confidence
-        self.threshold = 0.2
+        self.threshold = 0.05
         self.video_url = video_url
         self.hashes = {}
         self.sqlite_db = sqlite_db
@@ -175,7 +175,7 @@ class Detection:
                 if key not in LOOKED1:
                     continue
                 # extract the bounding box coordinates
-                (x, y) = (boxes[i][0] - BOX_EXTENDER, boxes[i][1] - 2*BOX_EXTENDER)
+                (x, y) = (boxes[i][0] - BOX_EXTENDER, boxes[i][1] - BOX_EXTENDER)
                 (w, h) = (boxes[i][2] + 2*BOX_EXTENDER, boxes[i][3] + 2*BOX_EXTENDER)
 
                 # draw a bounding box rectangle and label on the frame
