@@ -179,7 +179,7 @@ def main_IE_infer(cap):
         t1 = time.time()
         ret, image = cap.read()
         if not ret:
-            break
+            continue
 
         resized_image = cv2.resize(image, (new_w, new_h), interpolation = cv2.INTER_CUBIC)
         canvas = np.full((m_input_size, m_input_size, 3), 128)

@@ -17,7 +17,7 @@ import time
 
 class ObjCountByTimer:
     ''' This class count different objects ( by hashcode) by using timer  '''
-    def __init__(self, timestep=1, timescope=65, time_scale=(1,5,30,60)):
+    def __init__(self, timestep=1, timescope=85, time_scale=(1,5,60,80)):
         self.store = deque()
         self.timescope = timescope # in seconds
         self.timestep = timestep # in seconds

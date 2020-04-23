@@ -1,6 +1,5 @@
 # import the necessary packages
 
-from imutils.video import FPS
 from multiprocessing import Process
 from multiprocessing import Queue
 import os
@@ -79,11 +78,6 @@ def get_frame(images_queue, cam):
         #    cv2.imshow("Camera" + str(cam), images_queue.get())
         #    key = cv2.waitKey(1) & 0xFF
 
-    if __name__ == '__main__':
-        # stop the timer and display FPS information
-        fps.stop()
-        logger.debug("[INFO] elapsed time: {:.2f}".format(fps.elapsed()))
-        logger.debug("[INFO] approx. FPS: {:.2f}".format(fps.fps()))
 
 
 def fetchImagesFromQueueToVideo(filename, imagesQueue):
@@ -228,7 +222,7 @@ def initialize_video_streams(url=None):
 
     # Start process
     time.sleep(3.0)
-    fps = FPS().start()
+   # fps = FPS().start()
 
 
 ###################### Flask API #########################

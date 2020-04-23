@@ -175,8 +175,8 @@ class Detection:
                 if key not in LOOKED1:
                     continue
                 # extract the bounding box coordinates
-                (x, y) = (boxes[i][0] - BOX_EXTENDER, boxes[i][1] - BOX_EXTENDER)
-                (w, h) = (boxes[i][2] + 2*BOX_EXTENDER, boxes[i][3] + 2*BOX_EXTENDER)
+                (x, y) = (boxes[i][0] - 1.2*BOX_EXTENDER, boxes[i][1] - 1.2*BOX_EXTENDER)
+                (w, h) = (boxes[i][2] + 2.2*BOX_EXTENDER, boxes[i][3] + 2.2*BOX_EXTENDER)
 
                 # draw a bounding box rectangle and label on the frame
                 color = [int(c) for c in COLORS[classIDs[i]]]
