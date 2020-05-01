@@ -1,10 +1,14 @@
+import zmq
 import numpy as np
 from imutils.video import VideoStream
 import os
-import time
+import argparse
+
 import db
 import cv2
 import dhash
+from PIL import Image
+import time
 import datetime
 import json
 from objCountByTimer import ObjCountByTimer
@@ -16,7 +20,8 @@ CLASSES = open(labelsPath).read().strip().split("\n")
 
 # initialize a list of colors to represent each possible class label
 np.random.seed(42)
-COLORS = np.random.randint(0, 255, size=(len(CLASSES), 3)) #                     ,dtype="uint8")
+COLORS = np.random.randint(0, 255, size=(len(CLASSES), 3),
+                           dtype="uint8")
 
 LOOKED1 = {"car": [], "person": [], "bus": [], "truck": [], "motorbike": [], "train":[]}
 subject_of_interes = ["car", "person", "bus", "motorbike", "train"]
@@ -27,14 +32,16 @@ DIMENSION_X = 416
 DIMENSION_Y = 416
 piCameraResolution = (640, 480)  # (1024,768) #(640,480)  #(1920,1080) #(1080,720) # (1296,972)
 piCameraRate = 16
-NUMBER_OF_THREADS = 4
-BOX_EXTENDER = 60
+NUMBER_OF_THREADS = 2
+BOX_EXTENDER = 30
+SQLITE_DB = "framedata.db"
+args = {}
+separator = "="
 
 class Detection:
-    def __init__(self, sqlite_db, confidence, prototxt, model, video_url, output_queue, cam):
+    def __init__(self, sqlite_db, confidence, prototxt, model):
         self.confidence = confidence
         self.threshold = 0.05
-        self.video_url = video_url
         self.hashes = {}
         self.sqlite_db = sqlite_db
         self.topic_label = ''
@@ -42,67 +49,55 @@ class Detection:
         # derive the paths to the YOLO weights and model configuration
         self.weightsPath = model    # "yolo-coco/yolov3.weights"
         self.configPath = prototxt   #"yolo-coco/yolov3.cfg"
+     
+        print("[INFO] passing prototext: {} model: {} ".format(prototxt, model))
+        context = zmq.Context()
+        self.receiver = context.socket(zmq.PULL)
+        self.receiver.connect("tcp://localhost:5555")
+        self.sender = context.socket(zmq.PUSH)
+        self.sender.connect("tcp://localhost:5556")
 
 
         for i in range(NUMBER_OF_THREADS):
-            p_get_frame = Process(target=self.classify,
-                                  args=(output_queue, cam))
+            p_get_frame = Process(target=self.classify)
             p_get_frame.daemon = True
             p_get_frame.start()
             time.sleep(0.0025)
 
-    def classify(self, output_queue, cam):
-        if self.video_s is None:
-            self.video_s = self.init_video_stream()
+    def classify(self):
         if self.net is None:
             # load our YOLO object detector trained on COCO dataset (80 classes)
             # and determine only the *output* layer names that we need from YOLO
             print("[INFO] loading YOLO from disk...")
             self.net = cv2.dnn.readNetFromDarknet(self.configPath, self.weightsPath)
+            print("step 1.") 
             ln = self.net.getLayerNames()
+            print("step 2.")
             self.ln = [ln[i[0] - 1] for i in self.net.getUnconnectedOutLayers()]
-
+            print("step 3.")  
     # specify the target device as the Myriad processor on the NCS
             if DNN_TARGET_MYRIAD:
                 self.net.setPreferableTarget(cv2.dnn.DNN_TARGET_MYRIAD)
             else:
                 self.net.setPreferableTarget(cv2.dnn.DNN_TARGET_CPU)
+        print("Going into the while(True) loop") 
         while True:
             try:
-                frame = self.read_video_stream(self.video_s)
+                cam,frame = receiver.recv_pyobj()
+                #frame = self.read_video_stream(self.video_s)
+                print("frame" +frame.shape)
                 if frame is None:
-                    return
+                   continue
             except:
-                return
+                continue
             frame = self.classify_frame(self.net, self.ln, frame, cam)
             output_queue.put_nowait(frame)
 
-    def init_video_stream(self):
-        if 'picam' == self.video_url:
-            video_s = VideoStream(usePiCamera=True, resolution=piCameraResolution, framerate=piCameraRate).start()
-            time.sleep(2.0)
-
-        else:
-            # grab the frame from the threaded video stream
-            video_s = cv2.VideoCapture(self.video_url)
-        return video_s
-
-    def read_video_stream(self, video_s):
-        # print("Read video stream .. " + self.video_url)
-        if 'picam' == self.video_url:
-            frame = video_s.read()
-        else:
-            flag, frame = video_s.read()
-            if not flag:
-                video_s = cv2.VideoCapture(self.video_url)
-                flag, frame = video_s.read()
-                return frame
-        return frame
 
     def classify_frame(self, net, ln, frame, cam):
         # print(" Classify frame ... --->")
         # draw at the top left corner of the screen
-        cv2.putText(frame, self.topic_label, (10, 23), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 0), 2)
+        cv2.putText(frame, self.topic_label, (10, 23), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2)
         conn = db.create_connection(self.sqlite_db)
         # _frame = cv2.resize(frame, (DIMENSION_X, DIMENSION_Y))
         # _frame = imutils.resize(frame,DIMENSION_X)
@@ -117,7 +112,9 @@ class Detection:
         # set the blob as input to our deep learning object
         # detector and obtain the detections
         net.setInput(blob)
+        start = time.time()
         layerOutputs = net.forward(ln)
+        end = time.time()
         # loop over the detections
         (H, W) = frame.shape[:2]
         # initialize our lists of detected bounding boxes, confidences,
@@ -182,15 +179,11 @@ class Detection:
                     now = datetime.datetime.now()
                     day = "{date:%Y-%m-%d}".format(date=now)
                     # do_statistic(conn, cam, self.hashes)
-                    font_scale = min(h, w) / 280
-                    if font_scale > 0.12:
-                         cv2.putText(crop_img_data, str(datetime.datetime.now().strftime('%H:%M %d/%m/%y')), (1, 15), cv2.FONT_HERSHEY_SIMPLEX, font_scale, (255,255,0), 1)
-
                     db.insert_frame(conn, hash, day, time.time(), key, crop_img_data, w, h, cam)
                 except:
                     continue
                 # draw rectangle
-                cv2.rectangle(frame, (x, y), (x + w, y + h), color, 1)
+                cv2.rectangle(frame, (x, y), (x + w, y + h), color, 2)
                 text = "{}:".format(CLASSES[classIDs[i]])
                 cv2.putText(frame, text, (x, y - 5),
                             cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 1)
@@ -215,6 +208,7 @@ class Detection:
         return frame
 
 
+
 class ImageHashCodesCountByTimer(ObjCountByTimer):
     def equals(self, hash1, hash2):
         delta = hash1 - hash2
@@ -224,10 +218,8 @@ class ImageHashCodesCountByTimer(ObjCountByTimer):
 
 
 def do_statistic(conn, cam, hashes):
-    # Do some statistic work here
     params = get_parameters_json(hashes, cam)
     db.insert_statistic(conn, params)
-
 
 def get_parameters_json(hashes, cam):
     ret = []
@@ -247,7 +239,6 @@ def get_parameters_json(hashes, cam):
     # logging.debug( trace.__dict__ )
     return ret
 
-
 class Trace(dict):
     def __init__(self):
         dict.__init__(self)
@@ -262,7 +253,6 @@ class Trace(dict):
         return json.dumps(self, default=lambda o: o.__dict__,
                           sort_keys=True, indent=4)
 
-
 def dhash(image_data, hashSize=8):
     image_out = np.array(image_data).astype(np.uint8)
 
@@ -276,3 +266,51 @@ def dhash(image_data, hashSize=8):
     diff = resized[:, 1:] > resized[:, :-1]
     # convert the difference image to a hash
     return sum([2 ** i for (i, v) in enumerate(diff.flatten()) if v])
+
+
+
+def configure(args):
+    # construct the argument parse and parse the arguments
+    # I named config file as  file config.txt and stored it
+    # in the same directory as the script
+
+    with open('config.txt') as f:
+        for line in f:
+            if separator in line:
+                # Find the name and value by splitting the string
+                name, value = line.split(separator, 1)
+                # Assign key value pair to dict
+                # strip() removes white space from the ends of strings
+                args[name.strip()] = value.strip()
+
+    # global scrn_stats
+    # scrn_stats = Screen_statistic(paramsQueue)
+
+    ap = argparse.ArgumentParser()
+    ap.add_argument("-nw", "--not_show_in_window", required=False,
+                    help="video could be shown in window.", action="store_true", default=False)
+    ap.add_argument("-v", "--video_file", required=False,
+                    help="video file , could be access to remote location.")
+    ap.add_argument("-p", "--prototxt", required=False,
+                    help="path to Caffe 'deploy' prototxt file")
+    ap.add_argument("-m", "--model", required=False,
+                    help="path to Caffe pre-trained model")
+    ap.add_argument("-c", "--confidence", type=float, required=False,
+                    help="minimum probability to filter weak detections")
+    more_args = vars(ap.parse_args())
+
+    more_args = {k: v for k, v in more_args.items() if v is not None}
+    # if more_args["confidence"] == 0.0:more_args["confidence"] = args["confidence"]
+
+    args.update(more_args)
+
+
+configure(args)
+
+Detection(SQLITE_DB, float(args["confidence"]), args["prototxt"], args["model"]);
+
+
+
+
+
+ 
