@@ -1,8 +1,8 @@
 
 #Traffic controls cameras:
 #video_file1=http://203.77.210.41:2000/mjpg/video.mjpg
-video_file0=http://107.85.197.18:8080/-wvhttp-01-/GetOneShot?image_size=1920x1080&frame_count=100
-video_file1=http://213.226.254.135:91/mjpg/video.mjpg
+#video_file0=http://107.85.197.18:8080/-wvhttp-01-/GetOneShot?image_size=1920x1080&frame_count=100
+video_file0=http://213.226.254.135:91/mjpg/video.mjpg
 #Japanees Laundry:
 #video_file3=http://180.13.193.172:8083/-wvhttp-01-/GetOneShot?image_size=640x480&frame_count=1000000000
 
