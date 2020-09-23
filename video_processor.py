@@ -27,12 +27,12 @@ LOOKED1 = {"car": [], "person": [], "bus": [], "truck": [], "motorbike": [], "tr
 subject_of_interes = ["car", "person", "bus", "motorbike", "train"]
 
 DNN_TARGET_MYRIAD = False
-HASH_DELTA = 3  # bigger number  more precise object's count
+HASH_DELTA = 13  # bigger number  more precise object's count
 DIMENSION_X = 416
 DIMENSION_Y = 416
 piCameraResolution = (640, 480)  # (1024,768) #(640,480)  #(1920,1080) #(1080,720) # (1296,972)
 piCameraRate = 16
-NUMBER_OF_THREADS = 2
+NUMBER_OF_THREADS = 1
 BOX_EXTENDER = 30
 SQLITE_DB = "framedata.db"
 args = {}
