@@ -22,12 +22,12 @@ LOOKED1 = {"car": [], "person": [], "bus": [], "truck": [], "motorbike": [], "tr
 subject_of_interes = ["car", "person", "bus", "motorbike", "train"]
 
 DNN_TARGET_MYRIAD = False
-HASH_DELTA = 3  # bigger number  more precise object's count
+HASH_DELTA = 30  # bigger number  more precise object's count
 DIMENSION_X = 416
 DIMENSION_Y = 416
 piCameraResolution = (640, 480)  # (1024,768) #(640,480)  #(1920,1080) #(1080,720) # (1296,972)
 piCameraRate = 16
-NUMBER_OF_THREADS = 4
+NUMBER_OF_THREADS = 1
 BOX_EXTENDER = 60
 
 class Detection:
@@ -186,7 +186,7 @@ class Detection:
                     if font_scale > 0.12:
                          cv2.putText(crop_img_data, str(datetime.datetime.now().strftime('%H:%M %d/%m/%y')), (1, 15), cv2.FONT_HERSHEY_SIMPLEX, font_scale, (255,255,0), 1)
 
-                    db.insert_frame(conn, hash, day, time.time(), key, crop_img_data, w, h, cam)
+                    db.insert_frame(conn, hash, day, time.time()*1000, key, crop_img_data, w, h, cam)
                 except:
                     continue
                 # draw rectangle
@@ -236,7 +236,7 @@ def get_parameters_json(hashes, cam):
         trace = Trace()
         trace.name = key
         trace.cam = cam
-        tm = int(time.time())  # strftime("%H:%M:%S", localtime())
+        tm = time.time()*1000  # strftime("%H:%M:%S", localtime())
         trace.hashcodes = hashes[key].toString()
         trace.x = tm
         # last = len(hashes[key].counted) -1

@@ -112,9 +112,9 @@ class Detection:
         # set the blob as input to our deep learning object
         # detector and obtain the detections
         net.setInput(blob)
-        start = time.time()
+        start = time.time()*1000
         layerOutputs = net.forward(ln)
-        end = time.time()
+        end = time.time()*1000
         # loop over the detections
         (H, W) = frame.shape[:2]
         # initialize our lists of detected bounding boxes, confidences,
@@ -179,7 +179,7 @@ class Detection:
                     now = datetime.datetime.now()
                     day = "{date:%Y-%m-%d}".format(date=now)
                     # do_statistic(conn, cam, self.hashes)
-                    db.insert_frame(conn, hash, day, time.time(), key, crop_img_data, w, h, cam)
+                    db.insert_frame(conn, hash, day, time.time()*1000, key, crop_img_data, w, h, cam)
                 except:
                     continue
                 # draw rectangle
@@ -228,7 +228,7 @@ def get_parameters_json(hashes, cam):
         trace = Trace()
         trace.name = key
         trace.cam = cam
-        tm = int(time.time())  # strftime("%H:%M:%S", localtime())
+        tm = int(time.time()*1000)  # strftime("%H:%M:%S", localtime())
         trace.hashcodes = hashes[key].toString()
         trace.x = tm
         # last = len(hashes[key].counted) -1

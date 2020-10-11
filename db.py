@@ -2,6 +2,8 @@
 import sqlite3
 import cv2
 import base64
+import time
+
 from sqlite3 import Error
  
  
@@ -51,7 +53,7 @@ def insert_statistic(conn, params):
          print(" e: {}".format( e))
 
 
-def select_statistic_by_time(conn, cam, time1, time2):
+def select_statistic_by_time(conn, cam, time1, time2, obj):
     """
     Query statistic by time
     :param conn: the Connection object
@@ -60,12 +62,20 @@ def select_statistic_by_time(conn, cam, time1, time2):
     """
 
     conn.row_factory= sqlite3.Row
-    cur = conn.cursor()
-
-    cur.execute("SELECT * FROM statistic WHERE cam=? AND currentime BETWEEN ? and ? ORDER BY currentime ASC", (cam,time1,time2,))
+    
+    #rows = []
+    now = time.time()*1000
+    time2 = now - time2*3600000
+    time1 = now - time1*3600000
+    print(time2,time1)
+    cur = conn.cursor()   
+    str =  "('" + obj. replace(",","','") + "')"
+    #print(str)
+    cur.execute("SELECT currentime as x0, currentime + 30000 as x, y  FROM statistic WHERE type IN" +str+ " AND cam=? AND currentime BETWEEN ? and ? ORDER BY currentime ASC", #DeSC
+        (cam, time2, time1 ))
     # convert row object to the dictionary
-    rows = [dict(r) for r in cur.fetchall()]
-
+    rows = [dict(r) for r in cur.fetchall()] 
+    #print ( rows )
     #for row in rows:
     #    print(row)
     return rows

@@ -11,6 +11,7 @@ yolo-coco/
 # DB files
 *.db
 *.db*
+framedata.db
 
 # Distribution / packaging
 .Python

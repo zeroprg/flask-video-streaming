@@ -23,7 +23,7 @@ def traverse_dir(rootDir=".", reverse = True, wildcard="*" , start = 0 , end = 0
 def delete_file_older_then(path, sec):
     for f in os.listdir(path):
        try:
-           if os.stat(os.path.join(path,f)).st_mtime < time.time() - sec:
+           if os.stat(os.path.join(path,f)).st_mtime < time.time()*1000 - sec:
                 os.remove(os.path.join(path, f))
        except OSError: pass
 
@@ -81,7 +81,7 @@ if (__name__ == '__main__'):
     print("params_files:" + json.dumps(params_files))
     if len(params_files)>0: print("Test #1 : !!!!!!!!!!!! Successed !!!!!!!!!!!!!!")
     print("Test #2: Compare modification of first file in list with provided time")
-    test2Result = compare_dates(params_files[0], 1534367187) #time.time())
+    test2Result = compare_dates(params_files[0], 1534367187000) #time.time()*1000)
     print(test2Result)
     if test2Result: print("Test #2 : !!!!!!!!!!!! Successed !!!!!!!!!!!!!!")
     print("Test #3")

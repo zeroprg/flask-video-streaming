@@ -230,7 +230,7 @@ app = Flask(__name__, static_url_path='/static')
 app.config['SECRET_KEY'] = 'the quick brown fox jumps over the lazy   dog'
 app.config['CORS_HEADERS'] = 'Content-Type'
 
-cors = CORS(app, resources={r"/urls": {"origins": "http://localhost:5000"}})
+cors = CORS(app, resources={r"/urls": {"origins": "http://localhost:3020"}})
 
 
 # api = Api(app)
@@ -265,24 +265,32 @@ def index():
 
 
 @app.route('/moreparams')
+@cross_origin(origin='http://localhost:3020')
 def moreparams():
     """ Read list of json files or return one specific  for specific time """
     hour_back1 = request.args.get('hour_back1', default=1, type=int)
     hour_back2 = request.args.get('hour_back2', default=0, type=int)
+    object_of_interest = request.args.get('object_of_interest', type=None)
+    #print("object_of_interest: " + str(object_of_interest)[1:-1])
+
     cam = request.args.get('cam', default=0, type=int)
     if hour_back1 != '':
         hour_back1 = int(hour_back1)
     else:
-        hour_back1 = 1  # default value: 60 min back
-    now_in_seconds = time.time()
-    if hour_back2 != '': now_in_seconds = now_in_seconds - int(hour_back2) * 60 * 60
-    print("cam: {}, hour_back:{}, now_in_seconds:{}".format(cam, hour_back1, now_in_seconds))
+        hour_back1 = 0  # default value: 60 min back
 
-    params = gen_params(cam=cam, hours=hour_back1, currentime=now_in_seconds)
+    if hour_back2 != '':
+        hour_back2 = int(hour_back2)
+    else:
+        hour_back2 = 1  # default value: 60 min back
+    print("cam: {}, hour_back:{}, now_in_seconds:{}".format(cam, hour_back1, hour_back2))
+
+    params = gen_params(cam=cam, time1=hour_back1, time2=hour_back2 ,object_of_interest=object_of_interest)
     return Response(params, mimetype='text/plain')
 
 
 @app.route('/moreimgs')
+@cross_origin(origin='http://localhost:3020')
 def moreimgs():
     """ Read list of json files or return one specific  for specific time """
     direction = request.args.get('direction', default=1, type=int)
@@ -301,15 +309,16 @@ def moreimgs():
 
 
 @app.route('/imgs_at_time')
+@cross_origin(origin='http://localhost:3020')
 def imgs_at_time():
     """ Read list of json files or return one specific  for specific time """
-    seconds = request.args.get('time', default=time.time(), type=int)
-    delta = request.args.get('delta', default=10, type=int)
+    seconds = request.args.get('time', default=time.time()*1000, type=int)
+    delta = request.args.get('delta', default=10000, type=int)
     cam = request.args.get('cam', default=0, type=int)
     return Response(gen_array_of_imgs(cam, delta=delta, currentime=seconds), mimetype='text/plain')
 
 
-def gen_array_of_imgs(cam, delta=10, currentime=time.time()):
+def gen_array_of_imgs(cam, delta=10000, currentime=time.time()*1000):
     time1 = currentime - delta
     time2 = currentime + delta
     conn = db.create_connection(SQLITE_DB)
@@ -343,12 +352,12 @@ def detect(cam):
         pass
 
 
-def gen_params(cam=0, hours=1, currentime=time.time()):
+def gen_params(cam=0, time1=0, time2=5*60*60*1000, object_of_interest=[]):
     """Parameters streaming generator function."""
-    time1 = currentime - hours * 60 * 60
-    print("time1: {} now: {}".format(time1, currentime))
+ 
+    print("time1: {} time2: {}".format(time1, time2))
     conn = db.create_connection(SQLITE_DB)
-    ls = db.select_statistic_by_time(conn, cam, time1, currentime)
+    ls = db.select_statistic_by_time(conn, cam, time1, time2, object_of_interest)
     ret = json.dumps(ls)  # , indent = 4)
     logger.debug(ret)
     return ret
@@ -366,7 +375,7 @@ def ping_video_url(url):
 
 
 @app.route('/urls', methods=['GET', 'POST'])
-@cross_origin(origin='http://localhost:5000')
+@cross_origin(origin='http://localhost:3020')
 def urls():
     """Add/Delete/Update a new video url, list all availabe urls."""
     list_url = request.args.get('list', default=None)
@@ -380,6 +389,10 @@ def urls():
             # return index() #redirect("/")
             return Response('{"message":"URL added  successfully , video start processing"}', mimetype='text/plain')
     if list_url is not None:
+        #data = {url:videos, objectOfInterests: subject_of_interes}
+        #for video in videos:
+            
+
         return Response(json.dumps(videos), mimetype='text/plain')
     if delete_url is not None:
         for video in videos:
@@ -407,7 +420,7 @@ def params_feed():
     """Parameters streaming route. Put this in the src attribute of an img tag."""
     hours = request.args.get('hour_back1', default=1)
     start_hour = request.args.get('hour_back2', default=0)
-    currentime = time.time() - int(start_hour) * 60 * 60
+    currentime = (time.time() - int(start_hour) * 3600) * 1000
     return Response(gen_params(hours, currentime=currentime),
                     mimetype='text/plain')
 
@@ -420,4 +433,4 @@ def params_feed():
 
 if (__name__ == '__main__'):
     start()
-    app.run(host='0.0.0.0', threaded=True)  # debug = True ) #
+    app.run(host='0.0.0.0', port=3020, threaded=True)  # debug = True ) #

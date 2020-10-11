@@ -44,6 +44,10 @@ var URLlist = React.createClass({
   },
 
     loadData() {
+        const API = ""
+        const DEFAULT_QUERY ="urls?list=true"
+        const URL = API + "urls"
+        const deleteURL = URL + "?delete="
         this.setState({ isLoading: true });
         console.log(" start:")
         fetch(API + DEFAULT_QUERY)

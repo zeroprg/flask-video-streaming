@@ -107,7 +107,7 @@ class Screen_statistic(object):
                      for _value in value:
                          Break = False
                          for _orig_value in orig_value:
-                             if(int(time.time()) - _orig_value[5] > SCENE_FRAMES ):
+                             if(int(time.time()*1000) - _orig_value[5] > SCENE_FRAMES ):
                                  orig_value.remove(_orig_value)
                                  continue
                              #mse = ((_orig_value   _value)**2).mean()
