@@ -1,6 +1,7 @@
 
 #Traffic controls cameras:
-video_file1=http://203.77.210.41:2000/mjpg/video.mjpg
+#video_file1=http://203.77.210.41:2000/mjpg/video.mjpg
+video_file1=http://110.54.126.130:50000/cgi-bin/camera?resolution=1200&amp;quality=1&amp
 #video_file0=http://107.85.197.18:8080/-wvhttp-01-/GetOneShot?image_size=1920x1080&frame_count=100
 video_file0=http://213.226.254.135:91/mjpg/video.mjpg
 #Japanees Laundry:
