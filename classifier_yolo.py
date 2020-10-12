@@ -80,7 +80,7 @@ class Detection:
     def init_video_stream(self):
         if 'picam' == self.video_url:
             video_s = VideoStream(usePiCamera=True, resolution=piCameraResolution, framerate=piCameraRate).start()
-            time.sleep(2.0)
+            time.sleep(1.0)
 
         else:
             # grab the frame from the threaded video stream
@@ -181,19 +181,21 @@ class Detection:
                     hash = dhash(crop_img_data)
                     now = datetime.datetime.now()
                     day = "{date:%Y-%m-%d}".format(date=now)
-                    # do_statistic(conn, cam, self.hashes)
+                    do_statistic(conn, cam, self.hashes)
                     font_scale = min(h, w) / 280
+                    
                     if font_scale > 0.12:
-                         cv2.putText(crop_img_data, str(datetime.datetime.now().strftime('%H:%M %d/%m/%y')), (1, 15), cv2.FONT_HERSHEY_SIMPLEX, font_scale, (255,255,0), 1)
+                         cv2.putText(crop_img_data, str(datetime.datetime.now().strftime('%H:%M %d/%m/%y')), (1, 15), cv2.FONT_HERSHEY_SIMPLEX, font_scale, (255,255,0), 2)
 
                     db.insert_frame(conn, hash, day, time.time()*1000, key, crop_img_data, w, h, cam)
+                                    # draw rectangle
+                    cv2.rectangle(frame, (x, y), (x + w, y + h), color, 1)
+                    text = "{}:".format(CLASSES[classIDs[i]])
+                    cv2.putText(frame, text, (x, y - 5),
+                                cv2.FONT_HERSHEY_SIMPLEX, 1, color, 1)
+
                 except:
                     continue
-                # draw rectangle
-                cv2.rectangle(frame, (x, y), (x + w, y + h), color, 1)
-                text = "{}:".format(CLASSES[classIDs[i]])
-                cv2.putText(frame, text, (x, y - 5),
-                            cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 1)
 
                 if self.hashes.get(key, None) is None:
                     # count objects for last sec, last 5 sec and last minute

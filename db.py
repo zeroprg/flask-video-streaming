@@ -51,7 +51,7 @@ def insert_statistic(conn, params):
         conn.commit()
     except Error as e:
          print(" e: {}".format( e))
-
+    print(" insert_statistic:  {}".format(params))
 
 def select_statistic_by_time(conn, cam, time1, time2, obj):
     """
@@ -67,9 +67,10 @@ def select_statistic_by_time(conn, cam, time1, time2, obj):
     now = time.time()*1000
     time2 = now - time2*3600000
     time1 = now - time1*3600000
-    print(time2,time1)
-    cur = conn.cursor()   
-    str =  "('" + obj. replace(",","','") + "')"
+    print(time2,time1, obj)
+    cur = conn.cursor()
+    
+    str =  "('" + obj.replace(",","','") + "')"
     #print(str)
     cur.execute("SELECT currentime as x0, currentime + 30000 as x, y  FROM statistic WHERE type IN" +str+ " AND cam=? AND currentime BETWEEN ? and ? ORDER BY currentime ASC", #DeSC
         (cam, time2, time1 ))
@@ -77,7 +78,7 @@ def select_statistic_by_time(conn, cam, time1, time2, obj):
     rows = [dict(r) for r in cur.fetchall()] 
     #print ( rows )
     #for row in rows:
-    #    print(row)
+    #print(row)
     return rows
 
 

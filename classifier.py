@@ -212,7 +212,7 @@ def get_parameters_json(hashes, cam):
         trace = Trace()
         trace.name = key
         trace.cam = cam
-        tm = int(time.time()*1000)  # strftime("%H:%M:%S", localtime())
+        tm = time.time()*1000  # strftime("%H:%M:%S", localtime())
         trace.hashcodes = hashes[key].toString()
         trace.x = tm
         # last = len(hashes[key].counted) -1
