@@ -63,8 +63,8 @@ def select_statistic_by_time(conn, cam, time1, time2, obj):
     
     #rows = []
     now = time.time()
-    time2 = (now - time2*3600000)*1000
-    time1 = (now - time1*3600000)*1000
+    time2 = int((now - time2*3600000)*1000)
+    time1 = int((now - time1*3600000)*1000)
     print(time2,time1, obj)
     cur = conn.cursor()
     
