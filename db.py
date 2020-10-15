@@ -76,7 +76,7 @@ def select_statistic_by_time(conn, cam, time1, time2, obj):
     cursor = cur.fetchall()
     print(cursor)
     #rows = [dict(r) for r in cursor] 
-    rows = [row.fetchone()} for row in cursor]
+    rows = [row.fetchone() for row in cursor]
     print ( rows )
     #for row in rows:
     #print(row)
