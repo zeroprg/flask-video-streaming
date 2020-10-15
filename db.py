@@ -45,7 +45,8 @@ def insert_statistic(conn, params):
         hashcodes = str(param['hashcodes'])
     if param['y'] == 0: return # never store dummy noise
     try:
-        cur.execute("INSERT INTO statistic(type,currentime,y,text,hashcodes,cam) VALUES (%s, %s, %s, %s, %s, %s)", (param['name'], param['x'], param['y'], param['text'], hashcodes, param['cam']))
+        cur.execute("INSERT INTO statistic(type,currentime,y,text,hashcodes,cam) VALUES (%s, %s, %s, %s, %s, %s)",
+         (param['name'], param['x'], param['y'], param['text'], hashcodes, param['cam']))
     except Exception as e:
          print(" e: {}".format( e))
     print(" insert_statistic:  {}".format(params))
@@ -82,13 +83,16 @@ def select_statistic_by_time(conn, cam, time1, time2, obj):
 def insert_frame(conn, hashcode, date, time, type, numpy_array, x_dim, y_dim, cam):
     cur = conn.cursor()
     if y_dim == 0 or x_dim == 0 or  x_dim/y_dim > 5 or y_dim/x_dim > 5: return
-
+    
     cur.execute("UPDATE objects SET currentime=%s WHERE hashcode=%s", (time, str(hashcode)))
     print("cam= {}, x_dim={}, y_dim={}".format(cam, x_dim, y_dim))
     if cur.rowcount == 0:
         buffer = cv2.imencode('.jpg', numpy_array)[1]
         jpg_as_base64='data:image/jpeg;base64,'+ base64.b64encode(buffer).decode('utf-8')
-        cur.execute("INSERT INTO objects (hashcode, currentdate, currentime, type, frame, x_dim, y_dim, cam) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)", (str(hashcode), date, time, type, str(jpg_as_base64), int(x_dim), int(y_dim), int(cam))
+        try:
+            cur.execute("INSERT INTO objects (hashcode, currentdate, currentime, type, frame, x_dim, y_dim, cam) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)", 
+            (str(hashcode), date, time, type, str(jpg_as_base64), int(x_dim), int(y_dim), int(cam)))
+        except Exception as e: print(" e: {}".format( e))
 
 
 def select_frame_by_time(conn, cam, time1, time2):
@@ -101,9 +105,7 @@ def select_frame_by_time(conn, cam, time1, time2):
    # conn.row_factory= sqlite3.Row
     cur = conn.cursor()
     cur.execute("SELECT cam, hashcode, currentdate, currentime, type, frame FROM objects WHERE cam=%s AND currentime BETWEEN %s and %s ORDER BY currentime DESC", (cam,time1,time2,))
- 
-    rows = [dict(r) for r in cur.fetchall()]
- 
+    rows = [dict(r) for r in cur.fetchall()] 
     return rows
 
 def select_last_frames(conn, cam, n_rows, offset=0, as_json = False, type=None):
