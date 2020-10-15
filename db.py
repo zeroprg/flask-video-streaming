@@ -50,7 +50,7 @@ def insert_statistic(conn, params):
         hashcodes = str(param['hashcodes'])
     if param['y'] == 0: return # never store dummy noise
     try:
-        cur.execute("INSERT INTO statistic(type,currentime,y,text,hashcodes,cam) VALUES (%, %, %, %, %, %)", (param['name'], param['x'], param['y'], param['text'], hashcodes, param['cam']))
+        cur.execute("INSERT INTO statistic(type,currentime,y,text,hashcodes,cam) VALUES (%s, %s, %s, %s, %s, %s)", (param['name'], param['x'], param['y'], param['text'], hashcodes, param['cam']))
         conn.commit()
     except Error as e:
          print(" e: {}".format( e))
@@ -75,7 +75,7 @@ def select_statistic_by_time(conn, cam, time1, time2, obj):
     
     str =  "('" + obj.replace(",","','") + "')"
     #print(str)
-    cur.execute("SELECT currentime as x0, currentime + 30000 as x, y  FROM statistic WHERE type IN" +str+ " AND cam=% AND currentime BETWEEN % and % ORDER BY currentime ASC", #DeSC
+    cur.execute("SELECT currentime as x0, currentime + 30000 as x, y  FROM statistic WHERE type IN" +str+ " AND cam=%s AND currentime BETWEEN %s and %s ORDER BY currentime ASC", #DeSC
         (cam, time2, time1 ))
     # convert row object to the dictionary
     rows = [dict(r) for r in cur.fetchall()] 
@@ -89,11 +89,11 @@ def insert_frame(conn, hashcode, date, time, type, numpy_array, x_dim, y_dim, ca
     cur = conn.cursor()
     if y_dim == 0 or x_dim == 0 or  x_dim/y_dim > 5 or y_dim/x_dim > 5: return
     try:
-       cur.execute("UPDATE objects SET lastime=% WHERE hashcode=%", (time, str(hashcode)))
+       cur.execute("UPDATE objects SET lastime=%s WHERE hashcode=%s", (time, str(hashcode)))
        if cur.rowcount == 0:
           buffer = cv2.imencode('.jpg', numpy_array)[1]
           jpg_as_base64='data:image/jpeg;base64,'+ base64.b64encode(buffer).decode('utf-8')
-          cur.execute("INSERT INTO objects (hashcode, currentdate, currentime, type, frame, x_dim, y_dim, cam) VALUES (%, %, %, %, %, %, %, %)", (str(hashcode), date, time, type, jpg_as_base64, x_dim, y_dim, cam))
+          cur.execute("INSERT INTO objects (hashcode, currentdate, currentime, type, frame, x_dim, y_dim, cam) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)", (str(hashcode), date, time, type, jpg_as_base64, x_dim, y_dim, cam))
        conn.commit()
     except Error as e:
           print("type {} cam: {} e: {}".format( type, cam, e))
@@ -108,7 +108,7 @@ def select_frame_by_time(conn, cam, time1, time2):
     """
    # conn.row_factory= sqlite3.Row
     cur = conn.cursor()
-    cur.execute("SELECT cam, hashcode, currentdate, currentime, type, frame FROM objects WHERE cam=% AND currentime BETWEEN % and % ORDER BY currentime DESC", (cam,time1,time2,))
+    cur.execute("SELECT cam, hashcode, currentdate, currentime, type, frame FROM objects WHERE cam=%s AND currentime BETWEEN %s and %s ORDER BY currentime DESC", (cam,time1,time2,))
  
     rows = [dict(r) for r in cur.fetchall()]
  
@@ -125,9 +125,9 @@ def select_last_frames(conn, cam, n_rows, offset=0, as_json = False, type=None):
     #    conn.row_factory = sqlite3.Row
     cur = conn.cursor()
     if type == None:
-        cur.execute("SELECT hashcode, currentdate, currentime, type, frame, cam FROM objects where cam=%  ORDER BY currentime DESC LIMIT % OFFSET %", (cam,n_rows,offset,))
+        cur.execute("SELECT hashcode, currentdate, currentime, type, frame, cam FROM objects where cam=%s  ORDER BY currentime DESC LIMIT %s OFFSET %s", (cam,n_rows,offset,))
     else:
-        cur.execute("SELECT hashcode, currentdate, currentime, type, frame, cam FROM objects where cam=% and type=% ORDER BY currentime DESC LIMIT % OFFSET %", (cam,n_rows,offset,type,))
+        cur.execute("SELECT hashcode, currentdate, currentime, type, frame, cam FROM objects where cam=%s and type=%s ORDER BY currentime DESC LIMIT %s OFFSET %s", (cam,n_rows,offset,type,))
     i = 1
     if as_json == True:
         rows = "["
