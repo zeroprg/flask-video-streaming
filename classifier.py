@@ -186,6 +186,7 @@ class Detection:
 
             # draw at the top left corner of the screen
             cv2.putText(frame, self.topic_label, (10, 23), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2)
+            conn.commit()
             # print(" Classify frame ... <---")
         return frame
 
