@@ -67,19 +67,27 @@ def select_statistic_by_time(conn, cam, time1, time2, obj):
     time1 = int((now - time1*3600000)*1000)
     print(time2,time1, obj)
     cur = conn.cursor()
-    dict_cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+    # cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
     
     str =  "('" + obj.replace(",","','") + "')"
     #print(str)
-    cur.execute("SELECT currentime as x0, currentime + 30000 as x, y as y FROM statistic WHERE type IN" +str+ " AND cam=%s AND currentime BETWEEN %s and %s ORDER BY currentime ASC", #DeSC
+    cur.execute("SELECT type, currentime as x0, currentime + 30000 as x, y as y FROM statistic WHERE type IN" +str+ " AND cam=%s AND currentime BETWEEN %s and %s ORDER BY type,currentime ASC", #DeSC
         (cam, time2, time1 ))
     # convert row object to the dictionary
     cursor = cur.fetchall()
     print(cursor)
     #rows = [dict(r) for r in cursor] 
    # rows = [row.fetchone() for row in cursor]
-    rows = [{k:v for k, v in record.items()} for record in rows]
-    print ( rows )
+    #rows = [{ 'type':record[0], 'row':  for k, v in record.items() } for record in rows]
+    _type = ""
+    rows=[]
+    for record in cursor:
+            type = record[0]
+            if(type != _type): 
+                rows.append({'label':record[0],'values': 
+                [ {'x':v[1], 'y':v[2]} for v in list(filter( lambda x : x[0] == type , cursor))] })
+            _type=type
+    print(rows)
     #for row in rows:
     #print(row)
     return rows
