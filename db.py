@@ -67,6 +67,7 @@ def select_statistic_by_time(conn, cam, time1, time2, obj):
     time1 = int((now - time1*3600000)*1000)
     print(time2,time1, obj)
     cur = conn.cursor()
+    dict_cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
     
     str =  "('" + obj.replace(",","','") + "')"
     #print(str)
@@ -76,7 +77,8 @@ def select_statistic_by_time(conn, cam, time1, time2, obj):
     cursor = cur.fetchall()
     print(cursor)
     #rows = [dict(r) for r in cursor] 
-    rows = [row.fetchone() for row in cursor]
+   # rows = [row.fetchone() for row in cursor]
+    rows = [{k:v for k, v in record.items()} for record in rows]
     print ( rows )
     #for row in rows:
     #print(row)
