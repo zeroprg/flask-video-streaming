@@ -252,11 +252,12 @@ def index():
     start = int(start)
     video_urls = []
     img_paginator = IMG_PAGINATOR
-    conn = db.create_connection(SQLITE_DB)
+    conn = db.create_connection(SQLITE_DB)    
     images_filenames = []
     for i in range(len(videos)):
         video_urls.append((videos[i][0], 'video_feed?cam=' + str(videos[i][0])))
         images_filenames.append(db.select_last_frames(conn, i, IMG_PAGINATOR))
+    conn.commit()    
     logger.info("video_urls: {}".format(video_urls))
     """ Delete old frames wil be here """
     resp =  Response(render_template('index.html', **locals()), mimetype='text/html')
