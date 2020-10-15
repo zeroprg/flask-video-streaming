@@ -5,5 +5,6 @@ Werkzeug==0.12.2
 dhash
 imutils
 flask_cors
+psycopg2
 #use only for Raspberry Pi
 #picamera
