@@ -63,15 +63,15 @@ def select_statistic_by_time(conn, cam, time1, time2, obj):
     
     #rows = []
     now = time.time()
-    time2 = now - time2*3600000
-    time1 = now - time1*3600000
+    time2 = (now - time2*3600000)*1000
+    time1 = (now - time1*3600000)*1000
     print(time2,time1, obj)
     cur = conn.cursor()
     
     str =  "('" + obj.replace(",","','") + "')"
     #print(str)
     cur.execute("SELECT currentime as x0, currentime + 30000 as x, y  FROM statistic WHERE type IN" +str+ " AND cam=%s AND currentime BETWEEN %s and %s ORDER BY currentime ASC", #DeSC
-        (cam, time2*1000, time1*1000 ))
+        (cam, time2, time1 ))
     # convert row object to the dictionary
     rows = [dict(r) for r in cur.fetchall()] 
     #print ( rows )
