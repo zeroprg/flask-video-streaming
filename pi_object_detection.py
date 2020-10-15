@@ -312,13 +312,13 @@ def moreimgs():
 @cross_origin(origin='http://localhost:3020')
 def imgs_at_time():
     """ Read list of json files or return one specific  for specific time """
-    seconds = request.args.get('time', default=time.time()*1000, type=int)
+    seconds = request.args.get('time', default=int(time.time()*1000), type=int)
     delta = request.args.get('delta', default=10000, type=int)
     cam = request.args.get('cam', default=0, type=int)
     return Response(gen_array_of_imgs(cam, delta=delta, currentime=seconds), mimetype='text/plain')
 
 
-def gen_array_of_imgs(cam, delta=10000, currentime=time.time()*1000):
+def gen_array_of_imgs(cam, delta=10000, currentime=int(time.time()*1000)):
     time1 = currentime - delta
     time2 = currentime + delta
     conn = db.create_connection(SQLITE_DB)

@@ -180,7 +180,7 @@ class Detection:
                                     cv2.FONT_HERSHEY_SIMPLEX, font_scale, (255, 0, 0), 1)
                     now = datetime.datetime.now()
                     day = "{date:%Y-%m-%d}".format(date=now)
-                    db.insert_frame(conn, hash, day, time.time()*1000, key, crop_img_data, x_dim, y_dim, cam)
+                    db.insert_frame(conn, hash, day, int(time.time()*1000), key, crop_img_data, x_dim, y_dim, cam)
 
                 do_statistic(conn, cam, self.hashes)
 
@@ -212,7 +212,7 @@ def get_parameters_json(hashes, cam):
         trace = Trace()
         trace.name = key
         trace.cam = cam
-        tm = time.time()*1000  # strftime("%H:%M:%S", localtime())
+        tm = int(time.time()*1000)  # strftime("%H:%M:%S", localtime())
         trace.hashcodes = hashes[key].toString()
         trace.x = tm
         # last = len(hashes[key].counted) -1

@@ -23,7 +23,7 @@ def traverse_dir(rootDir=".", reverse = True, wildcard="*" , start = 0 , end = 0
 def delete_file_older_then(path, sec):
     for f in os.listdir(path):
        try:
-           if os.stat(os.path.join(path,f)).st_mtime < time.time()*1000 - sec:
+           if os.stat(os.path.join(path,f)).st_mtime < int(time.time()*1000) - sec:
                 os.remove(os.path.join(path, f))
        except OSError: pass
 

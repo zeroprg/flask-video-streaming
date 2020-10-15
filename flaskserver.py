@@ -65,7 +65,7 @@ def moreparams():
         hour_back1 = int(hour_back1)
     else:
         hour_back1 = 1  # default value: 60 min back
-    now_in_seconds = time.time()*1000
+    now_in_seconds = int(time.time()*1000)
     if hour_back2 != '': now_in_seconds = now_in_seconds - int(hour_back2) * 60 * 60
     print("cam: {}, hour_back:{}, now_in_seconds:{}".format(cam, hour_back1, now_in_seconds))
 
@@ -100,7 +100,7 @@ def imgs_at_time():
     return Response(gen_array_of_imgs(cam, delta=delta, currentime=seconds), mimetype='text/plain')
 
 
-def gen_array_of_imgs(cam, delta=10, currentime=time.time()*1000):
+def gen_array_of_imgs(cam, delta=10, currentime=int(time.time()*1000)):
     time1 = currentime - delta
     time2 = currentime + delta
     conn = db.create_connection(SQLITE_DB)

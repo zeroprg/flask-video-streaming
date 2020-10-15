@@ -176,7 +176,7 @@ def main_IE_infer(cap):
     exec_net = plugin.load(network=net)
 
     while cap.isOpened():
-        t1 = time.time()*1000
+        t1 = int(time.time()*1000)
         ret, image = cap.read()
         if not ret:
             continue
@@ -219,7 +219,7 @@ def main_IE_infer(cap):
 
         if cv2.waitKey(1)&0xFF == ord('q'):
             break
-        elapsedTime = time.time()*1000 - t1
+        elapsedTime = int(time.time()*1000) - t1
         fps = "(Playback) {:.1f} FPS".format(1/elapsedTime)
 
         ## frame skip, video file only

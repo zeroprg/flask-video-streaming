@@ -67,7 +67,7 @@ def select_statistic_by_time(conn, cam, time1, time2, obj):
     #conn.row_factory= sqlite3.Row
     
     #rows = []
-    now = time.time()*1000
+    now = time.time()
     time2 = now - time2*3600000
     time1 = now - time1*3600000
     print(time2,time1, obj)

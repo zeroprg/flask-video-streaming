@@ -112,9 +112,9 @@ class Detection:
         # set the blob as input to our deep learning object
         # detector and obtain the detections
         net.setInput(blob)
-        start = time.time()*1000
+        start = int(time.time()*1000)
         layerOutputs = net.forward(ln)
-        end = time.time()*1000
+        end = int(time.time()*1000)
         # loop over the detections
         (H, W) = frame.shape[:2]
         # initialize our lists of detected bounding boxes, confidences,
