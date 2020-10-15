@@ -46,4 +46,4 @@ video_file0=http://213.226.254.135:91/mjpg/video.mjpg
 prototxt=MobileNetSSD_deploy.prototxt.txt
 #model=yolo-coco/yolov3-tiny.weights
 model=MobileNetSSD_deploy.caffemodel
-confidence=0.15
+confidence=0.10
