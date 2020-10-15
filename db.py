@@ -71,7 +71,7 @@ def select_statistic_by_time(conn, cam, time1, time2, obj):
     str =  "('" + obj.replace(",","','") + "')"
     #print(str)
     cur.execute("SELECT currentime as x0, currentime + 30000 as x, y  FROM statistic WHERE type IN" +str+ " AND cam=%s AND currentime BETWEEN %s and %s ORDER BY currentime ASC", #DeSC
-        (cam, time2, time1 ))
+        (cam, time2*1000, time1*1000 ))
     # convert row object to the dictionary
     rows = [dict(r) for r in cur.fetchall()] 
     #print ( rows )
@@ -91,7 +91,7 @@ def insert_frame(conn, hashcode, date, time, type, numpy_array, x_dim, y_dim, ca
         jpg_as_base64='data:image/jpeg;base64,'+ base64.b64encode(buffer).decode('utf-8')
         try:
             cur.execute("INSERT INTO objects (hashcode, currentdate, currentime, type, frame, x_dim, y_dim, cam) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)", 
-            (str(hashcode), date, time, type, str(jpg_as_base64), int(x_dim), int(y_dim), int(cam)))
+            (str(hashcode), date, time, type, str(jpg_as_base64), int(x_dim), int(y_dim), int(cam))
         except Exception as e: print(" e: {}".format( e))
 
 
