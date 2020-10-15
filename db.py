@@ -3,8 +3,6 @@ import cv2
 import base64
 import time
 import psycopg2
-
-from sqlite3 import Error
  
  
 def create_connection(db_file):
@@ -18,7 +16,7 @@ def create_connection(db_file):
         #conn = sqlite3.connect(db_file)
         #conn.execute("PRAGMA journal_mode=WAL")
         conn = psycopg2.connect(host="192.168.0.153",database="postgres",user="postgres",password="123456")  
-    except Error as e:
+    except Exception as e:
         print(e)
     return conn
  
@@ -48,7 +46,7 @@ def insert_statistic(conn, params):
     if param['y'] == 0: return # never store dummy noise
     try:
         cur.execute("INSERT INTO statistic(type,currentime,y,text,hashcodes,cam) VALUES (%s, %s, %s, %s, %s, %s)", (param['name'], param['x'], param['y'], param['text'], hashcodes, param['cam']))
-    except Error as e:
+    except Exception as e:
          print(" e: {}".format( e))
     print(" insert_statistic:  {}".format(params))
 
@@ -92,7 +90,7 @@ def insert_frame(conn, hashcode, date, time, type, numpy_array, x_dim, y_dim, ca
           jpg_as_base64='data:image/jpeg;base64,'+ base64.b64encode(buffer).decode('utf-8')
           cur.execute("INSERT INTO objects (hashcode, currentdate, currentime, type, frame, x_dim, y_dim, cam) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)", 
           (str(hashcode), date, time, type, str(jpg_as_base64), int(x_dim), int(y_dim), int(cam))
-    except Error as e:
+    except Exception as e:
           print("type {} cam: {} e: {}".format( type, cam, e))
 
 
