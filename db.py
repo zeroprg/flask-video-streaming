@@ -1,8 +1,8 @@
-
-import sqlite3
+#import sqlite3
 import cv2
 import base64
 import time
+import psycopg2
 
 from sqlite3 import Error
  
@@ -15,10 +15,13 @@ def create_connection(db_file):
     """
     conn = None
     try:
-        conn = sqlite3.connect(db_file)
-        conn.execute("PRAGMA journal_mode=WAL")
+        #conn = sqlite3.connect(db_file)
+        #conn.execute("PRAGMA journal_mode=WAL")
+        conn = psycopg2.connect(host="192.168.0.153",database="postgres",user="postgres",password="123456")  
+
     except Error as e:
         print(e)
+
  
     return conn
  
