@@ -94,7 +94,7 @@ def insert_frame(conn, hashcode, date, time, type, numpy_array, x_dim, y_dim, ca
           buffer = cv2.imencode('.jpg', numpy_array)[1]
           jpg_as_base64='data:image/jpeg;base64,'+ base64.b64encode(buffer).decode('utf-8')
           cur.execute("INSERT INTO objects (hashcode, currentdate, currentime, type, frame, x_dim, y_dim, cam) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)", 
-          (str(hashcode), date, time, type, jpg_as_base64, x_dim, y_dim, cam))
+          (str(hashcode), date, time, type, str(jpg_as_base64), x_dim, y_dim, cam))
        conn.commit()
     except Error as e:
           print("type {} cam: {} e: {}".format( type, cam, e))
