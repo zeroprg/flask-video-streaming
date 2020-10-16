@@ -52,3 +52,6 @@ prototxt=MobileNetSSD_deploy.prototxt.txt
 #model=yolo-coco/yolov3-tiny.weights
 model=MobileNetSSD_deploy.caffemodel
 confidence=0.10
+
+#Database configuration (Postgres)
+#ipaddress=192.168.0.153

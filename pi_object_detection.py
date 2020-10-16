@@ -160,9 +160,9 @@ def configure(args):
 
     logger.debug(args)
 
-
+    logger.info('DB ip address:' + args["ipaddress"])
 def start_one_stream_processes(cam):
-    Detection(SQLITE_DB, float(args["confidence"]), args["prototxt"], args["model"], videos[cam][1],
+    Detection(SQLITE_DB, args["ipaddress"], float(args["confidence"]), args["prototxt"], args["model"], videos[cam][1],
               imagesQueue[cam], cam);
 
     logger.info("p_classifiers for cam:" + str(cam) + " started")
@@ -186,7 +186,7 @@ def start():
     initialize_video_streams()
 
     for cam in range(len(videos)):
-        Detection(SQLITE_DB, float(args["confidence"]), args["prototxt"], args["model"], videos[cam][1],
+        Detection(SQLITE_DB, args["ipaddress"], float(args["confidence"]), args["prototxt"], args["model"], videos[cam][1],
                   imagesQueue[cam], cam);
 
         logger.info("p_classifiers for cam:" + str(cam) + " started")
@@ -252,7 +252,7 @@ def index():
     start = int(start)
     video_urls = []
     img_paginator = IMG_PAGINATOR
-    conn = db.create_connection(SQLITE_DB)    
+    conn = db.create_connection(SQLITE_DB,args["ipaddress"])    
     images_filenames = []
     for i in range(len(videos)):
         video_urls.append((videos[i][0], 'video_feed?cam=' + str(videos[i][0])))
@@ -303,7 +303,7 @@ def moreimgs():
             start = start - IMG_PAGINATOR
         else:
             start = 0
-    conn = db.create_connection(SQLITE_DB)
+    conn = db.create_connection(SQLITE_DB,args["ipaddress"])
     rows = db.select_last_frames(conn, cam, IMG_PAGINATOR, offset=start, as_json=True)
     #    ret = json.dumps(rows)
     return Response(rows, mimetype='text/plain')
@@ -322,7 +322,7 @@ def imgs_at_time():
 def gen_array_of_imgs(cam, delta=10000, currentime=int(time.time()*1000)):
     time1 = currentime - delta
     time2 = currentime + delta
-    conn = db.create_connection(SQLITE_DB)
+    conn = db.create_connection(SQLITE_DB,args["ipaddress"])
     rows = db.select_frame_by_time(conn, cam, time1, time2)
     x = json.dumps(rows)
     return x
@@ -357,7 +357,7 @@ def gen_params(cam=0, time1=0, time2=5*60*60*1000, object_of_interest=[]):
     """Parameters streaming generator function."""
  
     print("time1: {} time2: {}".format(time1, time2))
-    conn = db.create_connection(SQLITE_DB)
+    conn = db.create_connection(SQLITE_DB,args["ipaddress"])
     ls = db.select_statistic_by_time(conn, cam, time1, time2, object_of_interest)
     ret = json.dumps(ls)  # , indent = 4)
     logger.debug(ret)

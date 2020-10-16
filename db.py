@@ -14,7 +14,7 @@ def create_connection(db_file, ipaddress=None, database="postgress", user="postg
     """
     conn = None
     try:
-        if(ipaddress is None):
+        if(  ipaddress is None or ipaddress == ''):
             conn = sqlite3.connect(db_file)
             conn.execute("PRAGMA journal_mode=WAL")
             

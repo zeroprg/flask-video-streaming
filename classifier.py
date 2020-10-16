@@ -32,13 +32,14 @@ NUMBER_OF_THREADS = 1
 
 
 class Detection:
-    def __init__(self, sqlite_db, confidence, prototxt, model, video_url, output_queue, cam):
+    def __init__(self, sqlite_db,ipaddress, confidence, prototxt, model, video_url, output_queue, cam):
         self.confidence = confidence
         self.prototxt = prototxt
         self.model = model
         self.video_url = video_url
         self.hashes = {}
         self.sqlite_db = sqlite_db
+        self.db_ipaddress = ipaddress
         self.topic_label = 'no data'
         self.net = self.video_s = None
 
@@ -94,7 +95,7 @@ class Detection:
 
     def classify_frame(self, net, frame, cam):
         # print(" Classify frame ... --->")
-        conn = db.create_connection(self.sqlite_db)
+        conn = db.create_connection(self.sqlite_db , self.db_ipaddress)
         _frame = cv2.resize(frame, (DIMENSION_X, DIMENSION_Y))
         # _frame = imutils.resize(frame,DIMENSION_X)
         blob = cv2.dnn.blobFromImage(_frame, 0.007843,
