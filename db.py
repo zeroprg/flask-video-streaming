@@ -2,10 +2,11 @@
 import cv2
 import base64
 import time
-import psycopg2
- 
- 
-def create_connection(db_file):
+import sqlite3
+
+#P ="%s" 
+P ='?' 
+def create_connection(db_file, ipaddress=None, database="postgress", user="postgress", password="123456"):
     """ create a database connection to the SQLite database
         specified by the db_file
     :param db_file: database file
@@ -13,9 +14,15 @@ def create_connection(db_file):
     """
     conn = None
     try:
-        #conn = sqlite3.connect(db_file)
-        #conn.execute("PRAGMA journal_mode=WAL")
-        conn = psycopg2.connect(host="192.168.0.153",database="postgres",user="postgres",password="123456")  
+        if(ipaddress is None):
+            conn = sqlite3.connect(db_file)
+            conn.execute("PRAGMA journal_mode=WAL")
+            
+        else:
+            import psycopg2
+            conn = psycopg2.connect(host=ipaddress,database=database,user=user,password=password)  
+            P='%s'
+
     except Exception as e:
         print(e)
     return conn
@@ -45,7 +52,7 @@ def insert_statistic(conn, params):
         hashcodes = str(param['hashcodes'])
     if param['y'] == 0: return # never store dummy noise
     try:
-        cur.execute("INSERT INTO statistic(type,currentime,y,text,hashcodes,cam) VALUES (%s, %s, %s, %s, %s, %s)",
+        cur.execute("INSERT INTO statistic(type,currentime,y,text,hashcodes,cam) VALUES ("+P+", "+P+", "+P+", "+P+", "+P+", "+P+")",
          (param['name'], param['x'], param['y'], param['text'], hashcodes, param['cam']))
     except Exception as e:
          print(" e: {}".format( e))
@@ -71,7 +78,7 @@ def select_statistic_by_time(conn, cam, time1, time2, obj):
     
     str =  "('" + obj.replace(",","','") + "')"
     #print(str)
-    cur.execute("SELECT type, currentime as x0, currentime + 30000 as x, y as y FROM statistic WHERE type IN" +str+ " AND cam=%s AND currentime BETWEEN %s and %s ORDER BY type,currentime ASC", #DeSC
+    cur.execute("SELECT type, currentime as x0, currentime + 30000 as x, y as y FROM statistic WHERE type IN" +str+ " AND cam="+P+" AND currentime BETWEEN "+P+" and "+P+" ORDER BY type,currentime ASC", #DeSC
         (cam, time2, time1 ))
     # convert row object to the dictionary
     cursor = cur.fetchall()
@@ -85,7 +92,7 @@ def select_statistic_by_time(conn, cam, time1, time2, obj):
             type = record[0]
             if(type != _type): 
                 rows.append({'label':record[0],'values': 
-                [ {'x':v[1], 'y':v[2]} for v in list(filter( lambda x : x[0] == type , cursor))] })
+                [ {'x0':v[1], 'x':v[2],'y':v[3]} for v in list(filter( lambda x : x[0] == type , cursor))] })
             _type=type
     print(rows)
     #for row in rows:
@@ -97,13 +104,13 @@ def insert_frame(conn, hashcode, date, time, type, numpy_array, x_dim, y_dim, ca
     cur = conn.cursor()
     if y_dim == 0 or x_dim == 0 or  x_dim/y_dim > 5 or y_dim/x_dim > 5: return
     
-    cur.execute("UPDATE objects SET currentime=%s WHERE hashcode=%s", (time, str(hashcode)))
+    cur.execute("UPDATE objects SET currentime="+P+" WHERE hashcode="+P, (time, str(hashcode)))
     print("cam= {}, x_dim={}, y_dim={}".format(cam, x_dim, y_dim))
     if cur.rowcount == 0:
         buffer = cv2.imencode('.jpg', numpy_array)[1]
         jpg_as_base64='data:image/jpeg;base64,'+ base64.b64encode(buffer).decode('utf-8')
         try:
-            cur.execute("INSERT INTO objects (hashcode, currentdate, currentime, type, frame, x_dim, y_dim, cam) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)", 
+            cur.execute("INSERT INTO objects (hashcode, currentdate, currentime, type, frame, x_dim, y_dim, cam) VALUES ("+P+", "+P+", "+P+", "+P+", "+P+", "+P+", "+P+", "+P+")", 
             (str(hashcode), date, time, type, str(jpg_as_base64), int(x_dim), int(y_dim), int(cam)))
         except Exception as e: print(" e: {}".format( e))
 
@@ -117,7 +124,7 @@ def select_frame_by_time(conn, cam, time1, time2):
     """
    # conn.row_factory= sqlite3.Row
     cur = conn.cursor()
-    cur.execute("SELECT cam, hashcode, currentdate, currentime, type, frame FROM objects WHERE cam=%s AND currentime BETWEEN %s and %s ORDER BY currentime DESC", (cam,time1,time2,))
+    cur.execute("SELECT cam, hashcode, currentdate, currentime, type, frame FROM objects WHERE cam="+P+" AND currentime BETWEEN "+P+" and "+P+" ORDER BY currentime DESC", (cam,time1,time2,))
     rows = [dict(r) for r in cur.fetchall()] 
     return rows
 
@@ -132,9 +139,9 @@ def select_last_frames(conn, cam, n_rows, offset=0, as_json = False, type=None):
     #    conn.row_factory = sqlite3.Row
     cur = conn.cursor()
     if type == None:
-        cur.execute("SELECT hashcode, currentdate, currentime, type, frame, cam FROM objects where cam=%s  ORDER BY currentime DESC LIMIT %s OFFSET %s", (cam,n_rows,offset,))
+        cur.execute("SELECT hashcode, currentdate, currentime, type, frame, cam FROM objects where cam="+P+"  ORDER BY currentime DESC LIMIT "+P+" OFFSET "+P+"", (cam,n_rows,offset,))
     else:
-        cur.execute("SELECT hashcode, currentdate, currentime, type, frame, cam FROM objects where cam=%s and type=%s ORDER BY currentime DESC LIMIT %s OFFSET %s", (cam,n_rows,offset,type,))
+        cur.execute("SELECT hashcode, currentdate, currentime, type, frame, cam FROM objects where cam="+P+" and type="+P+" ORDER BY currentime DESC LIMIT "+P+" OFFSET "+P+"", (cam,n_rows,offset,type,))
     i = 1
     if as_json == True:
         rows = "["
@@ -157,7 +164,7 @@ def delete_frames_later_then(conn, predicate):
     predicate : '-70 minutes' , '-1 seconds ', '-2 hour'
     """
     cur = conn.cursor()
-    cur.execute("DELETE from objects WHERE currentime < strftime('%s','now'," + predicate+ ")")
+    cur.execute("DELETE from objects WHERE currentime < strftime('"+P+"','now'," + predicate+ ")")
  
 def main():
     database = "framedata.db"
