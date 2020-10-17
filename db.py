@@ -143,8 +143,8 @@ def select_last_frames(conn, cam, time1, time2, obj, n_rows=50, offset=0):
     cur.execute("SELECT cam, hashcode, currentdate, currentime, type, frame FROM objects where cam="+P+" AND  type IN " +str+ " AND currentime BETWEEN "+P+" and "+P+" ORDER BY currentime DESC LIMIT "+P+" OFFSET "+P+"", 
         (cam, time2, time1,n_rows,offset,))
     fetched_rows = cur.fetchall()
-    rows = [ {'cam':v[0] , 'hashcode':v[1],  'currentdate':v[2], 'currentime':v[3], 'type': v[4], 'frame': "'"+v[5]+"'"} for v in fetched_rows ]
-    print(rows[0])
+    rows = [ {'cam':v[0] , 'hashcode':v[1],  'currentdate':v[2], 'currentime':v[3], 'type': v[4], 'frame': v[5]} for v in fetched_rows ]
+    #print(rows[0])
     return rows
 
 

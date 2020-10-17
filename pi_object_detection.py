@@ -314,7 +314,7 @@ def moreimgs():
     print("cam: {}, hour_back1:{}, hour_back2:{}, object_of_interest: {}".format(cam, hour_back1, hour_back2, object_of_interest))
     conn = db.create_connection(SQLITE_DB,ipaddress)
     rows = db.select_last_frames(conn,cam=cam, time1=hour_back1, time2=hour_back2, obj=object_of_interest)
-    return Response(rows, mimetype='text/plain')
+    return Response(json.dumps(rows), mimetype='text/plain')
 
 
 @app.route('/imgs_at_time')
