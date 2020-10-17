@@ -65,13 +65,14 @@ def select_statistic_by_time(conn, cam, time1, time2, obj):
     :param time1, time2 in second INTEGER
     :return:
     """
-
-    #conn.row_factory= sqlite3.Row
-    
-    #rows = []
     now = time.time()
     time2 = int((now - time2*3600000)*1000)
     time1 = int((now - time1*3600000)*1000)
+    if time2 > time1:  # swap them 
+        a=time2
+        time2=time1 
+        time1=a
+
     print(time2,time1, obj)
     cur = conn.cursor()
     # cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
@@ -82,10 +83,6 @@ def select_statistic_by_time(conn, cam, time1, time2, obj):
         (cam, time2, time1 ))
     # convert row object to the dictionary
     cursor = cur.fetchall()
-    print(cursor)
-    #rows = [dict(r) for r in cursor] 
-   # rows = [row.fetchone() for row in cursor]
-    #rows = [{ 'type':record[0], 'row':  for k, v in record.items() } for record in rows]
     _type = ""
     rows=[]
     for record in cursor:
@@ -94,9 +91,7 @@ def select_statistic_by_time(conn, cam, time1, time2, obj):
                 rows.append({'label':record[0],'values': 
                 [ {'x0':v[1], 'x':v[2],'y':v[3]} for v in list(filter( lambda x : x[0] == type , cursor))] })
             _type=type
-    print(rows)
-    #for row in rows:
-    #print(row)
+    #print(rows)
     return rows
 
 
@@ -128,32 +123,28 @@ def select_frame_by_time(conn, cam, time1, time2):
     rows = [dict(r) for r in cur.fetchall()] 
     return rows
 
-def select_last_frames(conn, cam, n_rows, offset=0, as_json = False, type=None):
+def select_last_frames(conn, cam, time1, time2, obj, n_rows=50, offset=0):
     """
     Query last n rows of frames b
     :param conn: the Connection object
-    :param n_rows number of rows
+    :param n_rows number of rows restrict value of request
     :return:
     """
-    #if as_json == False: 
-    #    conn.row_factory = sqlite3.Row
+    now = time.time()
+    time2 = int((now - time2*3600000)*1000)
+    time1 = int((now - time1*3600000)*1000)
+    if time2 > time1:  # swap them 
+        a=time2
+        time2=time1 
+        time1=a
+    str =  "('" + obj.replace(",","','") + "')"    
+    print(time2,time1, obj)
     cur = conn.cursor()
-    if type == None:
-        cur.execute("SELECT hashcode, currentdate, currentime, type, frame, cam FROM objects where cam="+P+"  ORDER BY currentime DESC LIMIT "+P+" OFFSET "+P+"", (cam,n_rows,offset,))
-    else:
-        cur.execute("SELECT hashcode, currentdate, currentime, type, frame, cam FROM objects where cam="+P+" and type="+P+" ORDER BY currentime DESC LIMIT "+P+" OFFSET "+P+"", (cam,n_rows,offset,type,))
-    i = 1
-    if as_json == True:
-        rows = "["
-        fetched_rows = cur.fetchall()
-        length = len(fetched_rows)
-        for r in fetched_rows:
-            delta =   '{' + '"cam":{}, "hashcode":"{}",  "currentdate":"{}", "currentime":{}, "type":"{}", "frame":"{}"'.format(r[5], r[0], r[1], r[2], r[3], r[4])+'}'
-            rows += delta + ',' if i < length else  delta +']'
-            i+=1
-    else:
-        rows = [ dict(r) for r in cur.fetchall() ]
-   # for row in rows: print(row['currentime'],row['cam'])
+    cur.execute("SELECT cam, hashcode, currentdate, currentime, type, frame FROM objects where cam="+P+" AND  type IN " +str+ " AND currentime BETWEEN "+P+" and "+P+" ORDER BY currentime DESC LIMIT "+P+" OFFSET "+P+"", 
+        (cam, time2, time1,n_rows,offset,))
+    fetched_rows = cur.fetchall()
+    rows = [ {'cam':v[0] , 'hashcode':v[1],  'currentdate':v[2], 'currentime':v[3], 'type': v[4], 'frame': "'"+v[5]+"'"} for v in fetched_rows ]
+    print(rows[0])
     return rows
 
 

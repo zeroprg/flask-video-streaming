@@ -118,6 +118,7 @@ vs = None
 
 fps = None
 p_get_frame = None
+ipaddress = None
 
 
 def configure(args):
@@ -159,10 +160,11 @@ def configure(args):
     logger.info("SHOW_VIDEO=" + str(SHOW_VIDEO))
 
     logger.debug(args)
-
-    logger.info('DB ip address:' + args["ipaddress"])
+    if("ipaddress" in args.keys() ):
+         ipaddress =  args["ipaddress"]
+         logger.info('DB ip address:' + ipaddress )
 def start_one_stream_processes(cam):
-    Detection(SQLITE_DB, args["ipaddress"], float(args["confidence"]), args["prototxt"], args["model"], videos[cam][1],
+    Detection(SQLITE_DB, ipaddress, float(args["confidence"]), args["prototxt"], args["model"], videos[cam][1],
               imagesQueue[cam], cam);
 
     logger.info("p_classifiers for cam:" + str(cam) + " started")
@@ -186,7 +188,7 @@ def start():
     initialize_video_streams()
 
     for cam in range(len(videos)):
-        Detection(SQLITE_DB, args["ipaddress"], float(args["confidence"]), args["prototxt"], args["model"], videos[cam][1],
+        Detection(SQLITE_DB, ipaddress, float(args["confidence"]), args["prototxt"], args["model"], videos[cam][1],
                   imagesQueue[cam], cam);
 
         logger.info("p_classifiers for cam:" + str(cam) + " started")
@@ -252,7 +254,7 @@ def index():
     start = int(start)
     video_urls = []
     img_paginator = IMG_PAGINATOR
-    conn = db.create_connection(SQLITE_DB,args["ipaddress"])    
+    conn = db.create_connection(SQLITE_DB,ipaddress)    
     images_filenames = []
     for i in range(len(videos)):
         video_urls.append((videos[i][0], 'video_feed?cam=' + str(videos[i][0])))
@@ -294,18 +296,24 @@ def moreparams():
 @cross_origin(origin='http://localhost:3020')
 def moreimgs():
     """ Read list of json files or return one specific  for specific time """
-    direction = request.args.get('direction', default=1, type=int)
-    start = request.args.get('start', default=0, type=int)
-    cam = request.args.get('cam', default=0, type=int)
+    hour_back1 = request.args.get('hour_back1', default=1, type=int)
+    hour_back2 = request.args.get('hour_back2', default=0, type=int)
+    object_of_interest = request.args.get('object_of_interest', type=None)
+    #print("object_of_interest: " + str(object_of_interest)[1:-1])
 
-    if direction < 0:
-        if start >= IMG_PAGINATOR:
-            start = start - IMG_PAGINATOR
-        else:
-            start = 0
-    conn = db.create_connection(SQLITE_DB,args["ipaddress"])
-    rows = db.select_last_frames(conn, cam, IMG_PAGINATOR, offset=start, as_json=True)
-    #    ret = json.dumps(rows)
+    cam = request.args.get('cam', default=0, type=int)
+    if hour_back1 != '':
+        hour_back1 = int(hour_back1)
+    else:
+        hour_back1 = 0  # default value: 60 min back
+
+    if hour_back2 != '':
+        hour_back2 = int(hour_back2)
+    else:
+        hour_back2 = 1  # default value: 60 min back
+    print("cam: {}, hour_back1:{}, hour_back2:{}, object_of_interest: {}".format(cam, hour_back1, hour_back2, object_of_interest))
+    conn = db.create_connection(SQLITE_DB,ipaddress)
+    rows = db.select_last_frames(conn,cam=cam, time1=hour_back1, time2=hour_back2, obj=object_of_interest)
     return Response(rows, mimetype='text/plain')
 
 
@@ -322,7 +330,7 @@ def imgs_at_time():
 def gen_array_of_imgs(cam, delta=10000, currentime=int(time.time()*1000)):
     time1 = currentime - delta
     time2 = currentime + delta
-    conn = db.create_connection(SQLITE_DB,args["ipaddress"])
+    conn = db.create_connection(SQLITE_DB,ipaddress)
     rows = db.select_frame_by_time(conn, cam, time1, time2)
     x = json.dumps(rows)
     return x
@@ -357,7 +365,7 @@ def gen_params(cam=0, time1=0, time2=5*60*60*1000, object_of_interest=[]):
     """Parameters streaming generator function."""
  
     print("time1: {} time2: {}".format(time1, time2))
-    conn = db.create_connection(SQLITE_DB,args["ipaddress"])
+    conn = db.create_connection(SQLITE_DB,ipaddress)
     ls = db.select_statistic_by_time(conn, cam, time1, time2, object_of_interest)
     ret = json.dumps(ls)  # , indent = 4)
     logger.debug(ret)
